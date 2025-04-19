@@ -451,10 +451,14 @@ void NN::calculate_gradients(
 
 		short *dropout = 0;
 		cudaMalloc(&dropout, sizeof(short) * layer_len);
+		cudaMemset(dropout, 0, sizeof(short) * layer_len);
 
-		cud_set_dropout kernel(layer_len / 32 + (layer_len % 32 > 0), 32) (
-			dropout_rate, random_sample, dropout, layer_len
-		);
+		if (i == layer_count - 1)
+			add_to_array kernel(layer_len / 32 + (layer_len % 32 > 0), 32) (dropout, layer_len, 1);
+		else
+			cud_set_dropout kernel(layer_len / 32 + (layer_len % 32 > 0), 32) (
+				dropout_rate, random_sample, dropout, layer_len
+			);
 		cudaDeviceSynchronize();
 		
 		element_wise_multiply kernel(layer_len / 32 + (layer_len % 32 > 0), 32) (
