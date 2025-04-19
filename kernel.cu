@@ -494,7 +494,7 @@ void bug_hunting()
 void test_LSTM()
 {
 	const data_t learning_rate = .1;
-	const data_t dropout_rate = 0;
+	const data_t dropout_rate = 0.2;
 
 	const size_t in_len = 1;
 	const size_t out_len = 2;
@@ -535,6 +535,8 @@ void test_LSTM()
 		data_t* Y = 0;
 		data_t* activations = 0;
 		data_t* execution_values = 0;
+		if (i % 10 == 0)
+			printf("\n");
 		for (size_t j = 0; j < 2; j++)
 		{
 			n->training_execute(
