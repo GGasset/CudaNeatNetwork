@@ -1,6 +1,6 @@
 
 # Notes
-## For regularization and optimizers scalability
+## For optimizer scalability
 
 - You cannot create a class in host memory and use a virtual function inside it from device code and viceversa
 - The class cannot be memcpy'ed into device memory, must be created in host/device code

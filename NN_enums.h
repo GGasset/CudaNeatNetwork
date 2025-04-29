@@ -27,16 +27,22 @@ enum LearningRateAdjusters : size_t
 
 enum ActivationFunctions : size_t
 {
-        sigmoid,
-        _tanh,
-        activations_last_entry
+	sigmoid,
+	_tanh,
+	activations_last_entry
 };
 
 enum CostFunctions : size_t
 {
-        MSE,
-        log_likelyhood,
+	MSE,
+	log_likelyhood,
 	PPO
+};
+
+enum optimizers_enum : size_t
+{
+	no_optimizer,
+	Adam
 };
 
 enum action_enum : size_t

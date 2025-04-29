@@ -21,6 +21,7 @@ SET(COMPILATION_FILES
 		NN.cu
 		NN_constructor.cu
 		GAE.cu
+		Optimizers.cu
 
 		functionality.cpp
 	)
