@@ -11,9 +11,9 @@
 class Optimizer_device
 {
 public:
-	size_t values_per_parameter;
-	size_t parameter_count;
-	field_t* optimizer_values;
+	size_t values_per_parameter = 0;
+	size_t parameter_count = 0;
+	field_t* optimizer_values = 0;
 
 	Optimizer_device();
 	~Optimizer_device();
@@ -35,7 +35,7 @@ public:
 	/// <summary>
 	/// Must be created inside device code
 	/// </summary>
-	Optimizer_device *optimizer;
+	Optimizer_device *optimizer = 0;
 private:
 
 };
