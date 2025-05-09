@@ -25,5 +25,5 @@ public:
 	
 	__device__ void hyperparameter_subtract_gradient(field_t *parameter, data_t gradient, size_t layer_parameter_i, gradient_hyperparameters hyperparameters);
 	/// <param name="layer_parameter_i">Basically gradient i</param>
-	__device__ virtual void subtract_gradient(field_t *parameter, data_t gradient, size_t layer_parameter_i);
+	__device__ virtual void subtract_gradient(field_t *parameter, data_t gradient, size_t layer_parameter_i, gradient_hyperparameters hyperparameters);
 };
