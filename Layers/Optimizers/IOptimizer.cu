@@ -10,13 +10,13 @@ __device__ void IOptimizer::alloc_optimizer_values(size_t param_count, bool copy
 	cudaMalloc(&optimizer_values, sizeof(field_t) * param_count * values_per_parameter);
 	initialize_optimizer_values(optimizer_values);
 	if (copy_old_values && old_optimizer_values && optimizer_values)
-		cudaMemcpy(optimizer_values, old_optimizer_values, sizeof(field_t) * h_min(param_count, old_param_count) * values_per_parameter, cudaMemcpyDeviceToDevice);
+		memcpy(optimizer_values, old_optimizer_values, sizeof(field_t) * __min(param_count, old_param_count) * values_per_parameter);
 	cudaFree(old_optimizer_values);
 }
 
 __device__ void IOptimizer::initialize_optimizer_values(field_t* values)
 {
-	cudaMemset(values, 0, sizeof(field_t) * parameter_count * values_per_parameter);
+	memset(values, 0, sizeof(field_t) * parameter_count * values_per_parameter);
 }
 
 __device__ void IOptimizer::cleanup()

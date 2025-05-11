@@ -25,14 +25,14 @@ __device__ IOptimizer* initialize_optimizer(optimizers_enum optimizer, size_t pa
 
 __global__ void global_optimizer_init(optimizers_enum optimizer, IOptimizer** out, size_t parameter_count)
 {
-	*out = initialize_optimizer(optimizer);
+	*out = initialize_optimizer(optimizer, parameter_count);
 }
 
 __host__ IOptimizer* host_optimizer_init(optimizers_enum optimizer, size_t parameter_count)
 {
 	IOptimizer** tmp = 0;
 	cudaMalloc(&tmp, sizeof(IOptimizer*));
-	global_optimizer_init kernel(1, 1) (optimizer, tmp);
+	global_optimizer_init <<<1, 1>>> (optimizer, tmp, parameter_count);
 	cudaDeviceSynchronize();
 
 	IOptimizer* out = 0;

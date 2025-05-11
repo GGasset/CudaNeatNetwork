@@ -18,7 +18,7 @@ public:
 	size_t parameter_count = 0;
 	field_t* optimizer_values = 0;
 
-	inline IOptimizer() {};
+	__device__ inline IOptimizer() {};
 	__device__ void alloc_optimizer_values(size_t param_count, bool copy_old_values);
 	__device__ virtual void initialize_optimizer_values(field_t* values);
 	__device__ void cleanup();

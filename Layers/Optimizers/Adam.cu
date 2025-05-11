@@ -17,7 +17,7 @@ __device__ void AdamOptimizer::initialize_optimizer_values(field_t* values)
 	tmp[5] = tmp[0];
 	tmp[6] = tmp[1];
 	for (size_t i = 0; i < values_per_parameter; i++)
-		cudaMemcpy(optimizer_values + values_per_parameter * i, tmp, sizeof(field_t) * values_per_parameter, cudaMemcpyDeviceToDevice);
+		memcpy(optimizer_values + values_per_parameter * i, tmp, sizeof(field_t) * values_per_parameter);
 }
 
 __device__ void AdamOptimizer::subtract_gradient(field_t* parameter, data_t gradient, size_t layer_parameter_i, gradient_hyperparameters hyperparameters)
