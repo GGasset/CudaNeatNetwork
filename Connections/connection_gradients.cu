@@ -53,7 +53,7 @@ __global__ void bias_gradient_subtraction(
 
 	size_t gradient_i = gradients_start + layer_gradients_start + neuron_gradients_starts[tid];
 	data_t gradient = gradients[gradient_i];
-	biases[tid] -= device_closest_to_zero(max_subtracted_gradient * (-1 + 2 * (gradient >= 0 && max_subtracted_gradient >= 0)), gradient * learning_rate);
+	biases[tid] -= device_closest_to_zero(max_subtracted_gradient * (1 - 2 * (gradient <= 0 && max_subtracted_gradient >= 0)), gradient * learning_rate);
 }
 
 __global__ void cud_dense_gradient_subtraction(
@@ -68,7 +68,7 @@ __global__ void cud_dense_gradient_subtraction(
 	size_t gradient_i = gradients_start + layer_gradients_start + neuron_gradients_starts[blockIdx.y] + tid + 1;
 	data_t gradient = gradients[gradient_i];
 	size_t weight_i = previous_layer_length * blockIdx.y + tid;
-	atomicAdd(weights + weight_i, -device_closest_to_zero(max_subtracted_gradient * (-1 + 2 * (gradient >= 0 && max_subtracted_gradient >= 0)), gradient * learning_rate));
+	atomicAdd(weights + weight_i, -device_closest_to_zero(max_subtracted_gradient * (1 - 2 * (gradient <= 0 && max_subtracted_gradient >= 0)), gradient * learning_rate));
 }
 
 __global__ void cud_NEAT_gradient_subtraction(
@@ -84,5 +84,5 @@ __global__ void cud_NEAT_gradient_subtraction(
 	size_t neuron_i = connection_neuron_i[tid];
 	size_t gradient_i = gradients_start + layer_gradients_start + neuron_gradients_starts[neuron_i] + tid + 1;
 	data_t gradient = gradients[gradient_i];
-	atomicAdd(weights + tid, -device_closest_to_zero(max_subtracted_gradient * (-1 + 2 * (gradient >= 0 && max_subtracted_gradient >= 0)), gradient * learning_rate));
+	atomicAdd(weights + tid, -device_closest_to_zero(max_subtracted_gradient * (1 - 2 * (gradient <= 0 && max_subtracted_gradient >= 0)), gradient * learning_rate));
 }
