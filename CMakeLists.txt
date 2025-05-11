@@ -46,6 +46,8 @@ ADD_PREFIX_INPLACE(${CONNECTIONS_FOLDER}/ CONNECTION_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${CONNECTIONS_FOLDER})
 
 SET(OPTIMIZER_FILES
+		Optimizer_init.cu
+
 		IOptimizer.cu
 		Adam.cu
 	)
@@ -170,7 +172,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC curand)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES "native")
 target_include_directories(${PROJECT_NAME} PRIVATE
-	Connections Costs Functionality Layers Separate_headers socket)
+	Connections Costs Functionality Layers Layers/Optimizers Separate_headers socket)
 if (DEBUG)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
