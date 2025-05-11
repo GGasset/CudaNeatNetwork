@@ -125,6 +125,15 @@ void ILayer::ILayer_load(FILE* file)
 
 void ILayer::deallocate()
 {
+	if (optimizer)
+	{
+		if (optimizer->optimizer_values)
+			cudaFree(optimizer->optimizer_values);
+		optimizer->optimizer_values = 0;
+		optimizer->parameter_count = 0;
+	}
+	cudaFree(optimizer);
+
 	connections->deallocate();
 	layer_specific_deallocate();
 	cudaDeviceSynchronize();

@@ -2,10 +2,12 @@
 #define ILAYER_H
 #include <stdlib.h>
 
-#include "IConnections.h"
 #include "neuron_operations.cuh"
 #include "derivatives.cuh"
 #include "gradients.cuh"
+
+#include "IConnections.h"
+#include "IOptimizer.h"
 
 class ILayer
 {
@@ -20,6 +22,7 @@ public:
 
 	bool is_recurrent = false;
 	IConnections* connections = 0;
+	IOptimizer* optimizer = 0;
 
 	size_t layer_activations_start = 0;
 
