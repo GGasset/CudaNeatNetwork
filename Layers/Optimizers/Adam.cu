@@ -6,7 +6,7 @@ AdamOptimizer::AdamOptimizer()
 	values_per_parameter = 7;
 }
 
-void AdamOptimizer::initialize_optimizer_values(field_t* values)
+__device__ void AdamOptimizer::initialize_optimizer_values(field_t* values)
 {
 	field_t tmp[7]{};
 	tmp[0] = 0.9;
@@ -20,7 +20,7 @@ void AdamOptimizer::initialize_optimizer_values(field_t* values)
 		cudaMemcpy(optimizer_values + values_per_parameter * i, tmp, sizeof(field_t) * values_per_parameter, cudaMemcpyDeviceToDevice);
 }
 
-void AdamOptimizer::subtract_gradient(field_t* parameter, data_t gradient, size_t layer_parameter_i, gradient_hyperparameters hyperparameters)
+__device__ void AdamOptimizer::subtract_gradient(field_t* parameter, data_t gradient, size_t layer_parameter_i, gradient_hyperparameters hyperparameters)
 {
 	gradient /= hyperparameters.learning_rate;
 
