@@ -40,3 +40,10 @@ __host__ IOptimizer* host_optimizer_init(optimizers_enum optimizer, size_t param
 	cudaFree(tmp);
 	return (out);
 }
+
+__global__ void call_Optimizer_destructor(IOptimizer *optimizer)
+{
+	if (!optimizer)
+		return ;
+	optimizer->cleanup();
+}
