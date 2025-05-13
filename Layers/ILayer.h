@@ -7,7 +7,7 @@
 #include "gradients.cuh"
 
 #include "IConnections.h"
-#include "IOptimizer.h"
+#include "Optimizer_init.h"
 
 class ILayer
 {
