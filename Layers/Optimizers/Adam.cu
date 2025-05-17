@@ -41,5 +41,5 @@ __device__ void AdamOptimizer::subtract_gradient(field_t* parameter, data_t grad
 	optimizer_values[values_starting_i + 6] *= optimizer_values[values_starting_i + 1];
 	data_t bias_corrected_v = v / (1 - optimizer_values[values_starting_i + 6]);
 
-	*parameter -= hyperparameters.learning_rate * bias_corrected_m / (sqrt(bias_corrected_v) + optimizer_values[values_starting_i + 2]);
+	atomicAdd(parameter, -(hyperparameters.learning_rate * bias_corrected_m / (sqrt(bias_corrected_v) + optimizer_values[values_starting_i + 2])));
 }
