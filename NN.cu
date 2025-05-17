@@ -440,7 +440,7 @@ void NN::calculate_gradients(
 		size_t layer_len = layers[i]->get_neuron_count();
 
 		float *random_sample = 0;
-		cudaMalloc(&random_sample, sizeof(float));
+		cudaMalloc(&random_sample, sizeof(float) * layer_len);
 		IConnections::generate_random_values(&random_sample, layer_len, 0, 1);
 
 		short *dropout = 0;
