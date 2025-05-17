@@ -11,7 +11,7 @@ public:
 	LSTMLayer(IConnections* connections, size_t neuron_count);
 	LSTMLayer();
 
-	inline size_t get_weight_count() { return connections->connection_count + 4 * get_neuron_count(); }
+	inline size_t get_weight_count() { return connections->connection_count + get_neuron_count() + 4 * get_neuron_count(); }
 
 	void layer_specific_initialize_fields(size_t connection_count, size_t neuron_count) override;
 	void layer_specific_deallocate() override;
