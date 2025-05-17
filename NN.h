@@ -82,9 +82,7 @@ public:
 		bool is_Y_hat_on_host_memory,
 		size_t Y_hat_value_count,
 		CostFunctions cost_function,
-		data_t learning_rate,
-		data_t gradient_clip,
-		float dropout_rate
+		gradient_hyperparameters hyperparameters
 	);
 
 	data_t training_batch(
@@ -94,11 +92,9 @@ public:
 		bool is_Y_hat_on_host_memory,
 		size_t Y_hat_value_count,
 		CostFunctions cost_function,
-		data_t learning_rate,
 		data_t** Y, 
 		bool copy_Y_to_host,
-		data_t gradient_clip,
-		float dropout_rate = .2
+		gradient_hyperparameters hyperparameters
 	);
 
 	/// <param name="gradients">- pointer to cero and to a valid array are valid</param>
@@ -129,12 +125,12 @@ public:
 	data_t* calculate_GAE_advantage(
 		size_t t_count,
 		data_t gamma, data_t lambda,
-		NN* value_function_estimator, data_t* value_function_state, data_t estimator_learning_rate, data_t estimator_gradient_clip, data_t estimator_dropout_rate, bool is_state_on_host, bool free_state,
+		NN* value_function_estimator, data_t* value_function_state, gradient_hyperparameters estimator_hyperparameters, bool is_state_on_host, bool free_state,
 		data_t* rewards, bool is_reward_on_host, bool free_rewards
 	);
 
 	void subtract_gradients(
-		data_t* gradients, size_t gradients_start, data_t learning_rate, data_t gradient_clip
+		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	);
 
 	void evolve();

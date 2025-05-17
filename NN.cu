@@ -273,9 +273,7 @@ data_t NN::train(
 	bool is_Y_hat_on_host_memory,
 	size_t Y_hat_value_count,
 	CostFunctions cost_function,
-	data_t learning_rate,
-	data_t gradient_clip,
-	float dropout_rate
+	gradient_hyperparameters hyperparameters
 )
 {
 	data_t* costs = 0;
@@ -297,12 +295,12 @@ data_t NN::train(
 
 	data_t* gradients = 0;
 	backpropagate(
-		t_count, costs, activations, execution_values, &gradients, dropout_rate
+		t_count, costs, activations, execution_values, &gradients, hyperparameters.dropout_rate
 	);
 
 	for (size_t t = 0; t < t_count; t++)
 	{
-		subtract_gradients(gradients, gradient_count * t, learning_rate, gradient_clip);
+		subtract_gradients(gradients, gradient_count * t, hyperparameters);
 	}
 
 	if (is_Y_hat_on_host_memory) cudaFree(Y_hat);
@@ -322,11 +320,9 @@ data_t NN::training_batch(
 	bool is_Y_hat_on_host_memory,
 	size_t Y_hat_value_count,
 	CostFunctions cost_function,
-	data_t learning_rate,
 	data_t** Y,
 	bool copy_Y_to_host,
-	data_t gradient_clip,
-	float dropout_rate
+	gradient_hyperparameters hyperparameters
 )
 {
 	data_t* execution_values = 0;
@@ -347,9 +343,7 @@ data_t NN::training_batch(
 		is_Y_hat_on_host_memory,
 		Y_hat_value_count,
 		cost_function,
-		learning_rate,
-		gradient_clip,
-		dropout_rate
+		hyperparameters
 	);
 }
 
@@ -487,7 +481,7 @@ void NN::calculate_gradients(
 data_t *NN::calculate_GAE_advantage(
 	size_t t_count,
 	data_t gamma, data_t lambda,
-	NN *value_function_estimator, data_t *value_function_state, data_t estimator_learning_rate, data_t estimator_gradient_clip, data_t estimator_dropout_rate, bool is_state_on_host, bool free_state,
+	NN *value_function_estimator, data_t *value_function_state, gradient_hyperparameters estimator_hyperparameters, bool is_state_on_host, bool free_state,
 	data_t *rewards, bool is_reward_on_host, bool free_rewards
 )
 {
@@ -510,8 +504,8 @@ data_t *NN::calculate_GAE_advantage(
 	value_function_estimator->training_batch( // TODO Returns a pointer to host memory and then copies it. Slow!
 		t_count,
 		value_function_state, discounted_rewards, 0, t_count,
-		CostFunctions::MSE, estimator_learning_rate,
-		&host_value_functions, 1, estimator_gradient_clip, estimator_dropout_rate
+		CostFunctions::MSE, 
+		&host_value_functions, 1, estimator_hyperparameters
 	);
 
 	data_t* value_functions = 0;
@@ -563,7 +557,7 @@ data_t *NN::calculate_GAE_advantage(
 	return 0;
 }
 
-void NN::subtract_gradients(data_t* gradients, size_t gradients_start, data_t learning_rate, data_t gradient_clip)
+void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparamters)
 {
 	reset_NaNs kernel(gradient_count / 32 + (gradient_count % 32 > 0), 32) (
 		gradients + gradients_start, 0, gradient_count
@@ -575,7 +569,7 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, data_t le
 		ILayer* current_layer = layers[i];
 		size_t layer_length = current_layer->get_neuron_count();
 
-		current_layer->subtract_gradients(gradients, gradients_start, learning_rate, gradient_clip);
+		current_layer->subtract_gradients(gradients, gradients_start, hyperparamters);
 	}
 	cudaDeviceSynchronize();
 }

@@ -49,7 +49,7 @@ NN* NN_constructor::construct(size_t input_length, optimizers_enum e_optimizer, 
 				break;
 		}
 		
-		IOptimizer* optimizer = initialize_optimizer(e_optimizer, layer->get_weight_count());
+		IOptimizer* optimizer = host_optimizer_init(e_optimizer, layer->get_weight_count());
 		layer->optimizer = optimizer;
 		
 		layers[i] = layer;

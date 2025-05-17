@@ -235,9 +235,8 @@ void GridTravellerPrototype()
 			actual_steps,
 			inputs,
 			discounted_rewards, 1, actual_steps,
-			CostFunctions::MSE, .01,
-			&value_functions, 1,
-			20000
+			CostFunctions::MSE,
+			&value_functions, 1, gradient_hyperparameters()
 		);
 
 		// Denoted as greek lowercase delta
@@ -266,7 +265,7 @@ void GridTravellerPrototype()
 		n->train(actual_steps,
 			execution_values, activations, 
 			advantages, true, actual_steps,
-			CostFunctions::log_likelyhood, .005, 100, 0.1
+			CostFunctions::log_likelyhood, gradient_hyperparameters()
 		);
 
 		/*n->train(actual_steps,
@@ -317,7 +316,7 @@ void test_LSTM_cells_for_rythm_prediction()
 		//.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 256, sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 256, sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, output_length, sigmoid)
-		.construct(input_length, stateful);
+		.construct(input_length, no_optimizer, stateful);
 
 	/*
 	NN *n = NN_constructor()
@@ -391,7 +390,7 @@ void test_LSTM_cells_for_rythm_prediction()
 			costs[i] = n->training_batch(
 				t_count,
 				X, Y_hat, true, output_length * t_count,
-				CostFunctions::MSE, learning_rate, &Y, true, 3, 0
+				CostFunctions::MSE, &Y, true, gradient_hyperparameters()
 			);
 		else
 		{
@@ -447,7 +446,7 @@ void bug_hunting()
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 64, ActivationFunctions::sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 32, ActivationFunctions::sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, output_len, ActivationFunctions::sigmoid)
-		.construct(input_len, stateful);
+		.construct(input_len, no_optimizer, stateful);
 
 	const size_t t_count = 2;
 	data_t X[input_len * t_count];
@@ -472,8 +471,8 @@ void bug_hunting()
 		printf("%i %.4f\n", i, n->training_batch(
 			t_count,
 			X, Y_hat, 1, output_len * t_count,
-			CostFunctions::MSE, learning_rate,
-			&Y, 1, 3.5, 0
+			CostFunctions::MSE,
+			&Y, 1, gradient_hyperparameters()
 		));
 		for (size_t j = 0; j < t_count; j++)
 		{	
@@ -506,7 +505,7 @@ void test_LSTM()
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 32)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 32, ActivationFunctions::sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, out_len, ActivationFunctions::sigmoid)
-		.construct(in_len, 0);
+		.construct(in_len, no_optimizer, 0);
 
 
 	const size_t t_count = 3;
@@ -547,7 +546,7 @@ void test_LSTM()
 			data_t cost = n->train(
 				t_count,
 				execution_values, activations, Y_hat + out_len * t_count * j, true, out_len * t_count,
-				CostFunctions::MSE, learning_rate, 1, dropout_rate
+				CostFunctions::MSE, gradient_hyperparameters()
 			);
 
 			if (i % 10 == 0)
