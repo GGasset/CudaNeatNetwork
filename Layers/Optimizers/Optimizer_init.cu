@@ -8,18 +8,15 @@ __device__ IOptimizer* initialize_optimizer(optimizers_enum optimizer, size_t pa
 	switch (optimizer)
 	{
 	case no_optimizer:
-		cudaMalloc(&out, sizeof(IOptimizer));
-		*out = IOptimizer();
-		out->alloc_optimizer_values(parameter_count, false);
+		out = new IOptimizer();
 		break;
 	case Adam:
-		cudaMalloc(&out, sizeof(AdamOptimizer));
-		*out = AdamOptimizer();
-		out->alloc_optimizer_values(parameter_count, false);
+		out = new AdamOptimizer();
 		break;
 	default:
 		return (0);
 	}
+	out->alloc_optimizer_values(parameter_count, false);
 	return (out);
 }
 
