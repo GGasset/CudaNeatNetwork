@@ -82,16 +82,16 @@ void DenseConnections::calculate_gradients(
 
 void DenseConnections::subtract_gradients(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-	data_t learning_rate, data_t gradient_clip
+	gradient_hyperparameters hyperparameters, IOptimizer* optimizer
 )
 {
 	cud_dense_gradient_subtraction kernel(dim3(previous_layer_length / 32 + (previous_layer_length % 32 > 0), neuron_count), 32) (
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-		weights, previous_layer_length, learning_rate, gradient_clip
+		weights, previous_layer_length, hyperparameters, optimizer
 	);
 	bias_gradient_subtraction kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-		biases, neuron_count, learning_rate, gradient_clip
+		biases, neuron_count, hyperparameters, optimizer
 	);
 	cudaDeviceSynchronize();
 }

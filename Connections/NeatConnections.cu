@@ -115,7 +115,7 @@ void NeatConnections::calculate_gradients(
 
 void NeatConnections::subtract_gradients(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts, 
-	data_t learning_rate, data_t gradient_clip
+	gradient_hyperparameters hyperparameters, IOptimizer* optimizer
 )
 {
 	/*size_t connections_start = 0;
@@ -133,11 +133,11 @@ void NeatConnections::subtract_gradients(
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 		connection_neuron_i, connection_count,
 		weights,
-		learning_rate, gradient_clip
+		hyperparameters, optimizer
 	);
 	bias_gradient_subtraction kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-		biases, neuron_count, learning_rate, gradient_clip
+		biases, neuron_count, hyperparameters, optimizer
 	);
 	cudaDeviceSynchronize();
 }

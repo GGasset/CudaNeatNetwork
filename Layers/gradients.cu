@@ -222,7 +222,7 @@ __global__ void LSTM_gradient_calculation(
 __global__ void LSTM_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts, size_t* connection_associated_gradient_counts,
 	field_t* neuron_weights,
-	data_t learning_rate, data_t max_subtracted_gradient,
+	gradient_hyperparameters hyperparameters, IOptimizer* optimizer,
 	size_t layer_length
 )
 {
@@ -230,13 +230,12 @@ __global__ void LSTM_gradient_subtraction(
 	if (tid >= layer_length) return;
 
 	size_t neuron_i = tid;
-	size_t neuron_gradients_start_i = gradients_start + layer_gradients_start + neuron_gradients_starts[tid] + connection_associated_gradient_counts[tid];
+	size_t layer_neuron_gradient_start_i = neuron_gradients_starts[tid] + connection_associated_gradient_counts[tid];
+	size_t neuron_gradients_start_i = gradients_start + layer_gradients_start + layer_neuron_gradient_start_i;
 	size_t neuron_weights_start = static_cast<size_t>(4) * tid;
 
-	neuron_weights[neuron_weights_start] -= device_closest_to_zero(abs(max_subtracted_gradient) * (1 - 2 * (gradients[neuron_gradients_start_i] < 0)), gradients[neuron_gradients_start_i] * learning_rate); // Forget weight
-	neuron_weights[neuron_weights_start + 1] -= device_closest_to_zero(abs(max_subtracted_gradient) * (1 - 2 * (gradients[neuron_gradients_start_i + 1] < 0)), gradients[neuron_gradients_start_i + 1] * learning_rate); // Store sigmoid weight
-	neuron_weights[neuron_weights_start + 2] -= device_closest_to_zero(abs(max_subtracted_gradient) * (1 - 2 * (gradients[neuron_gradients_start_i + 2] < 0)), gradients[neuron_gradients_start_i + 2] * learning_rate); // Store Tanh weight
-	neuron_weights[neuron_weights_start + 3] -= device_closest_to_zero(abs(max_subtracted_gradient) * (1 - 2 * (gradients[neuron_gradients_start_i + 3] < 0)), gradients[neuron_gradients_start_i + 3] * learning_rate); // Output_weight
+	for (size_t i = 0; i < 4; i++)
+		optimizer->hyperparameter_subtract_gradient(neuron_weights + i, gradients[neuron_gradients_start_i + i], layer_neuron_gradient_start_i + i, hyperparameters);
 }
 
 __global__ void neuron_gradient_calculation(

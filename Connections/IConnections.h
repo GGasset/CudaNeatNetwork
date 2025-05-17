@@ -13,6 +13,7 @@
 #include "NN_enums.h"
 #include "linear_functions.cuh"
 #include "connection_gradients.cuh"
+#include "Optimizer_init.h"
 #include "vector"
 #include "evolution.h"
 #include "cuda_functionality.cuh"
@@ -80,7 +81,7 @@ public:
 
 	virtual void subtract_gradients(
 		data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-		data_t learning_rate, data_t gradient_clip
+		gradient_hyperparameters hyperparameters, IOptimizer *optimizer
 	) = 0;
 
 	virtual size_t get_connection_count_at(size_t neuron_i) = 0;

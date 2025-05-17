@@ -7,6 +7,7 @@
 #include "cuda_functionality.cuh"
 #include "neuron_operations.cuh"
 #include "derivatives.cuh"
+#include "Optimizer_init.h"
 
 
 __global__ void LSTM_gradient_calculation(
@@ -19,7 +20,7 @@ __global__ void LSTM_gradient_calculation(
 __global__ void LSTM_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts, size_t* connection_associated_gradient_counts,
 	field_t* neuron_weights,
-	data_t learning_rate, data_t max_subtracted_gradient,
+	gradient_hyperparameters hyperparameters, IOptimizer *optimizer,
 	size_t layer_length
 );
 
