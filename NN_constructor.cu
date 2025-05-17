@@ -15,7 +15,7 @@ NN_constructor NN_constructor::append_layer(ConnectionTypes connections_type, Ne
 	return *this;
 }
 
-NN* NN_constructor::construct(size_t input_length, bool stateful)
+NN* NN_constructor::construct(size_t input_length, optimizers_enum e_optimizer, bool stateful)
 {
 	ILayer** layers = new ILayer*[layer_count];
 	size_t previous_layer_activations_start = 0;
@@ -48,6 +48,10 @@ NN* NN_constructor::construct(size_t input_length, bool stateful)
 			default:
 				break;
 		}
+		
+		IOptimizer* optimizer = initialize_optimizer(e_optimizer, layer->get_weight_count());
+		layer->optimizer = optimizer;
+		
 		layers[i] = layer;
 		previous_layer_activations_start += i ? layer_length : input_length;
 	}
