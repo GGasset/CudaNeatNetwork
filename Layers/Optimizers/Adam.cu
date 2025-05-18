@@ -1,7 +1,7 @@
 
 #include "Adam.h"
 
-AdamOptimizer::AdamOptimizer()
+__device__ AdamOptimizer::AdamOptimizer()
 {
 	values_per_parameter = 7;
 }
@@ -16,7 +16,7 @@ __device__ void AdamOptimizer::initialize_optimizer_values(field_t* values)
 	tmp[4] = 0;
 	tmp[5] = tmp[0];
 	tmp[6] = tmp[1];
-	for (size_t i = 0; i < values_per_parameter; i++)
+	for (size_t i = 0; i < parameter_count; i++)
 		memcpy(optimizer_values + values_per_parameter * i, tmp, sizeof(field_t) * values_per_parameter);
 }
 
@@ -41,5 +41,7 @@ __device__ void AdamOptimizer::subtract_gradient(field_t* parameter, data_t grad
 	optimizer_values[values_starting_i + 6] *= optimizer_values[values_starting_i + 1];
 	data_t bias_corrected_v = v / (1 - optimizer_values[values_starting_i + 6]);
 
-	atomicAdd(parameter, -(hyperparameters.learning_rate * bias_corrected_m / (sqrt(bias_corrected_v) + optimizer_values[values_starting_i + 2])));
+	data_t to_add = -(hyperparameters.learning_rate * bias_corrected_m / (sqrt(abs(bias_corrected_v)) + optimizer_values[values_starting_i + 2]));
+
+	atomicAdd(parameter, to_add);
 }
