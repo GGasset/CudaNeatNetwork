@@ -443,10 +443,10 @@ void bug_hunting()
 
 	const bool stateful = false;
 	NN *n = NN_constructor()
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 64, ActivationFunctions::sigmoid)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 32, ActivationFunctions::sigmoid)
+		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 20, ActivationFunctions::sigmoid)
+		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 10, ActivationFunctions::sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, output_len, ActivationFunctions::sigmoid)
-		.construct(input_len, no_optimizer, stateful);
+		.construct(input_len, Adam, stateful);
 
 	const size_t t_count = 2;
 	data_t X[input_len * t_count];
@@ -463,12 +463,11 @@ void bug_hunting()
 		Y_hat[i * output_len + 1] = !odd ? .25 : .75;
 	}
 
-	const data_t learning_rate = .1;
 	const size_t epochs = 6000;
 	for (size_t i = 0; i < epochs || 1; i++)
 	{
 		data_t *Y = 0;
-		printf("%i %.4f\n", i, n->training_batch(
+		printf("\n%i %.4f\n", i, n->training_batch(
 			t_count,
 			X, Y_hat, 1, output_len * t_count,
 			CostFunctions::MSE,
@@ -550,10 +549,48 @@ void test_LSTM()
 			);
 
 			if (i % 10 == 0)
-				printf("%i | %.4f | %.4f, %.4f\n", i, cost, Y[out_len * t_count - 2], Y[out_len * t_count - 1]);
+				printf("%i | %.4f | %.4f, %.4f\n", i, 0, Y[out_len * t_count - 2], Y[out_len * t_count - 1]);
 
 			delete[] Y;
 		}
+	}
+}
+
+void minimal_case()
+{
+	const size_t input_len = 1;
+	const size_t output_len = 1;
+	const size_t t_count = 1;
+
+	data_t X[input_len * t_count]{};
+	for (size_t i = 0; i < input_len * t_count; i++)
+	{
+		X[i] = .5;
+	}
+
+	data_t Y_hat[output_len * t_count]{};
+	for (size_t i = 0; i < output_len * t_count; i++)
+	{
+		Y_hat[i] = .5;
+	}
+
+	NN* n = NN_constructor()
+		.append_layer(Dense, Neuron, 5, sigmoid)
+		.append_layer(Dense, Neuron, output_len, sigmoid)
+		.construct(input_len, Adam);
+
+	gradient_hyperparameters hyperparameters;
+	size_t epochs = 1000;
+	for (size_t epoch = 0; epoch < epochs; epoch++)
+	{
+		data_t *Y = 0;
+		n->training_batch(t_count, X, Y_hat, true, output_len * t_count, MSE,
+			&Y, true, hyperparameters);
+		printf("\n");
+		for (size_t i = 0; i < output_len * t_count; i++)
+			printf("%.2f ", Y[i]);
+		printf("\n\n");
+		delete[] Y;
 	}
 }
 
@@ -562,6 +599,7 @@ int main()
 	//cudaSetDevice(0);
 	//GridTravellerPrototype();
 	//test_LSTM_cells_for_rythm_prediction();
-	//bug_hunting();
-	test_LSTM();
+	bug_hunting();
+	//test_LSTM();
+	//minimal_case();
 }
