@@ -498,13 +498,13 @@ void test_LSTM()
 	const size_t out_len = 2;
 
 	NN* n = NN_constructor()
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 128, ActivationFunctions::sigmoid)
+		.append_layer(ConnectionTypes::NEAT, NeuronTypes::LSTM, 128, ActivationFunctions::sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 64)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 48)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 32)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 32, ActivationFunctions::sigmoid)
 		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, out_len, ActivationFunctions::sigmoid)
-		.construct(in_len, no_optimizer, 0);
+		.construct(in_len, Adam, 0);
 
 
 	const size_t t_count = 3;
@@ -558,7 +558,7 @@ void test_LSTM()
 
 void minimal_case()
 {
-	const size_t input_len = 1;
+	const size_t input_len = 3;
 	const size_t output_len = 1;
 	const size_t t_count = 1;
 
@@ -575,7 +575,8 @@ void minimal_case()
 	}
 
 	NN* n = NN_constructor()
-		.append_layer(Dense, Neuron, 5, sigmoid)
+		.append_layer(NEAT, LSTM, 5, sigmoid)
+		.append_layer(Dense, LSTM, 5, sigmoid)
 		.append_layer(Dense, Neuron, output_len, sigmoid)
 		.construct(input_len, Adam);
 
@@ -599,7 +600,7 @@ int main()
 	//cudaSetDevice(0);
 	//GridTravellerPrototype();
 	//test_LSTM_cells_for_rythm_prediction();
-	bug_hunting();
+	//bug_hunting();
 	//test_LSTM();
-	//minimal_case();
+	minimal_case();
 }

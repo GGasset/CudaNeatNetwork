@@ -131,7 +131,7 @@ void NeatConnections::subtract_gradients(
 	}*/
 	cud_NEAT_gradient_subtraction kernel(connection_count / 32 + (connection_count % 32 > 0), 32) (
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-		connection_neuron_i, connection_count,
+		connection_neuron_i, connection_count, neuron_count,
 		weights,
 		hyperparameters, optimizer
 	);

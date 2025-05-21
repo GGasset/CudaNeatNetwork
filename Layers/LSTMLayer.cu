@@ -160,7 +160,7 @@ void LSTMLayer::subtract_gradients(data_t* gradients, size_t gradients_start, gr
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts, connection_associated_gradient_counts,
 		neuron_weights, 
 		hyperparameters, optimizer,
-		neuron_count
+		neuron_count, connections->connection_count + get_neuron_count()
 	);
 	cudaDeviceSynchronize();
 }

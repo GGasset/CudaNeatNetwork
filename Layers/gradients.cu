@@ -223,19 +223,20 @@ __global__ void LSTM_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts, size_t* connection_associated_gradient_counts,
 	field_t* neuron_weights,
 	gradient_hyperparameters hyperparameters, IOptimizer* optimizer,
-	size_t layer_length
+	size_t layer_length, size_t connections_weight_count
 )
 {
 	size_t tid = get_tid();
 	if (tid >= layer_length) return;
 
-	size_t neuron_i = tid;
 	size_t layer_neuron_gradient_start_i = neuron_gradients_starts[tid] + connection_associated_gradient_counts[tid];
 	size_t neuron_gradients_start_i = gradients_start + layer_gradients_start + layer_neuron_gradient_start_i;
 	size_t neuron_weights_start = static_cast<size_t>(4) * tid;
 
 	for (size_t i = 0; i < 4; i++)
-		optimizer->hyperparameter_subtract_gradient(neuron_weights + i, gradients[neuron_gradients_start_i + i], layer_neuron_gradient_start_i + i, hyperparameters);
+		optimizer->hyperparameter_subtract_gradient(
+			neuron_weights + neuron_weights_start + i, gradients[neuron_gradients_start_i + i], connections_weight_count + neuron_weights_start + i, hyperparameters
+		);
 }
 
 __global__ void neuron_gradient_calculation(

@@ -27,13 +27,13 @@ __global__ void bias_gradient_subtraction(
 
 __global__ void cud_dense_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-	field_t* weights, size_t previous_layer_length, 
+	field_t* weights, size_t previous_layer_length, size_t layer_length,
 	gradient_hyperparameters hyperparameter, IOptimizer* optimizer
 );
 
 __global__ void cud_NEAT_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-	size_t* connection_neuron_i, size_t connection_count, 
+	size_t* connection_neuron_i, size_t connection_count, size_t layer_length,
 	field_t* weights,
 	gradient_hyperparameters hyperparameter, IOptimizer* optimizer
 );

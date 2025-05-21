@@ -29,6 +29,10 @@ __device__ void IOptimizer::cleanup()
 
 __device__ void IOptimizer::hyperparameter_subtract_gradient(field_t* parameter, data_t gradient, size_t layer_parameter_i, gradient_hyperparameters hyperparameters)
 {
+#ifdef DEBUG
+	if (layer_parameter_i >= parameter_count)
+		printf("Overflow i: %i | max: %i\n", layer_parameter_i, parameter_count);
+#endif
 	gradient = device_closest_to_zero(gradient, abs(hyperparameters.gradient_clip) * (1 - 2 * (gradient <= 0)));
 	gradient *= hyperparameters.learning_rate;
 	subtract_gradient(parameter, gradient, layer_parameter_i, hyperparameters);

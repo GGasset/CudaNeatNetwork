@@ -21,7 +21,7 @@ __global__ void LSTM_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts, size_t* connection_associated_gradient_counts,
 	field_t* neuron_weights,
 	gradient_hyperparameters hyperparameters, IOptimizer *optimizer,
-	size_t layer_length
+	size_t layer_length, size_t connections_weight_count
 );
 
 __global__ void neuron_gradient_calculation(

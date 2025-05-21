@@ -53,28 +53,29 @@ __global__ void bias_gradient_subtraction(
 
 	size_t gradient_i = gradients_start + layer_gradients_start + neuron_gradients_starts[tid];
 	data_t gradient = gradients[gradient_i];
-	optimizer->hyperparameter_subtract_gradient(biases + tid, gradient, neuron_gradients_starts[tid], hyperparameter);
+	optimizer->hyperparameter_subtract_gradient(biases + tid, gradient, tid, hyperparameter);
 }
 
 __global__ void cud_dense_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-	field_t* weights, size_t previous_layer_length,
+	field_t* weights, size_t previous_layer_length, size_t layer_length,
 	gradient_hyperparameters hyperparameter, IOptimizer* optimizer
 )
 {
 	size_t tid = get_tid();
 	if (tid >= previous_layer_length) return;
 
-	size_t layer_gradient_i = neuron_gradients_starts[blockIdx.y] + tid + 1;
+	size_t neuron_i = blockIdx.y;
+	size_t layer_gradient_i = neuron_gradients_starts[neuron_i] + tid + 1;
 	size_t gradient_i = gradients_start + layer_gradients_start + layer_gradient_i;
 	data_t gradient = gradients[gradient_i];
-	size_t weight_i = previous_layer_length * blockIdx.y + tid;
-	optimizer->hyperparameter_subtract_gradient(weights + weight_i, gradient, layer_gradient_i, hyperparameter);
+	size_t weight_i = previous_layer_length * neuron_i + tid;
+	optimizer->hyperparameter_subtract_gradient(weights + weight_i, gradient, layer_length + weight_i, hyperparameter);
 }
 
 __global__ void cud_NEAT_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-	size_t* connection_neuron_i, size_t connection_count, 
+	size_t* connection_neuron_i, size_t connection_count, size_t layer_length,
 	field_t* weights,
 	gradient_hyperparameters hyperparameter, IOptimizer* optimizer
 )
@@ -87,5 +88,5 @@ __global__ void cud_NEAT_gradient_subtraction(
 	size_t layer_gradient_i = neuron_gradients_starts[neuron_i] + tid + 1;
 	size_t gradient_i = gradients_start + layer_gradients_start + layer_gradient_i;
 	data_t gradient = gradients[gradient_i];
-	optimizer->hyperparameter_subtract_gradient(weights + tid, gradient, layer_gradient_i, hyperparameter);
+	optimizer->hyperparameter_subtract_gradient(weights + tid, gradient, layer_length + tid, hyperparameter);
 }
