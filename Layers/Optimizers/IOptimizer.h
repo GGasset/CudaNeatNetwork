@@ -14,6 +14,7 @@
 class IOptimizer
 {
 public:
+	optimizers_enum optimizer = optimizers_enum::no_optimizer;
 	size_t values_per_parameter = 0;
 	size_t parameter_count = 0;
 	field_t* optimizer_values = 0;

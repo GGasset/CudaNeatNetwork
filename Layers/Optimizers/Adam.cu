@@ -3,6 +3,7 @@
 
 __device__ AdamOptimizer::AdamOptimizer()
 {
+	optimizer = Adam;
 	values_per_parameter = 7;
 }
 
