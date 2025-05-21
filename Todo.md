@@ -1,23 +1,3 @@
-
-# Notes
-## For optimizer scalability
-
-- You cannot create a class in host memory and use a virtual function inside it from device code and viceversa
-- The class cannot be memcpy'ed into device memory, must be created in host/device code
-
-### Method 1: Using a factory to avoid virtual functions
-- This method would solve problems but it would make scaling it a pain and it gives me cognitive dissonance
-
-### Method 2: Using a wrapper class
-- Creating a class with virtual functions
-	- So if it isn't an inherited class vanilla behaviour is used
-
-- Creating inherited classes that specialize in a specific regularization/optimization method
-- Creating a class to be called inside host code that manages the real classes that are on device memory
-	- This class is just used for constructor-destructor-adaptation for evolution methods
-- The device class is passed as argument and manages the gradient subtraction by itself
-
-
 # Todo
 
 ## High priority
