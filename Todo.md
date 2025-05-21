@@ -25,8 +25,10 @@
 - ~~Improve scalability for evolution methods, modularize it, current state is not modularized at all.~~
     - Needs testing (Medium priority)
 - Add L1 and L2 regullarization (Take scalability into account)
-- Add Optimizers (Take scalability into account)
-	- Just Adam for now
+- ~~Add Optimizers (Take scalability into account)~~
+	- ~~Adam~~
+    - Add saving/loading to disk
+        - Medium priority
 
 ## Normal cycle
 
