@@ -9,6 +9,7 @@
 	- ~~Adam~~
     - Add saving/loading to disk
         - Medium priority
+- Make a function that abstracts the process of parsing raw bytes from socket for mental health
 
 ## Normal cycle
 
@@ -45,6 +46,7 @@
 
 - ~~client_socket~~
 - socket functions
+    - Add abstract address detection
     - Add message to close server to stop loop
     - ~~construct -- destruct~~
     - Get ID of pointer to a NN
