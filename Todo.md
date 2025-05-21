@@ -8,7 +8,6 @@
 - ~~Add Optimizers (Take scalability into account)~~
 	- ~~Adam~~
     - Add saving/loading to disk
-        - Medium priority
 - Make a function that abstracts the process of parsing raw bytes from socket for mental health
 
 ## Normal cycle
