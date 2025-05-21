@@ -1,5 +1,6 @@
 
 #include "data_type.h"
+#include "kernel_macros.h"
 #include "NN_enums.h"
 #include "Adam.h"
 
@@ -12,5 +13,5 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer);
 
 // SAVING - LOADING
 
-__global__ void get_optimizer_data_buffer(IOptimizer *optimizer, void **out_buffer);
+__global__ void get_optimizer_data_buffer(IOptimizer *optimizer, void **out_buffer, size_t *buff_len);
 __host__ void host_save_optimizer(FILE *file, IOptimizer *optimizer);

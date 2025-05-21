@@ -29,7 +29,7 @@ __host__ IOptimizer* host_optimizer_init(optimizers_enum optimizer, size_t param
 {
 	IOptimizer** tmp = 0;
 	cudaMalloc(&tmp, sizeof(IOptimizer*));
-	global_optimizer_init <<<1, 1>>> (optimizer, tmp, parameter_count);
+	global_optimizer_init kernel(1, 1) (optimizer, tmp, parameter_count);
 	cudaDeviceSynchronize();
 
 	IOptimizer* out = 0;
@@ -45,9 +45,9 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer)
 	optimizer->cleanup();
 }
 
-__global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buffer)
+__global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buffer, size_t *buff_len)
 {
-	if (!out_buffer) return;
+	if (!out_buffer || !buff_len) return;
 
 	size_t values_per_paramater = optimizer->values_per_parameter;
 	size_t param_count = optimizer->parameter_count;
@@ -55,7 +55,8 @@ __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buff
 
 	size_t header_size = sizeof(optimizers_enum) + sizeof(size_t) * 2;
 	size_t buff_size = header_size + sizeof(field_t) * value_count;
-	char* out = new char[buff_size];
+	char* out = 0;
+	cudaMalloc(&out, buff_size);
 	if (!out) return;
 
 	memcpy(out, optimizer, header_size);
@@ -63,4 +64,26 @@ __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buff
 		memcpy(out + header_size, optimizer->optimizer_values, sizeof(field_t) * value_count);
 
 	*out_buffer = out;
+	*buff_len = buff_size;
+}
+
+__host__ void host_save_optimizer(FILE* file, IOptimizer* optimizer)
+{
+	void** device_buff = 0;
+	size_t* device_buff_len = 0;
+
+	cudaMalloc(&device_buff, sizeof(char *));
+	cudaMalloc(&device_buff_len, sizeof(size_t));
+	
+	get_optimizer_data_buffer kernel(1, 1) (optimizer, device_buff, device_buff_len);
+	cudaDeviceSynchronize();
+
+	size_t buff_len = 0;
+	cudaMemcpy(&buff_len, device_buff_len, sizeof(size_t), cudaMemcpyDeviceToHost);
+	cudaFree(device_buff_len);
+
+	void* buff = new char[buff_len];
+	cudaMemcpy(buff, device_buff, buff_len, cudaMemcpyDeviceToHost);
+	fwrite(buff, 1, buff_len, file);
+	delete[] buff;
 }
