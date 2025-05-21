@@ -44,3 +44,23 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer)
 		return ;
 	optimizer->cleanup();
 }
+
+__global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buffer)
+{
+	if (!out_buffer) return;
+
+	size_t values_per_paramater = optimizer->values_per_parameter;
+	size_t param_count = optimizer->parameter_count;
+	size_t value_count = values_per_paramater * param_count;
+
+	size_t header_size = sizeof(optimizers_enum) + sizeof(size_t) * 2;
+	size_t buff_size = header_size + sizeof(field_t) * value_count;
+	char* out = new char[buff_size];
+	if (!out) return;
+
+	memcpy(out, optimizer, header_size);
+	if (optimizer->optimizer_values && value_count)
+		memcpy(out + header_size, optimizer->optimizer_values, sizeof(field_t) * value_count);
+
+	*out_buffer = out;
+}
