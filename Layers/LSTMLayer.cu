@@ -66,9 +66,9 @@ void LSTMLayer::specific_save(FILE* file)
 	data_t* host_state = new data_t[neuron_count * 2];
 	data_t* host_prev_derivatives = new data_t[neuron_count * 3];
 
-	cudaMemcpy(host_neuron_weights, neuron_weights, sizeof(neuron_count) * 4, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_state, state, sizeof(neuron_count) * 2, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_prev_derivatives, prev_state_derivatives, sizeof(neuron_count) * 3, cudaMemcpyDeviceToHost);
+	cudaMemcpy(host_neuron_weights, neuron_weights, sizeof(field_t) * neuron_count * 4, cudaMemcpyDeviceToHost);
+	cudaMemcpy(host_state, state, sizeof(data_t) * neuron_count * 2, cudaMemcpyDeviceToHost);
+	cudaMemcpy(host_prev_derivatives, prev_state_derivatives, sizeof(data_t) * neuron_count * 3, cudaMemcpyDeviceToHost);
 	cudaDeviceSynchronize();
 
 	fwrite(host_neuron_weights, sizeof(field_t), neuron_count * 4, file);
