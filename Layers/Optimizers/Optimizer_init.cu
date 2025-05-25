@@ -46,6 +46,13 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer)
 	delete optimizer;
 }
 
+__global__ void call_optimizer_values_alloc(IOptimizer* optimizer, size_t new_param_count, bool copy_old_values)
+{
+	if (get_tid() || !optimizer) return;
+
+	optimizer->alloc_optimizer_values(new_param_count, copy_old_values);
+}
+
 __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, char* out_buffer, size_t out_buffer_size, size_t *buff_len)
 {
 	if (get_tid()) return;
