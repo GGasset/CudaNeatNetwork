@@ -7,7 +7,7 @@
 - Add L1 and L2 regullarization (Take scalability into account)
 - ~~Add Optimizers (Take scalability into account)~~
 	- ~~Adam~~
-    - Add saving/loading to disk
+    - ~~Add saving/loading to disk~~
 - Make a function that abstracts the process of parsing raw bytes from socket for mental health
 
 ## Normal cycle

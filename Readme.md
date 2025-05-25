@@ -8,12 +8,12 @@
 ## Technologies used
 ### Planned-WIP
  - L1, L2 regularization (Planned)
- - Adam optimizer (Planned)
  - C++ Socket bindings (WIP)
  - [PPO](https://arxiv.org/abs/1707.06347) Reinforcement Learning Policy Gradient Method used in ChatGPT (Planned)
  - [MinLSTM](https://arxiv.org/abs/2410.01201) Simpler versions of LSTM (Planned)
 
 ### Done
+ - [Adam optimizer](https://arxiv.org/abs/1412.6980)
  - [GAE](https://arxiv.org/abs/1506.02438) Generalized Advantage Estimator
  - LSTM architecture
 	![LSTM architecture](https://i.sstatic.net/RHNrZ.jpg) 

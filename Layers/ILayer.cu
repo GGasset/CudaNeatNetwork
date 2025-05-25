@@ -94,6 +94,8 @@ void ILayer::save(FILE* file)
 	delete[] host_neuron_gradients_starts;
 	delete[] host_connection_gradient_counts;
 
+	host_save_optimizer(file, optimizer);
+
 	specific_save(file);
 }
 
@@ -121,6 +123,8 @@ void ILayer::ILayer_load(FILE* file)
 
 	delete[] host_neuron_gradients_starts;
 	delete[] host_connection_associated_gradient_counts;
+
+	optimizer = host_load_optimizer(file);
 }
 
 void ILayer::deallocate()
