@@ -131,7 +131,6 @@ void ILayer::deallocate()
 {
 	call_Optimizer_destructor kernel(1, 1) (optimizer);
 	cudaDeviceSynchronize();
-	cudaFree(optimizer);
 
 	connections->deallocate();
 	layer_specific_deallocate();

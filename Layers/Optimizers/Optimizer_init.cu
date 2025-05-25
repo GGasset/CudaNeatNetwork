@@ -43,6 +43,7 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer)
 	if (!optimizer)
 		return ;
 	optimizer->cleanup();
+	delete optimizer;
 }
 
 __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buffer, size_t *buff_len)
