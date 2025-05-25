@@ -80,19 +80,22 @@ void ILayer::save(FILE* file)
 	fwrite(&layer_derivative_count, sizeof(size_t), 1, file);
 	fwrite(&derivatives_per_neuron, sizeof(size_t), 1, file);
 	fwrite(&layer_gradient_count, sizeof(size_t), 1, file);
+
+	bool contains_connection_gradient_counts = connection_associated_gradient_counts != 0;
+	fwrite(&contains_connection_gradient_counts, sizeof(bool), 1, file);
 	
-	size_t *host_neuron_gradients_starts, *host_connection_gradient_counts;
-	host_neuron_gradients_starts = new size_t[neuron_count];
-	host_connection_gradient_counts = new size_t[neuron_count];
-
+	size_t *host_neuron_gradients_starts = new size_t[neuron_count];
 	cudaMemcpy(host_neuron_gradients_starts, neuron_gradients_starts, sizeof(size_t) * neuron_count, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_connection_gradient_counts, connection_associated_gradient_counts, sizeof(size_t) * neuron_count, cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-
 	fwrite(host_neuron_gradients_starts, sizeof(size_t), neuron_count, file);
-	fwrite(host_connection_gradient_counts, sizeof(size_t), neuron_count, file);
 	delete[] host_neuron_gradients_starts;
-	delete[] host_connection_gradient_counts;
+
+	if (contains_connection_gradient_counts)
+	{
+		size_t *host_connection_gradient_counts = new size_t[neuron_count];
+		cudaMemcpy(host_connection_gradient_counts, connection_associated_gradient_counts, sizeof(size_t) * neuron_count, cudaMemcpyDeviceToHost);
+		fwrite(host_connection_gradient_counts, sizeof(size_t), neuron_count, file);
+		delete[] host_connection_gradient_counts;
+	}
 
 	host_save_optimizer(file, optimizer);
 
@@ -107,22 +110,23 @@ void ILayer::ILayer_load(FILE* file)
 	fread(&derivatives_per_neuron, sizeof(size_t), 1, file);
 	fread(&layer_gradient_count, sizeof(size_t), 1, file);
 
+	bool contains_connection_associated_gradient_counts = 0;
+	fread(&contains_connection_associated_gradient_counts, sizeof(bool), 1, file);
+
 	size_t* host_neuron_gradients_starts = new size_t[neuron_count];
-	size_t* host_connection_associated_gradient_counts = new size_t[neuron_count];
-
 	fread(host_neuron_gradients_starts, sizeof(size_t), neuron_count, file);
-	fread(host_connection_associated_gradient_counts, sizeof(size_t), neuron_count, file);
-
 	cudaMalloc(&neuron_gradients_starts, sizeof(size_t) * neuron_count);
-	cudaMalloc(&connection_associated_gradient_counts, sizeof(size_t) * neuron_count);
-	cudaDeviceSynchronize();
-
 	cudaMemcpy(neuron_gradients_starts, host_neuron_gradients_starts, sizeof(size_t) * neuron_count, cudaMemcpyHostToDevice);
-	cudaMemcpy(connection_associated_gradient_counts, host_connection_associated_gradient_counts, sizeof(size_t) * neuron_count, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
-
 	delete[] host_neuron_gradients_starts;
-	delete[] host_connection_associated_gradient_counts;
+
+	if (contains_connection_associated_gradient_counts)
+	{
+		size_t* host_connection_associated_gradient_counts = new size_t[neuron_count];
+		fread(host_connection_associated_gradient_counts, sizeof(size_t), neuron_count, file);
+		cudaMalloc(&connection_associated_gradient_counts, sizeof(size_t) * neuron_count);
+		cudaMemcpy(connection_associated_gradient_counts, host_connection_associated_gradient_counts, sizeof(size_t) * neuron_count, cudaMemcpyHostToDevice);
+		delete[] host_connection_associated_gradient_counts;
+	}
 
 	optimizer = host_load_optimizer(file);
 }
