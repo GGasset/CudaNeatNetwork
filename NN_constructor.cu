@@ -57,5 +57,6 @@ NN* NN_constructor::construct(size_t input_length, optimizers_enum e_optimizer, 
 	}
 	NN* n = new NN(layers, input_length, layer_count);
 	n->stateful = stateful;
+	n->default_optimizer = e_optimizer;
 	return n;
 }

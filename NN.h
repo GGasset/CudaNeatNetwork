@@ -35,6 +35,7 @@ public:
 	NN();
 
 	evolution_metadata evolution_values;
+	optimizers_enum default_optimizer = no_optimizer;
 	bool stateful = false;
 
 	size_t get_input_length();
