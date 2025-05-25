@@ -13,6 +13,6 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer);
 
 // SAVING - LOADING
 
-__global__ void get_optimizer_data_buffer(IOptimizer *optimizer, void **out_buffer, size_t *buff_len);
+__global__ void get_optimizer_data_buffer(IOptimizer* optimizer, char* out_buffer, size_t out_buffer_size, size_t* buff_len);
 __host__ void host_save_optimizer(FILE *file, IOptimizer *optimizer);
 __host__ IOptimizer* host_load_optimizer(FILE* file);

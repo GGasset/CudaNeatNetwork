@@ -46,9 +46,9 @@ __global__ void call_Optimizer_destructor(IOptimizer *optimizer)
 	delete optimizer;
 }
 
-__global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buffer, size_t *buff_len)
+__global__ void get_optimizer_data_buffer(IOptimizer* optimizer, char* out_buffer, size_t out_buffer_size, size_t *buff_len)
 {
-	if (!out_buffer || !buff_len) return;
+	if (get_tid()) return;
 
 	size_t values_per_paramater = optimizer->values_per_parameter;
 	size_t param_count = optimizer->parameter_count;
@@ -56,41 +56,45 @@ __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buff
 
 	size_t header_size = sizeof(optimizers_enum) + sizeof(size_t) * 2;
 	size_t buff_size = header_size + sizeof(field_t) * value_count;
-	char* out = 0;
-	cudaMalloc(&out, buff_size);
-	if (!out) return;
 
-	*(optimizers_enum*)out = optimizer->optimizer;
-	*(size_t*)(out + sizeof(optimizers_enum)) = optimizer->values_per_parameter;
-	*(size_t*)(out + sizeof(optimizers_enum) + sizeof(size_t)) = optimizer->parameter_count;
-	if (optimizer->optimizer_values && value_count)
-		memcpy(out + header_size, optimizer->optimizer_values, sizeof(field_t) * value_count);
+	if (buff_len)
+		*buff_len = buff_size;
 
-	*out_buffer = out;
-	*buff_len = buff_size;
+	if (out_buffer && out_buffer_size >= buff_size)
+	{
+		*(optimizers_enum*)out_buffer = optimizer->optimizer;
+		*(size_t*)(out_buffer + sizeof(optimizers_enum)) = optimizer->values_per_parameter;
+		*(size_t*)(out_buffer + sizeof(optimizers_enum) + sizeof(size_t)) = optimizer->parameter_count;
+		if (optimizer->optimizer_values && value_count)
+			memcpy(out_buffer + header_size, optimizer->optimizer_values, sizeof(field_t) * value_count);
+	}
 }
 
 __host__ void host_save_optimizer(FILE* file, IOptimizer* optimizer)
 {
 	if (!optimizer) return;
 
-	void** device_buff = 0;
-	size_t* device_buff_len = 0;
-
-	cudaMalloc(&device_buff, sizeof(char *));
+	size_t *device_buff_len = 0;
 	cudaMalloc(&device_buff_len, sizeof(size_t));
-	
-	get_optimizer_data_buffer kernel(1, 1) (optimizer, device_buff, device_buff_len);
+	get_optimizer_data_buffer kernel(1, 1) (optimizer, 0, 0, device_buff_len);
 	cudaDeviceSynchronize();
 
 	size_t buff_len = 0;
 	cudaMemcpy(&buff_len, device_buff_len, sizeof(size_t), cudaMemcpyDeviceToHost);
 	cudaFree(device_buff_len);
 
-	void* buff = new char[buff_len];
-	cudaMemcpy(buff, device_buff, buff_len, cudaMemcpyDeviceToHost);
-	fwrite(buff, 1, buff_len, file);
-	delete[] buff;
+	char* device_buffer = 0;
+	cudaMalloc(&device_buffer, buff_len);
+	cudaMemset(device_buffer, 0, buff_len);
+	get_optimizer_data_buffer kernel(1, 1) (optimizer, device_buffer, buff_len, 0);
+	cudaDeviceSynchronize();
+
+	char* buffer = new char[buff_len];
+	cudaMemcpy(buffer, device_buffer, buff_len, cudaMemcpyDeviceToHost);
+	cudaFree(device_buffer);
+
+	fwrite(buffer, 1, buff_len, file);
+	delete[] buffer;
 }
 
 static __global__ void set_optimizer_values(IOptimizer *optimizer, field_t *values, size_t value_count)

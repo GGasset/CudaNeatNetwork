@@ -773,8 +773,8 @@ void NN::save(FILE* file)
 
 	for (size_t i = 0; i < layer_count; i++)
 	{
-		layers[i]->save(file);
 		layers[i]->connections->save(file);
+		layers[i]->save(file);
 	}
 }
 
@@ -833,10 +833,10 @@ NN* NN::load(FILE* file)
 			default:
 				break;
 		}
-		layer->load(file);
 		connections->load(file);
-
 		layer->connections = connections;
+		layer->load(file);
+
 		output_layers[i] = layer;
 	}
 
