@@ -59,7 +59,9 @@ __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buff
 	cudaMalloc(&out, buff_size);
 	if (!out) return;
 
-	memcpy(out, optimizer, header_size);
+	*(optimizers_enum*)out = optimizer->optimizer;
+	*(size_t*)(out + sizeof(optimizers_enum)) = optimizer->values_per_parameter;
+	*(size_t*)(out + sizeof(optimizers_enum) + sizeof(size_t)) = optimizer->parameter_count;
 	if (optimizer->optimizer_values && value_count)
 		memcpy(out + header_size, optimizer->optimizer_values, sizeof(field_t) * value_count);
 
@@ -69,6 +71,8 @@ __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, void** out_buff
 
 __host__ void host_save_optimizer(FILE* file, IOptimizer* optimizer)
 {
+	if (!optimizer) return;
+
 	void** device_buff = 0;
 	size_t* device_buff_len = 0;
 
@@ -86,4 +90,41 @@ __host__ void host_save_optimizer(FILE* file, IOptimizer* optimizer)
 	cudaMemcpy(buff, device_buff, buff_len, cudaMemcpyDeviceToHost);
 	fwrite(buff, 1, buff_len, file);
 	delete[] buff;
+}
+
+static __global__ void set_optimizer_values(IOptimizer *optimizer, field_t *values, size_t value_count)
+{
+	size_t tid = get_tid();
+	if (tid >= value_count || !optimizer || !optimizer->optimizer_values || tid >= optimizer->parameter_count * optimizer->values_per_parameter) return;
+
+	optimizer->optimizer_values[tid] = values[tid];
+}
+
+__host__ IOptimizer* host_load_optimizer(FILE *file)
+{
+	size_t header_size = sizeof(optimizers_enum) + sizeof(size_t);
+
+	optimizers_enum optimizer = no_optimizer;
+	size_t values_per_parameter = 0;
+	size_t parameter_count = 0;
+
+	fread(&optimizer, sizeof(optimizers_enum), 1, file);
+	fread(&values_per_parameter, sizeof(size_t), 1, file);
+	fread(&parameter_count, sizeof(size_t), 1, file);
+
+	IOptimizer* out = host_optimizer_init(optimizer, parameter_count);
+
+	size_t value_count = values_per_parameter * parameter_count;
+	field_t* values = new field_t[value_count];
+	fread(values, sizeof(field_t), value_count, file);
+
+	field_t* device_values = 0;
+	cudaMalloc(&device_values, sizeof(field_t) * value_count);
+	cudaMemcpy(device_values, values, sizeof(field_t) * value_count, cudaMemcpyHostToDevice);
+	delete[] values;
+
+	set_optimizer_values kernel(value_count / 32 + (value_count % 32 > 0)) (out, device_values, value_count);
+	cudaDeviceSynchronize();
+	cudaFree(device_values);
+	return (out);
 }
