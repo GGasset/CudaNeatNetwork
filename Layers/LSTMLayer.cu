@@ -80,6 +80,8 @@ void LSTMLayer::specific_save(FILE* file)
 
 void LSTMLayer::load(FILE* file)
 {
+	ILayer_load(file);
+
 	field_t* host_neuron_weights = new field_t[neuron_count * 4];
 	data_t* host_state = new data_t[neuron_count * 2];
 	data_t* host_prev_derivatives = new data_t[neuron_count * 3];
