@@ -124,7 +124,7 @@ __host__ IOptimizer* host_load_optimizer(FILE *file)
 	cudaMemcpy(device_values, values, sizeof(field_t) * value_count, cudaMemcpyHostToDevice);
 	delete[] values;
 
-	set_optimizer_values kernel(value_count / 32 + (value_count % 32 > 0)) (out, device_values, value_count);
+	set_optimizer_values kernel(value_count / 32 + (value_count % 32 > 0), 32) (out, device_values, value_count);
 	cudaDeviceSynchronize();
 	cudaFree(device_values);
 	return (out);
