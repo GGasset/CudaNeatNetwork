@@ -576,6 +576,10 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 
 void NN::evolve()
 {
+#ifndef DETERMINISTIC
+	srand((unsigned int)get_arbitrary_number());
+#endif
+
 	for (size_t i = 0; i < layer_count; i++)
 	{
 		layers[i]->mutate_fields(evolution_values);
