@@ -13,6 +13,7 @@
 
 ## Normal cycle
 
+- Improve atomic functions scope for optimization
 - ~~LSTM~~
 - ~~Neuron~~
 - ~~NEAT connections~~ 
