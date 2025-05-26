@@ -881,9 +881,9 @@ void NN::deallocate()
 
 void NN::print_shape()
 {
-	printf("%i ", input_length);
+	printf("%i ", (int)input_length);
 	for (size_t i = 0; i < layer_count; i++)
-		printf("%i ", layers[i]->get_neuron_count());
+		printf("%i ", (int)layers[i]->get_neuron_count());
 	printf("\n");
 }
 
