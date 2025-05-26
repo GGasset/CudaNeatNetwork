@@ -13,7 +13,7 @@
 
 ## Normal cycle
 
-- Improve atomic functions scope for optimization
+- Replace atomic function use with mutexs for optimization
 - ~~LSTM~~
 - ~~Neuron~~
 - ~~NEAT connections~~ 
