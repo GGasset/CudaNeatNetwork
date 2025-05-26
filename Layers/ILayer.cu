@@ -220,7 +220,6 @@ void ILayer::remove_neuron(size_t layer_neuron_i)
 	connections->remove_neuron(layer_neuron_i);
 	removed_connection_count -= connections->connection_count;
 
-	set_neuron_count(neuron_count - 1);
 	size_t removed_gradients = removed_connection_count + gradients_per_neuron + 1;
 	layer_gradient_count -= removed_gradients;
 	layer_derivative_count -= derivatives_per_neuron;
@@ -228,15 +227,22 @@ void ILayer::remove_neuron(size_t layer_neuron_i)
 	if (neuron_gradients_starts)
 	{
 		neuron_gradients_starts = 
-			cuda_remove_elements(neuron_gradients_starts, neuron_count + 1, layer_neuron_i, 1, true);
-		add_to_array kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (neuron_gradients_starts, neuron_count, removed_gradients);
+			cuda_remove_elements(neuron_gradients_starts, neuron_count, layer_neuron_i, 1, true);
+		
+		size_t after_deletion_neuron_count = get_neuron_count() - layer_neuron_i - 1;
+		add_to_array kernel(after_deletion_neuron_count / 32 + (after_deletion_neuron_count % 32 > 0), 32) (
+			neuron_gradients_starts + layer_neuron_i, after_deletion_neuron_count, -removed_gradients
+		);
 	}
 
 	if (connection_associated_gradient_counts)
 		connection_associated_gradient_counts =
-			cuda_remove_elements(connection_associated_gradient_counts, neuron_count + 1, layer_neuron_i, 1, true);
+			cuda_remove_elements(connection_associated_gradient_counts, neuron_count, layer_neuron_i, 1, true);
 	cudaDeviceSynchronize();
+
 	layer_specific_remove_neuron(layer_neuron_i);
+
+	set_neuron_count(neuron_count - 1);
 }
 
 void ILayer::layer_specific_remove_neuron(size_t layer_neuron_i)
