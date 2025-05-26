@@ -172,7 +172,7 @@ void ILayer::add_neuron(size_t previous_layer_length, size_t previous_layer_acti
 	if (neuron_gradients_starts)
 	{
 		size_t* tmp_neuron_gradients_starts = new size_t[neuron_count];
-		cudaMemcpy(tmp_neuron_gradients_starts, neuron_gradients_starts, sizeof(size_t) * neuron_count - 1, cudaMemcpyDeviceToHost);
+		cudaMemcpy(tmp_neuron_gradients_starts, neuron_gradients_starts, sizeof(size_t) * (neuron_count - 1), cudaMemcpyDeviceToHost);
 		tmp_neuron_gradients_starts[neuron_count - 1] = tmp_neuron_gradients_starts[neuron_count - 2] + added_connection_count + gradients_per_neuron;
 		cudaFree(neuron_gradients_starts);
 		cudaMalloc(&neuron_gradients_starts, sizeof(size_t) * neuron_count);
