@@ -86,12 +86,15 @@ __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t
 	remove_start = h_min(len, remove_start);
 	remove_count = h_min(len - remove_start, remove_count);
 
+	size_t before_deletion_count = remove_start + 1;
+
 	T* out = 0;
 	cudaMalloc(&out, sizeof(T) * (len - remove_count));
+	cudaMemset(out, 0, sizeof(T) * (len - remove_count));
 	if (remove_start)
-		cudaMemcpy(out, old, sizeof(T) * remove_start, cudaMemcpyDeviceToDevice);
-	if (len - remove_start - remove_count)
-		cudaMemcpy(out + remove_start, old + remove_start + remove_count, sizeof(T) * (len - remove_start - remove_count), cudaMemcpyDeviceToDevice);
+		cudaMemcpy(out, old, sizeof(T) * before_deletion_count, cudaMemcpyDeviceToDevice);
+	if (len - remove_start - remove_count - 1)
+		cudaMemcpy(out + before_deletion_count, old + before_deletion_count + remove_count, sizeof(T) * (len - remove_start - remove_count - 1), cudaMemcpyDeviceToDevice);
 	if (free_old)
 		cudaFree(old);
 	return out;

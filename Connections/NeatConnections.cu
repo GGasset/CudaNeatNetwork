@@ -97,19 +97,6 @@ void NeatConnections::calculate_gradients(
 		costs, costs_start,
 		connection_count, weights, connection_points, connection_neuron_i
 	);
-	/*size_t connections_start = 0;
-	for (size_t i = 0; i < neuron_count; i++)
-	{
-		size_t connection_count = connection_counts[i];
-		cud_NEAT_gradient_calculation kernel(connection_count / 32 + (connection_count % 32 > 0), 32) (
-			activations, activations_start,
-			gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-			costs, costs_start,
-			i, connection_count, weights, connection_points, connections_start
-		);
-
-		connections_start += connection_count;
-	}*/
 	cudaDeviceSynchronize();
 }
 
@@ -118,17 +105,6 @@ void NeatConnections::subtract_gradients(
 	gradient_hyperparameters hyperparameters, IOptimizer* optimizer
 )
 {
-	/*size_t connections_start = 0;
-	for (size_t i = 0; i < neuron_count; i++)
-	{
-		size_t connection_count = connection_counts[i];
-		cud_NEAT_gradient_subtraction kernel(connection_count / 32 + (connection_count % 32 + 1), 32) (
-			gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-			i, connection_count, weights, connections_start,
-			learning_rate, dropout, gradient_clip
-		);
-		connections_start += connection_count;
-	}*/
 	cud_NEAT_gradient_subtraction kernel(connection_count / 32 + (connection_count % 32 > 0), 32) (
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 		connection_neuron_i, connection_count, neuron_count,
@@ -304,45 +280,20 @@ void NeatConnections::remove_neuron(size_t neuron_i)
 
 	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
 	
-	connection_neuron_i = cuda_remove_elements(connection_neuron_i, connection_count, connection_count_until_deletion, to_delete_connection_count, true);
-	connection_points = cuda_remove_elements(connection_points, connection_count, connection_count_until_deletion, to_delete_connection_count, true);
-	weights = cuda_remove_elements(weights, connection_count, connection_count_until_deletion, to_delete_connection_count, true);
+	size_t connections_remove_start = connection_count_until_deletion - (connection_count_until_deletion != 0);
+	size_t new_connection_count = connection_count - to_delete_connection_count;
+
+	connection_neuron_i = cuda_remove_elements(connection_neuron_i, connection_count, connections_remove_start, to_delete_connection_count, true);
+	add_to_array kernel(new_connection_count / 32 + (new_connection_count % 32 > 0), 32) (
+		connection_neuron_i + connection_count_until_deletion, new_connection_count - connection_count_until_deletion, -1
+	);
+
+	connection_points = cuda_remove_elements(connection_points, connection_count, connections_remove_start, to_delete_connection_count, true);
+	weights = cuda_remove_elements(weights, connection_count, connections_remove_start, to_delete_connection_count, true);
 	biases = cuda_remove_elements(biases, neuron_count, neuron_i, 1, true);
 
-	/*
-	size_t* tmp_connections_neuron_i = 0;
-	size_t* tmp_connection_points = 0;
-	field_t* tmp_weights = 0;
-	field_t* tmp_biases = 0;
-
-	cudaMalloc(&tmp_connections_neuron_i, sizeof(size_t) * (connection_count - to_delete_connection_count));
-	cudaMalloc(&tmp_connection_points, sizeof(size_t) * (connection_count - to_delete_connection_count));
-	cudaMalloc(&tmp_weights, sizeof(field_t) * (connection_count - to_delete_connection_count));
-	cudaMalloc(&tmp_biases, sizeof(field_t) * (neuron_count - 1));
-
-	cudaMemcpy(tmp_connections_neuron_i, connection_neuron_i, sizeof(size_t) * (connection_count_until_deletion), cudaMemcpyDeviceToDevice);
-	cudaMemcpy(tmp_connections_neuron_i + connection_count_until_deletion, connection_neuron_i + connection_count_until_deletion + to_delete_connection_count, sizeof(size_t) * connection_count_after_deletion, cudaMemcpyDeviceToDevice);
-  
-	cudaMemcpy(tmp_connection_points, connection_points, sizeof(size_t) * connection_count_until_deletion, cudaMemcpyDeviceToDevice);
-	cudaMemcpy(tmp_connection_points + connection_count_until_deletion, connection_points + connection_count_until_deletion + to_delete_connection_count, sizeof(size_t) * connection_count_after_deletion, cudaMemcpyDeviceToDevice);
-
-	cudaMemcpy(tmp_weights, weights, sizeof(field_t) * connection_count_until_deletion, cudaMemcpyDeviceToDevice);
-	cudaMemcpy(tmp_weights + connection_count_until_deletion, weights + connection_count_until_deletion + to_delete_connection_count, sizeof(field_t) * connection_count_after_deletion, cudaMemcpyDeviceToDevice);
-
-	cudaMemcpy(tmp_biases, biases, sizeof(field_t) * neuron_i, cudaMemcpyDeviceToDevice);
-	cudaMemcpy(tmp_biases + neuron_i, biases + neuron_i + 1, sizeof(field_t) * (neuron_count - neuron_i - 1), cudaMemcpyDeviceToDevice);
-	cudaDeviceSynchronize();
-
-	cudaFree(connection_points);
-	cudaFree(weights);
-	cudaFree(biases);
-	cudaFree(connection_neuron_i);
-
-	connection_neuron_i = tmp_connections_neuron_i;
-	connection_points = tmp_connection_points;
-	weights = tmp_weights;
-	biases = tmp_biases;*/
 	connection_count -= to_delete_connection_count;
+	cudaDeviceSynchronize();
 }
 
 void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i)

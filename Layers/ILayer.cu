@@ -231,7 +231,7 @@ void ILayer::remove_neuron(size_t layer_neuron_i)
 		
 		size_t after_deletion_neuron_count = get_neuron_count() - layer_neuron_i - 1;
 		add_to_array kernel(after_deletion_neuron_count / 32 + (after_deletion_neuron_count % 32 > 0), 32) (
-			neuron_gradients_starts + layer_neuron_i, after_deletion_neuron_count, -removed_gradients
+			neuron_gradients_starts + layer_neuron_i, after_deletion_neuron_count, -(int)removed_gradients
 		);
 	}
 
