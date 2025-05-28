@@ -32,10 +32,6 @@ NN::~NN()
 
 void NN::set_fields()
 {
-#ifdef DETERMINISTIC
-	srand(13);
-#endif
-
 	output_length = layers[layer_count - 1]->get_neuron_count();
 
 	size_t neuron_count = input_length;

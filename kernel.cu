@@ -597,6 +597,10 @@ void minimal_case()
 
 int main()
 {
+#ifdef DETERMINISTIC
+	srand(13);
+#endif
+
 	//cudaSetDevice(0);
 	//GridTravellerPrototype();
 	//test_LSTM_cells_for_rythm_prediction();
