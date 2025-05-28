@@ -162,7 +162,7 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 		sampling_vector.erase(sampling_vector.begin() + i);
 		added_connection_count++;
 	}
-	
+
 	cudaMalloc(&device_tmp_connections, sizeof(size_t) * (connection_count + added_connection_count));
 	cudaMalloc(&device_tmp_weights, sizeof(field_t) * (connection_count + added_connection_count));
 	cudaMalloc(&device_tmp_biases, sizeof(field_t) * (neuron_count + 1));
@@ -207,65 +207,34 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 
 void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connection_probability, std::vector<size_t>* added_connections_neuron_i)
 {
-	// Transform data to a vector
-	size_t *host_connection_points = new size_t[connection_count];
-  size_t *host_connection_neuron_i = new size_t[connection_count];
-	field_t* host_weights = new field_t[connection_count];
-	
-	cudaMemcpy(host_connection_points, connection_points, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_weights, weights, sizeof(field_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-
-	auto vector_connection_points = std::vector<size_t>();
-	auto vector_weights = std::vector<field_t>();
-  std::vector<size_t> vector_connection_neuron_i;
-	for (size_t i = 0; i < connection_count; i++)
-	{
-		// Adjust connections for index change while transforming points to a vector
-		vector_connection_points.push_back(host_connection_points[i] + (host_connection_points[i] >= added_neuron_i));
-		vector_weights.push_back(host_weights[i]);
-    vector_connection_neuron_i.push_back(host_connection_neuron_i[i]);
-	}
-
-	// Add connections
-	size_t tmp_connection_count = 0;
+	std::vector<size_t> added_neuron_i__added_connection_count_times = std::vector<size_t>();
+	size_t added_connection_count = 0;
 	for (size_t i = 0; i < neuron_count; i++)
 	{
-		uint8_t is_connection_added = rand() % 100000 / 100000.0 < connection_probability;
-		size_t old_neuron_connection_count = get_connection_count_at(i);
-		size_t new_neuron_connection_count = old_neuron_connection_count + is_connection_added;
-		//connection_counts[i] = new_neuron_connection_count;
-		
-		if (is_connection_added)
+		bool added = connection_probability >= get_random_float();
+		added_connection_count += added;
+
+		if (added)
 		{
+			added_neuron_i__added_connection_count_times.push_back(added_neuron_i);
+
 			added_connections_neuron_i->push_back(i);
-			vector_connection_points.insert(vector_connection_points.begin() + tmp_connection_count + old_neuron_connection_count, added_neuron_i);
-			vector_weights.insert(vector_weights.begin() + tmp_connection_count + old_neuron_connection_count, rand() % 100000 / 100000.0);
-      vector_connection_neuron_i.insert(vector_connection_neuron_i.begin() + tmp_connection_count + old_neuron_connection_count, i);
 		}
-
-		connection_count += is_connection_added;
-		tmp_connection_count += new_neuron_connection_count;
 	}
+	if (!added_connection_count) return;
 
-	// Copy data to device, free old arrays and free host arrays
-  cudaFree(connection_neuron_i);
-	cudaFree(connection_points);
-	cudaFree(weights);
-	delete[] host_connection_points;
-	delete[] host_weights;
-	cudaDeviceSynchronize();
+	size_t new_connection_count = connection_count + added_connection_count;
 
-  cudaMalloc(&connection_neuron_i, sizeof(size_t) * connection_count);
-	cudaMalloc(&weights, sizeof(field_t) * connection_count);
-	cudaMalloc(&connection_points, sizeof(size_t) * connection_count);
-	cudaDeviceSynchronize();
+	connection_points = cuda_realloc(connection_points, connection_count, new_connection_count, true);
+	cudaMemcpy(connection_points + connection_count, added_neuron_i__added_connection_count_times.data(), sizeof(size_t) * added_connection_count, cudaMemcpyHostToDevice);
 
-  cudaMemcpy(connection_neuron_i, vector_connection_neuron_i.data(), sizeof(size_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaMemcpy(weights, vector_weights.data(), sizeof(field_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaMemcpy(connection_points, vector_connection_points.data(), sizeof(size_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
+	connection_neuron_i = cuda_realloc(connection_neuron_i, connection_count, new_connection_count, true);
+	cudaMemcpy(connection_neuron_i + connection_count, added_connections_neuron_i->data(), sizeof(size_t) * added_connection_count, cudaMemcpyHostToDevice);
+
+	weights = cuda_realloc(weights, connection_count, new_connection_count, true);
+	generate_random_values(&weights, added_connection_count, connection_count, new_connection_count);
+
+	connection_count = new_connection_count;
 }
 
 void NeatConnections::remove_neuron(size_t neuron_i)
@@ -280,7 +249,7 @@ void NeatConnections::remove_neuron(size_t neuron_i)
 
 	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
 	
-	size_t connections_remove_start = connection_count_until_deletion - (connection_count_until_deletion != 0);
+	size_t connections_remove_start = connection_count_until_deletion;// - (connection_count_until_deletion != 0);
 	size_t new_connection_count = connection_count - to_delete_connection_count;
 
 	connection_neuron_i = cuda_remove_elements(connection_neuron_i, connection_count, connections_remove_start, to_delete_connection_count, true);
