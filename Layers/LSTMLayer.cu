@@ -205,13 +205,13 @@ void LSTMLayer::mutate_fields(evolution_metadata evolution_values)
 
 void LSTMLayer::layer_specific_add_neuron()
 {
-	neuron_weights = cuda_realloc(neuron_weights, (neuron_count - 1) * 4, neuron_count * 4, true);
-	IConnections::generate_random_values(&neuron_weights, 4, (neuron_count - 1) * 4, 1);
+	neuron_weights = cuda_realloc(neuron_weights, neuron_count * 4, (neuron_count + 1) * 4, true);
+	IConnections::generate_random_values(&neuron_weights, 4, neuron_count * 4, 1);
 	
-	state = cuda_realloc(state, (neuron_count - 1) * 2, neuron_count * 2, true);
-	cudaMemset(state + (neuron_count - 1) * 4, 0, sizeof(data_t) * 4);
+	state = cuda_realloc(state, neuron_count * 2, (neuron_count + 1) * 2, true);
+	cudaMemset(state + neuron_count * 2, 0, sizeof(data_t) * 2);
 
-	prev_state_derivatives = cuda_realloc(prev_state_derivatives, (neuron_count - 1) * 3, neuron_count * 3, true);
+	prev_state_derivatives = cuda_realloc(prev_state_derivatives, neuron_count * 3, (neuron_count + 1) * 3, true);
 }
 
 void LSTMLayer::layer_specific_remove_neuron(size_t layer_neuron_i)

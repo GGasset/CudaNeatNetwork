@@ -156,27 +156,28 @@ void ILayer::add_neuron(size_t previous_layer_length, size_t previous_layer_acti
 	size_t added_connection_count = connections->connection_count;
 	connections->add_neuron(previous_layer_length, previous_layer_activations_start, previous_layer_connection_probability, min_connections);
 	added_connection_count = connections->connection_count - added_connection_count;
-	set_neuron_count(neuron_count + 1);
 
 	if (connection_associated_gradient_counts)
 	{
-		size_t* tmp_connection_associated_gradient_counts = new size_t[neuron_count];
-		cudaMemcpy(tmp_connection_associated_gradient_counts, connection_associated_gradient_counts, sizeof(size_t) * neuron_count - 1, cudaMemcpyDeviceToHost);
-		tmp_connection_associated_gradient_counts[neuron_count - 1] = added_connection_count;
+		size_t* tmp_connection_associated_gradient_counts = new size_t[neuron_count + 1];
+		cudaMemcpy(tmp_connection_associated_gradient_counts, connection_associated_gradient_counts, sizeof(size_t) * neuron_count, cudaMemcpyDeviceToHost);
+		tmp_connection_associated_gradient_counts[neuron_count] = 1 + added_connection_count;
+
 		cudaFree(connection_associated_gradient_counts);
-		cudaMalloc(&connection_associated_gradient_counts, sizeof(size_t) * neuron_count);
-		cudaMemcpy(connection_associated_gradient_counts, tmp_connection_associated_gradient_counts, sizeof(size_t) * neuron_count, cudaMemcpyHostToDevice);
+		cudaMalloc(&connection_associated_gradient_counts, sizeof(size_t) * (neuron_count + 1));
+		cudaMemcpy(connection_associated_gradient_counts, tmp_connection_associated_gradient_counts, sizeof(size_t) * (neuron_count + 1), cudaMemcpyHostToDevice);
 		delete[] tmp_connection_associated_gradient_counts;
 	}
 
 	if (neuron_gradients_starts)
 	{
-		size_t* tmp_neuron_gradients_starts = new size_t[neuron_count];
-		cudaMemcpy(tmp_neuron_gradients_starts, neuron_gradients_starts, sizeof(size_t) * (neuron_count - 1), cudaMemcpyDeviceToHost);
-		tmp_neuron_gradients_starts[neuron_count - 1] = tmp_neuron_gradients_starts[neuron_count - 2] + added_connection_count + gradients_per_neuron;
+		size_t* tmp_neuron_gradients_starts = new size_t[neuron_count + 1];
+		cudaMemcpy(tmp_neuron_gradients_starts, neuron_gradients_starts, sizeof(size_t) * neuron_count, cudaMemcpyDeviceToHost);
+		tmp_neuron_gradients_starts[neuron_count] = tmp_neuron_gradients_starts[neuron_count - 1] + 1 + added_connection_count + gradients_per_neuron;
+
 		cudaFree(neuron_gradients_starts);
-		cudaMalloc(&neuron_gradients_starts, sizeof(size_t) * neuron_count);
-		cudaMemcpy(neuron_gradients_starts, tmp_neuron_gradients_starts, sizeof(size_t) * neuron_count, cudaMemcpyHostToDevice);
+		cudaMalloc(&neuron_gradients_starts, sizeof(size_t) * (neuron_count + 1));
+		cudaMemcpy(neuron_gradients_starts, tmp_neuron_gradients_starts, sizeof(size_t) * (neuron_count + 1), cudaMemcpyHostToDevice);
 		delete[] tmp_neuron_gradients_starts;
 	}
 
@@ -184,6 +185,8 @@ void ILayer::add_neuron(size_t previous_layer_length, size_t previous_layer_acti
 	layer_gradient_count += added_connection_count + gradients_per_neuron + 1;
 
 	layer_specific_add_neuron();
+
+	set_neuron_count(neuron_count + 1);
 }
 
 void ILayer::layer_specific_add_neuron()
