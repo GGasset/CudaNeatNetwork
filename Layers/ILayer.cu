@@ -233,9 +233,10 @@ void ILayer::remove_neuron(size_t layer_neuron_i)
 			cuda_remove_elements(neuron_gradients_starts, neuron_count, layer_neuron_i, 1, true);
 		
 		size_t after_deletion_neuron_count = get_neuron_count() - layer_neuron_i - 1;
-		add_to_array kernel(after_deletion_neuron_count / 32 + (after_deletion_neuron_count % 32 > 0), 32) (
-			neuron_gradients_starts + layer_neuron_i, after_deletion_neuron_count, -(int)removed_gradients
-		);
+		if (after_deletion_neuron_count)
+			add_to_array kernel(after_deletion_neuron_count / 32 + (after_deletion_neuron_count % 32 > 0), 32) (
+				neuron_gradients_starts + layer_neuron_i, after_deletion_neuron_count, -(int)removed_gradients
+			);
 	}
 
 	if (connection_associated_gradient_counts)
