@@ -624,14 +624,14 @@ void NN::evolve()
 	}
 	if (evolution_values.neuron_deletion_probability > get_random_float() && layer_count > 1)
 	{
-		printf("removing neuron\n");
 		size_t layer_i = rand() % (layer_count - 1);
+		printf("removing neuron at %i\n", (int)layer_i);
 		remove_neuron(layer_i);
 	}
 	if (evolution_values.neuron_addition_probability > get_random_float() && layer_count > 1)
 	{
-		printf("adding_neuron\n");
 		size_t layer_i = rand() % (layer_count - 1);
+		printf("adding_neuron at %i\n", (int)layer_i);
 		add_neuron(layer_i);
 	}
 	float* evolution_values_pointer = (float*)(&evolution_values);
