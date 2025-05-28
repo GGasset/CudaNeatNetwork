@@ -104,6 +104,6 @@ template<typename T>
 __host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
 {
 	T* out = cuda_realloc(old, old_len, old_len + 1, free_old);
-	out[old_len] = new_last;
+	cudaMemcpy(out + old_len, &new_last, sizeof(T), cudaMemcpyHostToDevice);
 	return out;
 }
