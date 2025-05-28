@@ -99,3 +99,11 @@ __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t
 		cudaMemcpy(out + remove_start, old + remove_start + remove_count, sizeof(T) * (len - remove_count - remove_start), cudaMemcpyDeviceToDevice);
 	return out;
 }
+
+template<typename T>
+__host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
+{
+	T* out = cuda_realloc(old, old_len, old_len + 1, free_old);
+	out[old_len] = new_last;
+	return out;
+}
