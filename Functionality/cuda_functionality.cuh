@@ -83,19 +83,19 @@ __host__ T* cuda_realloc(T* old, size_t old_len, size_t new_len, bool free_old)
 template<typename T>
 __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t remove_count, bool free_old)
 {
+	if (!len || !old) return (0);
+
 	remove_start = h_min(len, remove_start);
 	remove_count = h_min(len - remove_start, remove_count);
 
-	size_t before_deletion_count = remove_start + (remove_start > 0);
-
 	T* out = 0;
 	cudaMalloc(&out, sizeof(T) * (len - remove_count));
+	if (!out) return (0);
 	cudaMemset(out, 0, sizeof(T) * (len - remove_count));
+
 	if (remove_start)
-		cudaMemcpy(out, old, sizeof(T) * before_deletion_count, cudaMemcpyDeviceToDevice);
-	if (len - remove_start - remove_count - 1)
-		cudaMemcpy(out + before_deletion_count, old + before_deletion_count + remove_count, sizeof(T) * (len - remove_start - remove_count - (remove_start > 0)), cudaMemcpyDeviceToDevice);
-	if (free_old)
-		cudaFree(old);
+		cudaMemcpy(out, old, sizeof(T) * (remove_start), cudaMemcpyDeviceToDevice);
+	if (!(remove_start + remove_count >= len))
+		cudaMemcpy(out + remove_start, old + remove_start + remove_count, sizeof(T) * (len - remove_count - remove_start), cudaMemcpyDeviceToDevice);
 	return out;
 }
