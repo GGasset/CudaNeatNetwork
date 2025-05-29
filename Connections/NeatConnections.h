@@ -1,6 +1,7 @@
 #pragma once
 #include "IConnections.h"
 #include "vector"
+#include "set"
 
 class NeatConnections :
     public IConnections
