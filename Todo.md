@@ -47,6 +47,7 @@
 
 - ~~client_socket~~
 - socket functions
+    - Paralellize withing CPU
     - Add abstract address detection
     - Add message to close server to stop loop
     - ~~construct -- destruct~~
