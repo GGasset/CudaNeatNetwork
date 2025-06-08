@@ -35,7 +35,7 @@ __global__ void cud_NEAT_gradient_calculation(
 
 	size_t neuron_i = connection_neuron_i[tid];
 	size_t input_gradient_i = gradients_start + layer_gradients_start + neuron_gradients_starts[neuron_i];
-	size_t weight_gradient_i = input_gradient_i + tid + 1;
+	size_t weight_gradient_i = gradients_start + layer_gradients_start + tid + neuron_i + 1;
 	size_t connection_input_i = connection_points[tid];
 
 	data_t input_gradient = gradients[input_gradient_i];
@@ -85,7 +85,7 @@ __global__ void cud_NEAT_gradient_subtraction(
 
 	size_t neuron_i = connection_neuron_i[tid];
 
-	size_t layer_gradient_i = neuron_gradients_starts[neuron_i] + tid + 1;
+	size_t layer_gradient_i = neuron_i + tid + 1;
 	size_t gradient_i = gradients_start + layer_gradients_start + layer_gradient_i;
 	data_t gradient = gradients[gradient_i];
 	optimizer->hyperparameter_subtract_gradient(weights + tid, gradient, layer_length + tid, hyperparameter);
