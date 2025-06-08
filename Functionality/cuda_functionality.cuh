@@ -101,9 +101,23 @@ __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t
 }
 
 template<typename T>
+__host__ void print_array(T* arr, size_t arr_len)
+{
+	T* host_arr = new T[arr_len];
+	cudaMemcpy(host_arr, arr, sizeof(T) * arr_len, cudaMemcpyDefault);
+
+	for (size_t i = 0; i < arr_len; i++) printf("%.2f ", (float)(host_arr[i]));
+	printf("\n");
+
+	delete[] host_arr;
+}
+
+template<typename T>
 __host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
 {
 	T* out = cuda_realloc(old, old_len, old_len + 1, free_old);
-	cudaMemcpy(out + old_len, &new_last, sizeof(T), cudaMemcpyHostToDevice);
+
+	T tmp = new_last;
+	cudaMemcpy(out + old_len, &tmp, sizeof(T), cudaMemcpyHostToDevice);
 	return out;
 }
