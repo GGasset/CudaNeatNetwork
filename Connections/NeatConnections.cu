@@ -151,7 +151,7 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 
 		connection_points = cuda_push_back(connection_points, new_connection_count, previous_layer_activations_start + i, true);
 		connection_neuron_i = cuda_push_back(connection_neuron_i, new_connection_count, neuron_count, true);
-		weights = cuda_push_back(weights, new_connection_count, (field_t)get_random_float() / new_connection_count, true);
+		weights = cuda_push_back(weights, new_connection_count, (field_t)get_random_float(), true);
 
 		added_connection_count++;
 		new_connection_count++;
@@ -168,9 +168,9 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 			counter += (added_connection_point_layer_neuron_i.count(i) == 0);
 			if (counter != remaining_connection_i_to_add + 1) continue;
 
-			connection_points = cuda_push_back(connection_points, new_connection_count, previous_layer_activations_start + i, true);
 			connection_neuron_i = cuda_push_back(connection_neuron_i, new_connection_count, neuron_count, true);
-			weights = cuda_push_back(weights, new_connection_count, (field_t)get_random_float() / new_connection_count, true);
+			connection_points = cuda_push_back(connection_points, new_connection_count, previous_layer_activations_start + i, true);
+			weights = cuda_push_back(weights, new_connection_count, (field_t)get_random_float(), true);
 
 			added_connection_count++;
 			new_connection_count++;
@@ -178,7 +178,11 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 			i = previous_layer_length;
 		}
 	}
+	multiply_array kernel(added_connection_count / 32 + (added_connection_count % 32 > 0), 32) (
+		weights + connection_count, added_connection_count, 1.0 / added_connection_count
+	);
 	biases = cuda_push_back(biases, neuron_count, (field_t)0, true);
+	cudaDeviceSynchronize();
 	connection_count = new_connection_count;
 }
 
