@@ -150,11 +150,7 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 		if (!added) continue;
 
 		added_connection_point_layer_neuron_i.insert(i);
-
 		to_add_connection_points.push_back(previous_layer_activations_start + i);
-		connection_points = cuda_push_back(connection_points, new_connection_count, previous_layer_activations_start + i, true);
-		connection_neuron_i = cuda_push_back(connection_neuron_i, new_connection_count, neuron_count, true);
-		weights = cuda_push_back(weights, new_connection_count, (field_t)get_random_float(), true);
 
 		added_connection_count++;
 		new_connection_count++;
