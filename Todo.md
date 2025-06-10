@@ -2,7 +2,7 @@
 
 ## High priority
 
-- ~~Improve scalability for evolution methods, modularize it, current state is not modularized at all.~~
+- Improve scalability for evolution methods, simplify and modularize them, current state is not modularized at all.
     - ~~Add compatibility with optimizers~~
     - Needs testing (Medium priority)
 - Add L1 and L2 regullarization (Take scalability into account)
