@@ -240,71 +240,26 @@ void NeatConnections::remove_neuron(size_t neuron_i)
 
 void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i)
 {
-	size_t* host_connection_points = new size_t[connection_count];
-  size_t* host_connection_neuron_i = new size_t[connection_count];
-	field_t* host_weights = new field_t[connection_count];
+	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
+	if (!to_delete_connection_count) return;
 
+	size_t *host_connection_points = new size_t[connection_count];
 	cudaMemcpy(host_connection_points, connection_points, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_weights, weights, sizeof(field_t) * connection_count, cudaMemcpyDeviceToHost);
-  cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
 
-	auto connection_points_vector = std::vector<size_t>();
-	auto vector_weights = std::vector<field_t>();
-  std::vector<size_t> vector_connection_neuron_i;
+	size_t *host_connection_neuron_i = new size_t[connection_count];
+	cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
 	for (size_t i = 0; i < connection_count; i++)
-	{
-		// Adjust connections for index change while transforming points to a vector
-		connection_points_vector.push_back(host_connection_points[i]);
-		vector_weights.push_back(host_weights[i]);
-    vector_connection_neuron_i.push_back(host_connection_neuron_i[i]);
-	}
+		if (host_connection_points[i] == neuron_i)
+			removed_connections_neuron_i->push_back(host_connection_neuron_i);
 
-  delete[] host_connection_points;
-  delete[] host_connection_neuron_i;
-  delete[] host_weights;
+	delete[] host_connection_points;
+	delete[] host_connection_neuron_i;
 
-	size_t found_i = 0;
-	while (true)
-	{
-		// Search for connections pointing to neuron_i, break if not found
-		uint8_t found = false;
-		for (size_t i = found_i; i < connection_count && !found; i++)
-		{
-			found = connection_points_vector[i] == neuron_i;
-			found_i = i;
-		}
-		if (!found)
-			break;
+	weights = cuda_remove_occurrences(connection_points, neuron_i, weights, connection_count, true);
+	connection_neuron_i = cuda_remove_occurrences(connection_points, neuron_i, connection_neuron_i, connection_count, true);
+	connection_points = cuda_remove_occurrences(connection_points, neuron_i, connection_points, connection_count, true);
 
-		// Get the neuron containing the connection
-		size_t connection_neuron_i = vector_connection_neuron_i[found_i];
-
-		// Update info
-		removed_connections_neuron_i->push_back(connection_neuron_i);
-		vector_weights.erase(vector_weights.begin() + found_i);
-		connection_points_vector.erase(connection_points_vector.begin() + found_i);
-    vector_connection_neuron_i.erase(vector_connection_neuron_i.begin() + found_i);
-		connection_count--;
-	}
-	for (size_t i = 0; i < connection_count; i++)
-	{
-		connection_points_vector[i] -= connection_points_vector[i] > neuron_i;
-	}
-	cudaFree(connection_points);
-	cudaFree(weights);
-  cudaFree(connection_neuron_i);
-	cudaDeviceSynchronize();
-
-	cudaMalloc(&connection_points, sizeof(size_t) * connection_count);
-	cudaMalloc(&weights, sizeof(field_t) * connection_count);
-  cudaMalloc(&connection_neuron_i, sizeof(size_t) * connection_count);
-	cudaDeviceSynchronize();
-
-	cudaMemcpy(connection_points, connection_points_vector.data(), sizeof(size_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaMemcpy(weights, vector_weights.data(), sizeof(field_t) * connection_count, cudaMemcpyHostToDevice);
-  cudaMemcpy(connection_neuron_i, vector_connection_neuron_i.data(), sizeof(size_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
+	connection_count -= to_delete_connection_count;
 }
 
 IConnections* NeatConnections::connections_specific_clone()
