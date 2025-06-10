@@ -135,7 +135,7 @@ __host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_up
 }
 
 template<typename T, typename t>
-__host__ T* cuda_add_to_occurrences(t* compare_arr, t search_value, T* to_update_arr, T to_add, size_t arrs_len, bool free_updated)
+__host__ T* cuda_add_to_occurrences(t* compare_arr, int (*compare_func)(t val, t second_arg), t second_arg, T* to_update_arr, T to_add, size_t arrs_len, bool free_updated)
 {
 	T* host_arr = new T[len];
 	cudaMemcpy(host_arr, old, sizeof(T) * len, cudaMemcpyDeviceToHost);
@@ -144,7 +144,7 @@ __host__ T* cuda_add_to_occurrences(t* compare_arr, t search_value, T* to_update
 	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
 	
 	for (size_t i = 0; i < len; i++)
-		if (host_compare_arr[i] == search_value)
+		if (compare_func(host_compare_arr[i], second_arg))
 			host_arr[i] += to_add;
 
 	T* out = 0;
