@@ -226,17 +226,12 @@ void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connec
 void NeatConnections::remove_neuron(size_t neuron_i)
 {
 	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
+
+	connection_points = cuda_remove_occurrences(connection_neuron_i, neuron_i, connection_points, connection_count, true);
+	weights = cuda_remove_occurrences(connection_neuron_i, neuron_i, weights, connection_count, true);
 	
-	size_t connections_remove_start = connection_count_until_deletion;// - (connection_count_until_deletion != 0);
-	size_t new_connection_count = connection_count - to_delete_connection_count;
-
-	connection_neuron_i = cuda_remove_elements(connection_neuron_i, connection_count, connections_remove_start, to_delete_connection_count, true);
-	add_to_array kernel(new_connection_count / 32 + (new_connection_count % 32 > 0), 32) (
-		connection_neuron_i + connection_count_until_deletion, new_connection_count - connection_count_until_deletion, -1
-	);
-
-	connection_points = cuda_remove_elements(connection_points, connection_count, connections_remove_start, to_delete_connection_count, true);
-	weights = cuda_remove_elements(weights, connection_count, connections_remove_start, to_delete_connection_count, true);
+	connection_neuron_i = cuda_remove_occurrences(connection_neuron_i, neuron_i, connection_neuron_i, connection_count, true);
+	connection_neuron_i = cuda_add_to_occurrences(connection_neuron_i, size_t_bigger_than_compare_func, neuron_i, connection_neuron_i, (size_t)-1, connection_count - to_delete_connection_count, true);
 	biases = cuda_remove_elements(biases, neuron_count, neuron_i, 1, true);
 
 	connection_count -= to_delete_connection_count;
