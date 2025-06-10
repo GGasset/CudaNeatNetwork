@@ -558,8 +558,8 @@ void test_LSTM()
 
 void minimal_case()
 {
-	const size_t input_len = 2;
-	const size_t output_len = 2;
+	const size_t input_len = 50;
+	const size_t output_len = 5;
 	const size_t t_count = 1;
 
 	/*data_t X[input_len * t_count]{};
@@ -576,19 +576,19 @@ void minimal_case()
 
 	NN* n = NN_constructor()
 		//.append_layer(NEAT, Neuron, 1, sigmoid)
-		//.append_layer(NEAT, Neuron, 5, sigmoid)
+		.append_layer(NEAT, Neuron, 5, sigmoid)
 		.append_layer(NEAT, Neuron, output_len, sigmoid)
 		.construct(input_len, no_optimizer);
 	
 	gradient_hyperparameters hyperparameters;
-	hyperparameters.learning_rate = .2;
-	size_t epochs = 500;
+	hyperparameters.learning_rate = .01;
+	size_t epochs = 50000;
 	
 	for (size_t epoch = 0; epoch < epochs || !epoch; epoch++)
 	{
-		//n->evolve();
-		//n->remove_neuron(0);
-		n->add_neuron(0);
+		n->evolve();
+		//if (epoch < 250 && 1) n->add_neuron(0);
+		//if (epoch % 2 && 0) n->remove_neuron(0);
 
 		data_t *X = (data_t*)calloc(n->get_input_length() * t_count, sizeof(data_t));
 		for (size_t i = 0; i < n->get_input_length() * t_count; i++)
@@ -598,13 +598,16 @@ void minimal_case()
 			Y_hat[i] = .56;
 
 		data_t *Y = 0;
+		//Y = n->inference_execute(X);
 		n->training_batch(t_count, X, Y_hat, true, n->get_output_length() * t_count, MSE,
 			&Y, true, hyperparameters);
 		for (size_t i = 0; i < n->get_output_length() * t_count; i++)
-			if (((1 && Y[i] == 0.0) || Y[i] != Y[i]) && 1)
+			if (((cudaPeekAtLastError() != cudaSuccess) || Y[i] != Y[i]))
 			{
 				epochs = 0;
 				printf("error");
+				if (cudaGetLastError() != cudaSuccess) printf(" Because of cuda error\n");
+				else printf(" %.2f\n", Y[i]);
 				break;
 			}
 			else
@@ -612,6 +615,7 @@ void minimal_case()
 		printf("\n");
 
 		free(X);
+		free(Y_hat);
 		delete[] Y;
 
 		n->print_shape();

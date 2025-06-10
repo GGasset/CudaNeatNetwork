@@ -57,8 +57,15 @@ __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 	dst[tid] = src[tid];
 }
 
-//template<typename T>
-__global__ void count_value(size_t value, size_t* array, size_t array_length, unsigned int* output);
+template<typename T>
+__global__ void count_value(T value, T* array, size_t array_length, unsigned int* output)
+{
+	size_t tid = get_tid();
+	if (tid >= array_length) return;
+	if (array[tid] != value) return;
+
+	atomicAdd(output, 1);
+}
 
 __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length);
 
@@ -97,6 +104,29 @@ __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t
 		cudaMemcpy(out, old, sizeof(T) * (remove_start), cudaMemcpyDeviceToDevice);
 	if (!(remove_start + remove_count >= len))
 		cudaMemcpy(out + remove_start, old + remove_start + remove_count, sizeof(T) * (len - remove_count - remove_start), cudaMemcpyDeviceToDevice);
+	return out;
+}
+
+template<typename T>
+__host__ T* cuda_remove_occurrences(T* old, size_t len, T to_delete_number, bool free_old)
+{
+	T* host_arr = new T[len];
+	cudaMemcpy(host_arr, old, sizeof(T) * len, cudaMemcpyDeviceToHost);
+
+	std::vector<T> parsed_vector = std::vector<T>();
+	for (size_t i = 0; i < len; i++)
+	{
+		T val = host_arr[i];
+		if (val != to_delete_number) parsed_vector.push_back(val);
+	}
+	delete[] host_arr;
+	host_arr = 0;
+
+	T* out = 0;
+	cudaMalloc(&out, sizeof(T) * parsed_vector.size());
+	cudaMemcpy(out, parsed_vector.data(), sizeof(T) * parsed_vector.size(), cudaMemcpyHostToDevice);
+
+	if (free_old) cudaFree(old);
 	return out;
 }
 

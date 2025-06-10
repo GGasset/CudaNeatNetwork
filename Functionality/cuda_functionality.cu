@@ -46,15 +46,6 @@ __device__ size_t get_tid()
 	return blockIdx.x * blockDim.x + threadIdx.x;
 }
 
-__global__ void count_value(size_t value, size_t* array, size_t array_length, unsigned int* output)
-{
-	size_t tid = get_tid();
-	if (tid >= array_length) return;
-	if (array[tid] != value) return;
-
-	atomicAdd(output, 1);
-}
-
 __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length)
 {
 	size_t tid = get_tid();
