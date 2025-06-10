@@ -134,6 +134,11 @@ __host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_up
 	return out;
 }
 
+int size_t_bigger_than_compare_func(size_t val, size_t second_arg)
+{
+	return val > second_arg;
+}
+
 template<typename T, typename t>
 __host__ T* cuda_add_to_occurrences(t* compare_arr, int (*compare_func)(t val, t second_arg), t second_arg, T* to_update_arr, T to_add, size_t arrs_len, bool free_updated)
 {
