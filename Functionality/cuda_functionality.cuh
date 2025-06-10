@@ -107,18 +107,22 @@ __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t
 	return out;
 }
 
-template<typename T>
-__host__ T* cuda_remove_occurrences(T* old, size_t len, T to_delete_number, bool free_old)
+template<typename T, typename t>
+__host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_update_arr, size_t arrs_len, bool free_updated)
 {
 	T* host_arr = new T[len];
 	cudaMemcpy(host_arr, old, sizeof(T) * len, cudaMemcpyDeviceToHost);
 
+	t* host_compare_arr = new t[len];
+	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
+
 	std::vector<T> parsed_vector = std::vector<T>();
 	for (size_t i = 0; i < len; i++)
-	{
-		T val = host_arr[i];
-		if (val != to_delete_number) parsed_vector.push_back(val);
-	}
+		if (host_compare_arr[i] != to_delete_number) 
+			parsed_vector.push_back(host_arr[i]);
+
+	delete[] host_compare_arr;
+	host_compare_arr = 0;
 	delete[] host_arr;
 	host_arr = 0;
 
