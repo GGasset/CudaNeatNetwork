@@ -111,7 +111,7 @@ template<typename T, typename t>
 __host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_update_arr, size_t arrs_len, bool free_updated)
 {
 	T* host_arr = new T[len];
-	cudaMemcpy(host_arr, old, sizeof(T) * len, cudaMemcpyDeviceToHost);
+	cudaMemcpy(host_arr, to_update_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
 
 	t* host_compare_arr = new t[len];
 	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
@@ -130,7 +130,31 @@ __host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_up
 	cudaMalloc(&out, sizeof(T) * parsed_vector.size());
 	cudaMemcpy(out, parsed_vector.data(), sizeof(T) * parsed_vector.size(), cudaMemcpyHostToDevice);
 
-	if (free_old) cudaFree(old);
+	if (free_updated) cudaFree(to_update_arr);
+	return out;
+}
+
+template<typename T, typename t>
+__host__ T* cuda_add_to_occurrences(t* compare_arr, t search_value, T* to_update_arr, T to_add, size_t arrs_len, bool free_updated)
+{
+	T* host_arr = new T[len];
+	cudaMemcpy(host_arr, old, sizeof(T) * len, cudaMemcpyDeviceToHost);
+
+	t* host_compare_arr = new t[len];
+	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
+	
+	for (size_t i = 0; i < len; i++)
+		if (host_compare_arr[i] == search_value)
+			host_arr[i] += to_add;
+
+	T* out = 0;
+	cudaMalloc(&out, sizeof(T) * arrs_len);
+	cudaMemcpy(out, host_arr, sizeof(T) * arrs_len, cudaMemcpyHostToDevice);
+
+	delete[] host_arr;
+	delete[] host_compare_arr;
+
+	if (free_updated) cudaFree(to_update_arr);
 	return out;
 }
 

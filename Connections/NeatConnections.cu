@@ -225,14 +225,6 @@ void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connec
 
 void NeatConnections::remove_neuron(size_t neuron_i)
 {
-	size_t connection_count_until_deletion = 0;
-	for (size_t i = 0; i < neuron_i; i++)
-		connection_count_until_deletion += get_connection_count_at(i);
-
-	size_t connection_count_after_deletion = 0;
-	for (size_t i = neuron_i + 1; i < neuron_count; i++)
-		connection_count_after_deletion += get_connection_count_at(i);
-
 	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
 	
 	size_t connections_remove_start = connection_count_until_deletion;// - (connection_count_until_deletion != 0);
