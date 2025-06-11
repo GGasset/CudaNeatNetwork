@@ -250,7 +250,7 @@ void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size
 	cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
 	for (size_t i = 0; i < connection_count; i++)
 		if (host_connection_points[i] == neuron_i)
-			removed_connections_neuron_i->push_back(host_connection_neuron_i);
+			removed_connections_neuron_i->push_back(host_connection_neuron_i[i]);
 
 	delete[] host_connection_points;
 	delete[] host_connection_neuron_i;
