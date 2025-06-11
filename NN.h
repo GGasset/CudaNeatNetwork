@@ -135,6 +135,9 @@ public:
 	);
 
 	void evolve();
+	void add_layer();
+	void add_layer(size_t insert_i);
+	void add_layer(size_t insert_i, NeuronTypes layer_type);
 	void add_layer(size_t insert_i, ILayer* layer);
 	void add_output_neuron();
 	void add_input_neuron();

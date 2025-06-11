@@ -588,35 +588,7 @@ void NN::evolve()
 	if (evolution_values.layer_addition_probability > get_random_float())
 	{
 		printf("Adding layer\n");
-		NeuronTypes insert_type = (NeuronTypes)(rand() % NeuronTypes::last_neuron_entry);
-		size_t insert_i = layer_count > 1 ? rand() % (layer_count - 1) : 0;
-		
-		size_t previous_layer_length = input_length;
-		size_t previous_layer_activations_start = 0;
-		if (insert_i)
-		{
-			ILayer* previous_layer = layers[insert_i];
-			previous_layer_length = previous_layer->get_neuron_count();
-			previous_layer_activations_start = previous_layer->layer_activations_start;
-		}
-		
-		IConnections* new_connections = new NeatConnections(previous_layer_activations_start, previous_layer_length, 1);
-		ILayer* new_layer = 0;
-
-		switch (insert_type)
-		{
-		case NeuronTypes::Neuron:
-			new_layer = new NeuronLayer(new_connections, 1, (ActivationFunctions)(rand() % ActivationFunctions::activations_last_entry));
-			break;
-		case NeuronTypes::LSTM:
-			new_layer = new LSTMLayer(new_connections, 1);
-			break;
-		default:
-			throw "Neuron_type not added to evolve method";
-			break;
-		}
-		new_layer->optimizer = host_optimizer_init(default_optimizer, new_layer->get_weight_count());
-		add_layer(insert_i, new_layer);
+		add_layer();
 	}
 	if (evolution_values.neuron_deletion_probability > get_random_float() && layer_count > 1)
 	{
@@ -638,6 +610,48 @@ void NN::evolve()
 			(evolution_values.evolution_metadata_field_mutation_chance > get_random_float()) *
 			(1 - 2 * (get_random_float() > .5));
 	}
+}
+
+void NN::add_layer()
+{
+	size_t insert_i = layer_count > 1 ? rand() % (layer_count - 1) : 0;
+	add_layer(insert_i);
+}
+
+void NN::add_layer(size_t insert_i)
+{
+	NeuronTypes insert_type = (NeuronTypes)(rand() % NeuronTypes::last_neuron_entry);
+	add_layer(insert_i, insert_type);
+}
+
+void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
+{
+	size_t previous_layer_length = input_length;
+	size_t previous_layer_activations_start = 0;
+	if (insert_i)
+	{
+		ILayer* previous_layer = layers[insert_i];
+		previous_layer_length = previous_layer->get_neuron_count();
+		previous_layer_activations_start = previous_layer->layer_activations_start;
+	}
+
+	IConnections* new_connections = new NeatConnections(previous_layer_activations_start, previous_layer_length, 1);
+	ILayer* new_layer = 0;
+
+	switch (layer_type)
+	{
+	case NeuronTypes::Neuron:
+		new_layer = new NeuronLayer(new_connections, 1, (ActivationFunctions)(rand() % ActivationFunctions::activations_last_entry));
+		break;
+	case NeuronTypes::LSTM:
+		new_layer = new LSTMLayer(new_connections, 1);
+		break;
+	default:
+		throw "Neuron_type not added to evolve method";
+		break;
+	}
+	new_layer->optimizer = host_optimizer_init(default_optimizer, new_layer->get_weight_count());
+	add_layer(insert_i, new_layer);
 }
 
 void NN::add_layer(size_t insert_i, ILayer* layer)
