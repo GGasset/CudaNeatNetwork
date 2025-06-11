@@ -72,8 +72,9 @@
 # Bugs
  - ~~device array being used as host array in NeuronLayer and LSTMLayer remove neuron~~
  - ~~bug in add neuron~~
- - constrain evolution
+ - evolution
     * if removing neuron in a layer with 1 neuron remove layer (now it won't delete the neuron)
+    * Check for neurons that are not pointed to or don't point to any other and delete them after calling evolve
  - ~~constrain weights and biases to prevent nans (reset NaNs)~~
 
 ### Not to do until all Layer constructors are made:
