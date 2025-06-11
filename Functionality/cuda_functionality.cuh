@@ -110,14 +110,14 @@ __host__ T* cuda_remove_elements(T* old, size_t len, size_t remove_start, size_t
 template<typename T, typename t>
 __host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_update_arr, size_t arrs_len, bool free_updated)
 {
-	T* host_arr = new T[len];
-	cudaMemcpy(host_arr, to_update_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
+	T* host_arr = new T[arrs_len];
+	cudaMemcpy(host_arr, to_update_arr, sizeof(T) * arrs_len, cudaMemcpyDeviceToHost);
 
-	t* host_compare_arr = new t[len];
-	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
+	t* host_compare_arr = new t[arrs_len];
+	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * arrs_len, cudaMemcpyDeviceToHost);
 
 	std::vector<T> parsed_vector = std::vector<T>();
-	for (size_t i = 0; i < len; i++)
+	for (size_t i = 0; i < arrs_len; i++)
 		if (host_compare_arr[i] != to_delete_number) 
 			parsed_vector.push_back(host_arr[i]);
 
@@ -134,7 +134,7 @@ __host__ T* cuda_remove_occurrences(t* compare_arr, t to_delete_number, T* to_up
 	return out;
 }
 
-int size_t_bigger_than_compare_func(size_t val, size_t second_arg)
+inline int size_t_bigger_than_compare_func(size_t val, size_t second_arg)
 {
 	return val > second_arg;
 }
@@ -142,13 +142,13 @@ int size_t_bigger_than_compare_func(size_t val, size_t second_arg)
 template<typename T, typename t>
 __host__ T* cuda_add_to_occurrences(t* compare_arr, int (*compare_func)(t val, t second_arg), t second_arg, T* to_update_arr, T to_add, size_t arrs_len, bool free_updated)
 {
-	T* host_arr = new T[len];
-	cudaMemcpy(host_arr, old, sizeof(T) * len, cudaMemcpyDeviceToHost);
+	T* host_arr = new T[arrs_len];
+	cudaMemcpy(host_arr, to_update_arr, sizeof(T) * arrs_len, cudaMemcpyDeviceToHost);
 
-	t* host_compare_arr = new t[len];
-	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * len, cudaMemcpyDeviceToHost);
+	t* host_compare_arr = new t[arrs_len];
+	cudaMemcpy(host_compare_arr, compare_arr, sizeof(T) * arrs_len, cudaMemcpyDeviceToHost);
 	
-	for (size_t i = 0; i < len; i++)
+	for (size_t i = 0; i < arrs_len; i++)
 		if (compare_func(host_compare_arr[i], second_arg))
 			host_arr[i] += to_add;
 
