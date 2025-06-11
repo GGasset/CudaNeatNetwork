@@ -605,10 +605,12 @@ void NN::evolve()
 	float* evolution_values_pointer = (float*)(&evolution_values);
 	for (size_t i = 0; i < sizeof(evolution_metadata) / sizeof(float); i++)
 	{
-		evolution_values_pointer[i] +=
-			evolution_values.evolution_metadata_field_max_mutation *
-			(evolution_values.evolution_metadata_field_mutation_chance > get_random_float()) *
-			(1 - 2 * (get_random_float() > .5));
+		float sign = (1 - 2 * (get_random_float() > .5));
+		float mutation = get_random_float() * evolution_values.evolution_metadata_field_max_mutation * sign;
+		int will_mutate = evolution_values.evolution_metadata_field_mutation_chance > get_random_float();
+
+		if (will_mutate && evolution_values_pointer[i] + mutation > 1E-5 && evolution_values_pointer[i] + mutation < .3)
+			evolution_values_pointer[i] += mutation;
 	}
 }
 

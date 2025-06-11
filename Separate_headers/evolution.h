@@ -8,6 +8,6 @@ typedef struct evolution_metadata {
 	float neuron_addition_probability = .02;
 	float layer_distance_from_added_neuron_connection_addition_modifier = .001;
 
-	float evolution_metadata_field_mutation_chance = .0005;
-	float evolution_metadata_field_max_mutation = .0001;
+	float evolution_metadata_field_mutation_chance = .001;
+	float evolution_metadata_field_max_mutation = .001;
 } evolution_metadata;

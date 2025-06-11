@@ -75,6 +75,7 @@
  - evolution
     * if removing neuron in a layer with 1 neuron remove layer (now it won't delete the neuron)
     * Check for neurons that are not pointed to or don't point to any other and delete them after calling evolve
+    * ~~Constrain evolution metadata fields from 1E-5 to .3 for stable process~~
  - ~~constrain weights and biases to prevent nans (reset NaNs)~~
 
 ### Not to do until all Layer constructors are made:
