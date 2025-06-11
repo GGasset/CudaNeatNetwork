@@ -602,7 +602,7 @@ void minimal_case()
 		n->training_batch(t_count, X, Y_hat, true, n->get_output_length() * t_count, MSE,
 			&Y, true, hyperparameters);
 		for (size_t i = 0; i < n->get_output_length() * t_count; i++)
-			if (((cudaPeekAtLastError() != cudaSuccess) || Y[i] != Y[i]))
+			if (((cudaPeekAtLastError() != cudaSuccess) || Y[i] != Y[i] || !Y[i]))
 			{
 				epochs = 0;
 				printf("error");
