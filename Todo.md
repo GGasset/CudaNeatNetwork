@@ -1,4 +1,5 @@
 # Todo
+*80-90% done*
 
 ## Regularization - Optimizers
 
