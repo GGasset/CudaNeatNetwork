@@ -13,6 +13,7 @@
 
 - Paralelize layer derivative calculation calls withing CPU
 
+- Add execution with output to GPU
 
 - Make a function that abstracts the process of parsing raw bytes from socket for mental health
 
@@ -43,7 +44,7 @@
 - ~~reinforcement learning cost function~~
     - ~~GAE in GPU~~
         - ~~CPU function that given a value function estimator NN and rewards, computes GAE~~
-            - Add execution with output to GPU to optimize this
+            - Use execution with output to GPU
     - Proximal Policy optimization cost function
 
 - Create logging options for training in csv format
