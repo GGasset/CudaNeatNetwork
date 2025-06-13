@@ -8,12 +8,15 @@
 #include "data_type.h"
 
 #include "functionality.h"
+#include "NN_enums.h"
 
 //__global__ template void apply_to_array<typename t>(t* array, size_t array_length, std::function<bool(t, t)> if_function, t right_if_function_parameter, std::function<t(t)> to_apply);
 __device__ data_t device_min(data_t a, data_t b);
 __device__ data_t device_max(data_t a, data_t b);
 __device__ data_t device_closest_to_zero(data_t a, data_t b);
 __device__ data_t device_clip(data_t to_clip, data_t a, data_t b);
+
+__host__ data_t* alloc_output(size_t output_value_count, output_pointer_type output_type);
 
 /// <summary>
 /// Calculates linear thread_id up to blockIdx.x [inclusive]

@@ -175,7 +175,7 @@ void GridTravellerPrototype()
 			supervised_outputs[step_i * 2 + 1] = target_direction_y > 0 ? .75 : .25;
 			
 			n->training_execute(
-				1, X, &Y, true,
+				1, X, &Y, host_cpp_pointer_output,
 				&execution_values, &activations,
 				step_i
 			);
@@ -230,13 +230,13 @@ void GridTravellerPrototype()
 				discounted_rewards[j] += rewards[k] * discount_factor;
 			}
 		}
-		data_t *value_functions;
+		data_t *value_functions = 0;
 		value_function->training_batch(
 			actual_steps,
 			inputs,
 			discounted_rewards, 1, actual_steps,
 			CostFunctions::MSE,
-			&value_functions, 1, gradient_hyperparameters()
+			&value_functions, host_cpp_pointer_output, gradient_hyperparameters()
 		);
 
 		// Denoted as greek lowercase delta
@@ -390,7 +390,7 @@ void test_LSTM_cells_for_rythm_prediction()
 			costs[i] = n->training_batch(
 				t_count,
 				X, Y_hat, true, output_length * t_count,
-				CostFunctions::MSE, &Y, true, gradient_hyperparameters()
+				CostFunctions::MSE, &Y, host_cpp_pointer_output, gradient_hyperparameters()
 			);
 		else
 		{
@@ -471,7 +471,7 @@ void bug_hunting()
 			t_count,
 			X, Y_hat, 1, output_len * t_count,
 			CostFunctions::MSE,
-			&Y, 1, gradient_hyperparameters()
+			&Y, host_cpp_pointer_output, gradient_hyperparameters()
 		));
 		for (size_t j = 0; j < t_count; j++)
 		{	
@@ -539,7 +539,7 @@ void test_LSTM()
 		{
 			n->training_execute(
 				t_count, 
-				X + in_len * t_count * j, &Y, true,
+				X + in_len * t_count * j, &Y, host_cpp_pointer_output,
 				&execution_values, &activations
 			);
 			data_t cost = n->train(
@@ -600,7 +600,7 @@ void minimal_case()
 		data_t *Y = 0;
 		//Y = n->inference_execute(X);
 		n->training_batch(t_count, X, Y_hat, true, n->get_output_length() * t_count, MSE,
-			&Y, true, hyperparameters);
+			&Y, host_cpp_pointer_output, hyperparameters);
 		for (size_t i = 0; i < n->get_output_length() * t_count; i++)
 			if (((cudaPeekAtLastError() != cudaSuccess) || Y[i] != Y[i] || !Y[i]))
 			{

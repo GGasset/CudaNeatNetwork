@@ -44,9 +44,9 @@ public:
 	~NN();
 	NN(ILayer** layers, size_t input_length, size_t layer_count);
 
-	void execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, short copy_output_to_host);
+	void execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type);
 	void set_up_execution_arrays(data_t** execution_values, data_t** activations, size_t t_count);
-	data_t* batch_execute(data_t* input, size_t t_count);
+	data_t* batch_execute(data_t* input, size_t t_count, output_pointer_type output_type = host_cpp_pointer_output);
 	data_t* inference_execute(data_t* input);
 
 	data_t adjust_learning_rate(
@@ -69,10 +69,10 @@ public:
 		size_t t_count,
 		data_t* X,
 		data_t** Y,
-		bool copy_Y_to_host,
+		output_pointer_type output_type,
 		data_t** execution_values,
 		data_t** activations,
-		size_t old_arrays_t_length = 0
+		size_t arrays_t_length = 0
 	);
 
 	data_t train(
@@ -87,14 +87,14 @@ public:
 	);
 
 	data_t training_batch(
-		size_t t_count, 
+		size_t t_count,
 		data_t* X,
 		data_t* Y_hat,
 		bool is_Y_hat_on_host_memory,
 		size_t Y_hat_value_count,
 		CostFunctions cost_function,
-		data_t** Y, 
-		bool copy_Y_to_host,
+		data_t** Y,
+		output_pointer_type output_type,
 		gradient_hyperparameters hyperparameters
 	);
 

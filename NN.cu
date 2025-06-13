@@ -64,7 +64,7 @@ void NN::set_fields()
 	this->gradient_count = gradient_count;
 }
 
-void NN::execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, short copy_output_to_host = true)
+void NN::execute(data_t* input, data_t* execution_values, data_t* activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type)
 {
 	cudaMemcpy(activations + t * neuron_count, input + input_length * t, sizeof(data_t) * input_length, cudaMemcpyHostToDevice);
 	cudaDeviceSynchronize();
@@ -73,9 +73,11 @@ void NN::execute(data_t* input, data_t* execution_values, data_t *activations, s
 		layers[i]->execute(activations, neuron_count * t, execution_values, execution_value_count * t);
 		cudaDeviceSynchronize();
 	}
-	if (copy_output_to_host)
+	if (output_type != no_output && output_start_pointer)
 	{
-		cudaMemcpy(output_start_pointer + output_length * t, activations + neuron_count * t + *output_activations_start, sizeof(data_t) * output_length, cudaMemcpyDeviceToHost);
+		cudaMemcpyKind memcpy_kind = cudaMemcpyDeviceToHost;
+		if (output_type == cuda_pointer_output) cudaMemcpyDeviceToDevice;
+		cudaMemcpy(output_start_pointer + output_length * t, activations + neuron_count * t + *output_activations_start, sizeof(data_t) * output_length, memcpy_kind);
 		cudaDeviceSynchronize();
 	}
 }
@@ -90,22 +92,17 @@ void NN::set_up_execution_arrays(data_t** execution_values, data_t** activations
 	cudaDeviceSynchronize();
 }
 
-data_t* NN::batch_execute(data_t* input, size_t t_count)
+data_t* NN::batch_execute(data_t* input, size_t t_count, output_pointer_type output_type)
 {
+	if (output_type == no_output) return (0);
+
 	data_t* execution_values = 0;
 	data_t* activations = 0;
 	set_up_execution_arrays(&execution_values, &activations, t_count);
 
-	data_t* outputs = new data_t[output_length * t_count];
-	for (size_t i = 0; i < output_length * t_count; i++)
-	{
-		outputs[i] = 0;
-	}
+	data_t* outputs = alloc_output(output_length * t_count, output_type);
 	for (size_t t = 0; t < t_count; t++)
-	{
-		execute(input, execution_values, activations, t, outputs, 1);
-	}
-
+		execute(input, execution_values, activations, t, outputs, output_type);
 
 	cudaFree(execution_values);
 	cudaFree(activations);
@@ -115,9 +112,8 @@ data_t* NN::batch_execute(data_t* input, size_t t_count)
 
 data_t* NN::inference_execute(data_t* input)
 {
-	return batch_execute(input, 1);
+	return batch_execute(input, 1, host_cpp_pointer_output);
 }
-
 
 data_t NN::adjust_learning_rate(
 	data_t learning_rate,
@@ -225,7 +221,7 @@ void NN::training_execute(
 	size_t t_count,
 	data_t* X,
 	data_t** Y,
-	bool copy_Y_to_host,
+	output_pointer_type output_type,
 	data_t** execution_values,
 	data_t** activations,
 	size_t arrays_t_length
@@ -249,19 +245,14 @@ void NN::training_execute(
 	}
 
 
-	if (copy_Y_to_host)
+	data_t* out_Y = 0;
+	if (Y)
 	{
-		*Y = new data_t[output_length * t_count];
-		for (size_t i = 0; i < output_length * t_count; i++)
-		{
-			(*Y)[i] = 0;
-		}
+		out_Y = alloc_output(t_count * output_length, output_type);
+		*Y = out_Y;
 	}
-
 	for (size_t t = 0; t < t_count; t++)
-	{
-		execute(X, (*execution_values) + execution_value_count * arrays_t_length, (*activations) + neuron_count * arrays_t_length, t, copy_Y_to_host ? *Y : 0, copy_Y_to_host);
-	}
+		execute(X, (*execution_values) + execution_value_count * arrays_t_length, (*activations) + neuron_count * arrays_t_length, t, out_Y, output_type);
 }
 
 
@@ -321,7 +312,7 @@ data_t NN::training_batch(
 	size_t Y_hat_value_count,
 	CostFunctions cost_function,
 	data_t** Y,
-	bool copy_Y_to_host,
+	output_pointer_type output_type,
 	gradient_hyperparameters hyperparameters
 )
 {
@@ -331,7 +322,7 @@ data_t NN::training_batch(
 		t_count,
 		X,
 		Y,
-		copy_Y_to_host,
+		output_type,
 		&execution_values,
 		&activations
 	);
@@ -500,30 +491,19 @@ data_t *NN::calculate_GAE_advantage(
 	);
 	cudaDeviceSynchronize();
 
-	data_t *host_value_functions = 0;
-	value_function_estimator->training_batch( // TODO Returns a pointer to host memory and then copies it. Slow!
+	data_t* value_functions = 0;
+	value_function_estimator->training_batch(
 		t_count,
 		value_function_state, discounted_rewards, 0, t_count,
 		CostFunctions::MSE, 
-		&host_value_functions, 1, estimator_hyperparameters
+		&value_functions, cuda_pointer_output, estimator_hyperparameters
 	);
 
-	data_t* value_functions = 0;
-	cudaMalloc(&value_functions, sizeof(data_t) * value_function_estimator->get_output_length() * t_count);
-	cudaDeviceSynchronize();
-	if (!value_functions || !host_value_functions)
-		return 0;
-	cudaMemcpy(value_functions, host_value_functions, sizeof(data_t) * value_function_estimator->get_output_length() * t_count, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
-	delete[] host_value_functions;
 
 	data_t *deltas = 0;
 	cudaMalloc(&deltas, sizeof(data_t) * t_count);
-	cudaDeviceSynchronize();
 	if (!deltas) return (0);
-
 	cudaMemset(deltas, 0, sizeof(data_t) * t_count);
-	cudaDeviceSynchronize();
 
 	calculate_deltas kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count, 
@@ -536,11 +516,8 @@ data_t *NN::calculate_GAE_advantage(
 
 	data_t* advantages = 0;
 	cudaMalloc(&advantages, sizeof(data_t) * t_count);
-	cudaDeviceSynchronize();
 	if (!advantages) return 0;
-
 	cudaMemset(advantages, 0, sizeof(data_t) * t_count);
-	cudaDeviceSynchronize();
 
 	parallel_calculate_GAE_advantage kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count,

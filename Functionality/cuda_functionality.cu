@@ -41,6 +41,26 @@ __device__ data_t device_clip(data_t to_clip, data_t a, data_t b)
 	return device_max(device_min(to_clip, upper_clip), lower_clip);
 }
 
+__host__ data_t* alloc_output(size_t output_value_count, output_pointer_type output_type)
+{
+	data_t* output = 0;
+	switch (output_type)
+	{
+	case cuda_pointer_output:
+		cudaMalloc(&output, sizeof(data_t) * output_value_count);
+		cudaMemset(output, 0, sizeof(data_t) * output_value_count);
+		break;
+	case host_cpp_pointer_output:
+		output = new data_t[output_value_count];
+		memset(output, 0, sizeof(data_t) * output_value_count);
+		break;
+	case no_output:
+	default:
+		return (0);
+	}
+	return output;
+}
+
 __device__ size_t get_tid()
 {
 	return blockIdx.x * blockDim.x + threadIdx.x;

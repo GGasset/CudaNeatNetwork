@@ -17,6 +17,13 @@ enum ConnectionTypes : size_t
 	last_connection_entry
 };
 
+enum output_pointer_type : size_t
+{
+	no_output,
+	cuda_pointer_output,
+	host_cpp_pointer_output
+};
+
 enum LearningRateAdjusters : size_t
 {
 	high_learning_high_learning_rate,
