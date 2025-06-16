@@ -9,8 +9,8 @@ LSTMLayer::LSTMLayer(IConnections* connections, size_t neuron_count)
 	set_neuron_count(neuron_count);
 
 	execution_values_per_neuron = 10;
+	hidden_states_per_neuron = 2;
 	
-	//derivatives_per_neuron = 19;
 	derivatives_per_neuron = 24;
 	layer_derivative_count = derivatives_per_neuron * neuron_count;
 	
@@ -25,6 +25,7 @@ LSTMLayer::LSTMLayer()
 {
 	layer_type = NeuronTypes::LSTM;
 	is_recurrent = true;
+	hidden_states_per_neuron = 2;
 }
 
 void LSTMLayer::layer_specific_initialize_fields(size_t connection_count, size_t neuron_count)

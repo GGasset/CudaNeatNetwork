@@ -26,6 +26,8 @@ public:
 
 	size_t layer_activations_start = 0;
 
+	size_t hidden_states_per_neuron = 0;
+
 	size_t execution_values_layer_start = 0;
 	size_t execution_values_per_neuron = 0;
 
