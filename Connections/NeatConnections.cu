@@ -276,44 +276,16 @@ IConnections* NeatConnections::connections_specific_clone()
 
 void NeatConnections::specific_save(FILE* file)
 {
-	size_t *host_connection_points, *host_connection_neuron_i;
-	host_connection_points = new size_t[connection_count];
-	host_connection_neuron_i = new size_t[connection_count];
-
-	cudaMemcpy(host_connection_points, connection_points, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-	
-	fwrite(host_connection_points, sizeof(size_t), connection_count, file);
-	fwrite(host_connection_neuron_i, sizeof(size_t), connection_count, file);
-
-	delete[] host_connection_points;
-	delete[] host_connection_neuron_i;
+	save_array(connection_points, connection_count, file, true);
+	save_array(connection_neuron_i, connection_count, file, true);
 }
 
 void NeatConnections::load(FILE* file)
 {
 	load_neuron_metadata(file);
 
-	size_t *host_connection_points = 0;
-	size_t *host_connection_neuron_i = 0;
-
-	host_connection_points = new size_t[connection_count];
-	host_connection_neuron_i = new size_t[connection_count];
-
-	fread(host_connection_points, sizeof(size_t), connection_count, file);
-	fread(host_connection_neuron_i, sizeof(size_t), connection_count, file);
-
-	cudaMalloc(&connection_points, sizeof(size_t) * connection_count);
-	cudaMalloc(&connection_neuron_i, sizeof(size_t) * connection_count);
-	cudaDeviceSynchronize();
-	
-	cudaMemcpy(connection_points, host_connection_points, sizeof(size_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaMemcpy(connection_neuron_i, host_connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
-
-	delete[] host_connection_points;
-	delete[] host_connection_neuron_i;
+	connection_points = load_array<size_t>(connection_count, file, true);
+	connection_neuron_i = load_array<size_t>(connection_count, file, true);
 
 	load_IConnections_data(file);
 }
