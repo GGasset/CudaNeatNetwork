@@ -179,6 +179,34 @@ __host__ void print_array(T* arr, size_t arr_len)
 }
 
 template<typename T>
+__host__ void save_array(T *arr, size_t arr_len, FILE *file, int is_device_arr)
+{
+	if (!arr) return;
+	T* host_arr = new T[arr_len];
+	cudaMemcpyKind		memcpy_kind = cudaMemcpyHostToHost;
+	if (is_device_arr)	memcpy_kind = cudaMemcpyDeviceToHost;
+
+	cudaMemcpy(host_arr, arr, sizeof(T) * arr_len);
+	fwrite(host_arr, sizeof(T), arr_len, file);
+
+	delete[] host_arr;
+}
+
+template<typename T>
+__host__ T* load_array(size_t elem_count, FILE *file, int output_to_device)
+{
+	T* host_arr = new T[elem_count];
+	if (fread_s(host_arr, sizeof(T) * elem_count, sizeof(T), elem_count, file) != sizeof(T) * elem_count) throw;
+	if (!output_to_device) return host_arr;
+	
+	T* device_arr = 0;
+	cudaMalloc(&device_arr, sizeof(T) * elem_count);
+	cudaMemcpy(device_arr, host_arr, sizeof(T) * elem_count);
+	delete[] host_arr;
+	return device_arr;
+}
+
+template<typename T>
 __host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
 {
 	T* out = cuda_realloc(old, old_len, old_len + 1, free_old);
