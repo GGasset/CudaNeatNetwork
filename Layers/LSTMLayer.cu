@@ -73,8 +73,8 @@ void LSTMLayer::load(FILE* file)
 	ILayer_load(file);
 
 	neuron_weights = load_array<field_t>(neuron_count * 4, file, true);
-	state = load_array<field_t>(neuron_count * 2, file, true);
-	prev_state_derivatives = load_array<field_t>(neuron_count * 3, file, true);
+	state = load_array<data_t>(neuron_count * 2, file, true);
+	prev_state_derivatives = load_array<data_t>(neuron_count * 3, file, true);
 }
 
 void LSTMLayer::execute(data_t* activations, size_t activations_start, data_t* execution_values, size_t execution_values_start)
@@ -156,6 +156,14 @@ void LSTMLayer::calculate_derivatives(
 		neuron_count
 	);
 	cudaDeviceSynchronize();
+}
+
+data_t* LSTMLayer::get_state()
+{
+	data_t* out = 0;
+	cudaMalloc(&out, sizeof(data_t) * neuron_count * hidden_states_per_neuron);
+	cudaMemcpy(out, state, sizeof(data_t) * neuron_count * hidden_states_per_neuron, cudaMemcpyDeviceToDevice);
+	return out;
 }
 
 void LSTMLayer::mutate_fields(evolution_metadata evolution_values)

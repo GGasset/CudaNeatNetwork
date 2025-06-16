@@ -85,10 +85,14 @@ public:
 		data_t* execution_values, size_t execution_values_start
 	) = 0;
 
+	inline virtual data_t* get_state() {};
+
 	virtual void mutate_fields(evolution_metadata evolution_values);
+
 	void add_neuron(size_t previous_layer_length, size_t previous_layer_activations_start, float previous_layer_connection_probability, size_t min_connections);
 	virtual void layer_specific_add_neuron();
 	void adjust_to_added_neuron(size_t added_neuron_i, float connection_probability);
+
 	void remove_neuron(size_t layer_neuron_i);
 	virtual void layer_specific_remove_neuron(size_t layer_neuron_i);
 	void adjust_to_removed_neuron(size_t neuron_i);

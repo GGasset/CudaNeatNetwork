@@ -43,6 +43,8 @@ public:
 		data_t* execution_values, size_t execution_values_start
 	) override;
 
+	data_t* get_state() override;
+
 	void mutate_fields(evolution_metadata evolution_values) override;
 	void layer_specific_add_neuron() override;
 	void layer_specific_remove_neuron(size_t layer_neuron_i) override;
