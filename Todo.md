@@ -50,6 +50,8 @@
     - Add python script for plotting it
 
 ### PPO psudocode in each PPO train batch called t_count times per batch
+Accept reward array to be accessed only at last t
+Modularize into 2 functions (PPO_execute, PPO_train)
 
 * Save every hidden layer state and append it to array pointer passed as argument
 * Execute given the input appending network output for training
