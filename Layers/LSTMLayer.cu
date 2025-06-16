@@ -62,48 +62,18 @@ ILayer* LSTMLayer::layer_specific_clone()
 
 void LSTMLayer::specific_save(FILE* file)
 {
-	field_t* host_neuron_weights = new field_t[neuron_count * 4];
-	data_t* host_state = new data_t[neuron_count * 2];
-	data_t* host_prev_derivatives = new data_t[neuron_count * 3];
-
-	cudaMemcpy(host_neuron_weights, neuron_weights, sizeof(field_t) * neuron_count * 4, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_state, state, sizeof(data_t) * neuron_count * 2, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_prev_derivatives, prev_state_derivatives, sizeof(data_t) * neuron_count * 3, cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-
-	fwrite(host_neuron_weights, sizeof(field_t), neuron_count * 4, file);
-	fwrite(host_state, sizeof(data_t), neuron_count * 2, file);
-	fwrite(host_prev_derivatives, sizeof(data_t), neuron_count * 3, file);
-
-	delete[] host_neuron_weights;
-	delete[] host_state;
+	save_array(neuron_weights, neuron_count * 4, file, true);
+	save_array(state, neuron_count * 2, file, true);
+	save_array(prev_state_derivatives, neuron_count * 3, file, true);
 }
 
 void LSTMLayer::load(FILE* file)
 {
 	ILayer_load(file);
 
-	field_t* host_neuron_weights = new field_t[neuron_count * 4];
-	data_t* host_state = new data_t[neuron_count * 2];
-	data_t* host_prev_derivatives = new data_t[neuron_count * 3];
-
-	fread(host_neuron_weights, sizeof(field_t), neuron_count * 4, file);
-	fread(host_state, sizeof(data_t), neuron_count * 2, file);
-	fread(host_prev_derivatives, sizeof(data_t), neuron_count * 3, file);
-
-	cudaMalloc(&neuron_weights, sizeof(field_t) * neuron_count * 4);
-	cudaMalloc(&state, sizeof(data_t) * neuron_count * 2);
-	cudaMalloc(&prev_state_derivatives, sizeof(data_t) * neuron_count * 3);
-	cudaDeviceSynchronize();
-
-	cudaMemcpy(neuron_weights, host_neuron_weights, sizeof(field_t) * neuron_count * 4, cudaMemcpyHostToDevice);
-	cudaMemcpy(state, host_state, sizeof(data_t) * neuron_count * 2, cudaMemcpyHostToDevice);
-	cudaMemcpy(prev_state_derivatives, host_prev_derivatives, sizeof(data_t) * neuron_count * 3, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
-
-	delete[] host_neuron_weights;
-	delete[] host_state;
-	delete[] host_prev_derivatives;
+	neuron_weights = load_array<field_t>(neuron_count * 4, file, true);
+	state = load_array<field_t>(neuron_count * 2, file, true);
+	prev_state_derivatives = load_array<field_t>(neuron_count * 3, file, true);
 }
 
 void LSTMLayer::execute(data_t* activations, size_t activations_start, data_t* execution_values, size_t execution_values_start)
