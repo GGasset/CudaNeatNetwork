@@ -68,18 +68,8 @@ void IConnections::save(FILE* file)
 
 	specific_save(file);
 
-	field_t* host_weights = new field_t[connection_count];
-	field_t* host_biases = new field_t[neuron_count];
-
-	cudaMemcpy(host_weights, weights, sizeof(field_t) * connection_count, cudaMemcpyDeviceToHost);
-	cudaMemcpy(host_biases, biases, sizeof(field_t) * neuron_count, cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-
-	fwrite(host_weights, sizeof(field_t), connection_count, file);
-	fwrite(host_biases, sizeof(field_t), neuron_count, file);
-	delete[] host_weights;
-	delete[] host_biases;
-
+	save_array(weights, connection_count, file, true);
+	save_array(biases, neuron_count, file, true);
 }
 
 
@@ -92,22 +82,8 @@ void IConnections::load_neuron_metadata(FILE* file)
 
 void IConnections::load_IConnections_data(FILE* file)
 {
-	field_t* host_weights = new field_t[connection_count];
-	field_t* host_biases = new field_t[neuron_count];
-
-	fread(host_weights, sizeof(field_t), connection_count, file);
-	fread(host_biases, sizeof(field_t), neuron_count, file);
-
-	cudaMalloc(&weights, sizeof(field_t) * connection_count);
-	cudaMalloc(&biases, sizeof(field_t) * neuron_count);
-	cudaDeviceSynchronize();
-
-	cudaMemcpy(weights, host_weights, sizeof(field_t) * connection_count, cudaMemcpyHostToDevice);
-	cudaMemcpy(biases, host_biases, sizeof(field_t) * neuron_count, cudaMemcpyHostToDevice);
-	cudaDeviceSynchronize();
-
-	delete[] host_weights;
-	delete[] host_biases;
+	weights = load_array<field_t>(connection_count, file, true);
+	biases = load_array<field_t>(neuron_count, file, true);
 }
 
 void IConnections::deallocate()
