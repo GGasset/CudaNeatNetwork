@@ -49,6 +49,23 @@
 - Create logging options for training in csv format
     - Add python script for plotting it
 
+### PPO psudocode in each PPO train batch called t_count times per batch
+
+* Save every hidden layer state and append it to array pointer passed as argument
+* Execute given the input appending network output for training
+* If its last t:
+    * foreach t in t_count:
+        * Clone NN (NN_tmp)
+        * Calculate GAE advantage, train value function
+        * while KL_divergence < threshold, and clipped PPO is not clipped:
+            * Execute NN_tmp on input[t] and hidden_state[t] saving training values
+            * Calculate gradients with PPO_clip cost function with training values and output[t]
+                * Append gradients to array so they can later be subtracted to NN
+            * Subtract gradients to NN_tmp
+    * Subtracts all collected gradients to NN
+    * Set training variables to default (affects outside function)
+* return execution output and cost
+
 ## Socket
 - ~~server socket~~
     - ~~Add windows compatibility (Just easy change in header)~~
