@@ -529,9 +529,8 @@ data_t *NN::calculate_GAE_advantage(
 	cudaFree(deltas);
 	cudaFree(discounted_rewards);
 	cudaFree(value_functions);
-	delete[] value_functions;
 
-	return 0;
+	return advantages;
 }
 
 void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparamters)
