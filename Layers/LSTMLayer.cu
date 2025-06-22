@@ -166,6 +166,12 @@ data_t* LSTMLayer::get_state()
 	return out;
 }
 
+void LSTMLayer::set_state(data_t* to_set)
+{
+	if (!to_set) return;
+	cudaMemcpy(state, to_set, sizeof(data_t) * hidden_states_per_neuron * get_neuron_count(), cudaMemcpyDeviceToDevice);
+}
+
 void LSTMLayer::mutate_fields(evolution_metadata evolution_values)
 {
 	float* arr = 0;

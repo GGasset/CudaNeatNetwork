@@ -44,6 +44,7 @@ public:
 	) override;
 
 	data_t* get_state() override;
+	void set_state(data_t* to_set) override;
 
 	void mutate_fields(evolution_metadata evolution_values) override;
 	void layer_specific_add_neuron() override;

@@ -86,7 +86,7 @@ public:
 	) = 0;
 
 	inline virtual data_t* get_state() { return 0; };
-	inline virtual void set_state(data_t *set_state) {};
+	inline virtual void set_state(data_t * to_set) {};
 
 	virtual void mutate_fields(evolution_metadata evolution_values);
 
