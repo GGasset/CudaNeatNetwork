@@ -550,6 +550,33 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 	cudaDeviceSynchronize();
 }
 
+data_t* NN::get_hidden_state()
+{
+	size_t current_array_len = 0;
+	data_t* out = 0;
+	for (size_t i = 0; i < layer_count; i++)
+	{
+		size_t layer_state_count = layers[i]->get_neuron_count() * layers[i]->hidden_states_per_neuron;
+		size_t new_array_len = current_array_len + layer_state_count;
+		if (new_array_len == current_array_len) continue;
+
+		out = cuda_realloc(out, current_array_len, new_array_len, true);
+
+		data_t *tmp = layers[i]->get_state();
+		if (!tmp)
+		{
+			cudaFree(out);
+			return 0;
+		}
+
+		cudaMemcpy(out + current_array_len, tmp, sizeof(data_t) * layer_state_count, cudaMemcpyDeviceToDevice);
+		cudaFree(tmp);
+
+		current_array_len = new_array_len;
+	}
+	return out;
+}
+
 void NN::evolve()
 {
 #ifndef DETERMINISTIC
