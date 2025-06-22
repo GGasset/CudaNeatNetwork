@@ -160,6 +160,8 @@ void LSTMLayer::calculate_derivatives(
 
 data_t* LSTMLayer::get_state()
 {
+	if (!hidden_states_per_neuron) return 0;
+
 	data_t* out = 0;
 	cudaMalloc(&out, sizeof(data_t) * neuron_count * hidden_states_per_neuron);
 	cudaMemcpy(out, state, sizeof(data_t) * neuron_count * hidden_states_per_neuron, cudaMemcpyDeviceToDevice);
