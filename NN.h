@@ -134,6 +134,9 @@ public:
 		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	);
 
+	data_t* get_hidden_state();
+	void set_hidden_state(data_t *state);
+
 	void evolve();
 	void add_layer();
 	void add_layer(size_t insert_i);

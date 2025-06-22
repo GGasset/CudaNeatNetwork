@@ -85,7 +85,8 @@ public:
 		data_t* execution_values, size_t execution_values_start
 	) = 0;
 
-	inline virtual data_t* get_state() {};
+	inline virtual data_t* get_state() { return 0; };
+	inline virtual void set_state(data_t *set_state) {};
 
 	virtual void mutate_fields(evolution_metadata evolution_values);
 
