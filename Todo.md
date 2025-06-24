@@ -9,7 +9,7 @@
     - ~~Add saving/loading to disk~~
 
 ## Code optimization
-- Replace atomic function use with mutexs for optimization
+- Replace atomic function use with mutexs for inter-neuron parallelization
 
 - Paralelize layer derivative calculation calls withing CPU
 
