@@ -577,6 +577,20 @@ data_t* NN::get_hidden_state()
 	return out;
 }
 
+void NN::set_hidden_state(data_t* state, int free_input_state)
+{
+	size_t state_i = 0;
+	for (size_t i = 0; i < layer_count; i++)
+	{
+		ILayer* layer = layers[i];
+
+		layer->set_state(state + state_i);
+
+		state_i += layer->hidden_states_per_neuron * layer->get_neuron_count();
+	}
+	if (free_input_state) cudaFree(state);
+}
+
 void NN::evolve()
 {
 #ifndef DETERMINISTIC

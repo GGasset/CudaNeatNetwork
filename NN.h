@@ -135,7 +135,7 @@ public:
 	);
 
 	data_t* get_hidden_state();
-	void set_hidden_state(data_t *state);
+	void set_hidden_state(data_t *state, int free_input_state);
 
 	void evolve();
 	void add_layer();
