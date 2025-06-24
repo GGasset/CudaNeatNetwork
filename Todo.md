@@ -15,8 +15,6 @@
 
 - ~~Add execution with output to GPU~~
 
-- Make a function that abstracts the process of parsing raw bytes from socket for mental health
-
 ## Fundamentals
 
 - ~~LSTM~~
@@ -75,37 +73,45 @@ Modularize into 2 functions (PPO_execute, PPO_train)
 * Set training variables to default (affects outside of function)
 
 ## Socket
-- ~~server socket~~
-    - ~~Add windows compatibility (Just easy change in header)~~
-        - Needs testing
-    - ~~Create log file~~
-    - Create destructor for socket interpreter -> NN manager
-    - Use poll instead of select
-    - Improve security
-        1. Bind to a file for security
-        2. Use script for server init
-            * Create file
-            * Set chmod for socket file
-            * Set max open fd for server
-            * Start server
-            * with flag --strict-security or -s
-                - reboot
 
-- ~~client_socket~~
-- socket functions
-    - Paralellize withing CPU
-    - Add abstract address detection
-    - Add message to close server to stop loop
-    - ~~construct -- destruct~~
-    - Get ID of pointer to a NN
-        you pass a id and returns another id that is a reference to a existing NN
-        it has its own execution data to train in parallel
-    - training execute
-    - training functions
-    - save & load
-    - evolution methods
-    - Inference
-    - delete memory
+- Use poll instead of select
+- Use epoll in linux
+- Modularize core functionality to be swapped depending on OS
+- Create destructor for socket interpreter -> NN manager
+- Simplify file names to match class names
+- Paralellize server side withing CPU
+- Modularize parsing raw bytes (Higher priority than socket functions)
+
+### Compatible protocols
+
+* AF-INET
+* ~~AF-UNIX Abstract address~~
+* ~~AF-UNIX File binding~~
+
+### Security
+* ~~Bind to a file~~
+* Use script for server init
+    * Create file
+    * Set permissions for socket file
+    * Set max open fd for server
+    * Start server
+    * with flag -s
+        - reboot
+
+### Socket functions
+
+- Add abstract address detection
+- Add message to close server to stop loop
+- ~~construct -- destruct~~
+- Get ID of pointer to a NN
+    you pass a id and returns another id that is a reference to a existing NN
+    it has its own execution data to train in parallel
+- training execute
+- training functions
+- save & load
+- evolution methods
+- Inference
+- delete memory
 
 ## Evolution
 
