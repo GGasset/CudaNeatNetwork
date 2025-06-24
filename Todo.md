@@ -41,10 +41,10 @@
 ## Training
 - ~~return cost while training~~
 - ~~adaptative learning rates~~
-- reinforcement learning cost function
-    - ~~GAE in GPU~~
-        - ~~CPU function that given a value function estimator NN and rewards, computes GAE~~
-    - Proximal Policy optimization cost function
+- ~~Supervised learning~~
+- reinforcement learning cost functions
+    - ~~GAE (Generalized Advantage Estimator)~~
+    - PPO (Proximal Policy Optimization)
 
 - Create logging options for training in csv format
     - Add python script for plotting it
