@@ -154,67 +154,38 @@ data_t NN::adjust_learning_rate(
 
 }
 
-data_t NN::calculate_output_costs(
-	CostFunctions cost_function,
+data_t NN::training_batch(
 	size_t t_count,
+	data_t* X,
 	data_t* Y_hat,
-	data_t* activations, size_t activations_start,
-	data_t* costs, size_t costs_start
+	bool is_Y_hat_on_host_memory,
+	size_t Y_hat_value_count,
+	CostFunctions cost_function,
+	data_t** Y,
+	output_pointer_type output_type,
+	gradient_hyperparameters hyperparameters
 )
 {
-	data_t* cost = 0;
-	cudaMalloc(&cost, sizeof(data_t));
-	cudaDeviceSynchronize();
-	cudaMemset(cost, 0, sizeof(data_t));
-	cudaDeviceSynchronize();
-	switch (cost_function)
-	{
-	case CostFunctions::MSE:
-		MSE_derivative kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, neuron_count, activations_start, *output_activations_start,
-			costs, costs_start,
-			Y_hat, output_length
-		);
-		MSE_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, neuron_count, activations_start, *output_activations_start,
-			Y_hat, output_length,
-			cost
-		);
-		break;
-	case CostFunctions::log_likelyhood:
-		log_likelyhood_derivative kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, activations_start,
-			neuron_count, *output_activations_start, output_length,
-			costs, costs_start,
-			Y_hat
-		);
-		log_likelyhood_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, neuron_count, activations_start, *output_activations_start,
-			Y_hat, output_length,
-			cost
-		);
-		break;
-	case CostFunctions::PPO:
-		PPO_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, activations_start, 
-			neuron_count, *output_activations_start, output_length,
-			costs, costs_start,
-			Y_hat
-		);
-		break;
-	default:
-		break;
-	}
-	cudaDeviceSynchronize();
-	multiply_array kernel(1, 1) (
-		cost, 1, 1.0 / (output_length * t_count)
+	data_t* execution_values = 0;
+	data_t* activations = 0;
+	training_execute(
+		t_count,
+		X,
+		Y,
+		output_type,
+		&execution_values,
+		&activations
 	);
-	data_t host_cost = 0;
-	cudaDeviceSynchronize();
-	cudaMemcpy(&host_cost, cost, sizeof(data_t), cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-	cudaFree(cost);
-	return host_cost;
+	return train(
+		t_count,
+		execution_values,
+		activations,
+		Y_hat,
+		is_Y_hat_on_host_memory,
+		Y_hat_value_count,
+		cost_function,
+		hyperparameters
+	);
 }
 
 void NN::training_execute(
@@ -304,38 +275,67 @@ data_t NN::train(
 	return cost;
 }
 
-data_t NN::training_batch(
-	size_t t_count,
-	data_t* X,
-	data_t* Y_hat,
-	bool is_Y_hat_on_host_memory,
-	size_t Y_hat_value_count,
+data_t NN::calculate_output_costs(
 	CostFunctions cost_function,
-	data_t** Y,
-	output_pointer_type output_type,
-	gradient_hyperparameters hyperparameters
+	size_t t_count,
+	data_t* Y_hat,
+	data_t* activations, size_t activations_start,
+	data_t* costs, size_t costs_start
 )
 {
-	data_t* execution_values = 0;
-	data_t* activations = 0;
-	training_execute(
-		t_count,
-		X,
-		Y,
-		output_type,
-		&execution_values,
-		&activations
-	);
-	return train(
-		t_count, 
-		execution_values,
-		activations,
-		Y_hat,
-		is_Y_hat_on_host_memory,
-		Y_hat_value_count,
-		cost_function,
-		hyperparameters
-	);
+	data_t* cost = 0;
+	cudaMalloc(&cost, sizeof(data_t));
+	cudaDeviceSynchronize();
+	cudaMemset(cost, 0, sizeof(data_t));
+	cudaDeviceSynchronize();
+	switch (cost_function)
+	{
+	case CostFunctions::MSE:
+		MSE_derivative kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
+			activations, neuron_count, activations_start, *output_activations_start,
+			costs, costs_start,
+			Y_hat, output_length
+			);
+		MSE_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
+			activations, neuron_count, activations_start, *output_activations_start,
+			Y_hat, output_length,
+			cost
+			);
+		break;
+	case CostFunctions::log_likelyhood:
+		log_likelyhood_derivative kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
+			activations, activations_start,
+			neuron_count, *output_activations_start, output_length,
+			costs, costs_start,
+			Y_hat
+			);
+		log_likelyhood_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
+			activations, neuron_count, activations_start, *output_activations_start,
+			Y_hat, output_length,
+			cost
+			);
+		break;
+	case CostFunctions::PPO:
+		PPO_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
+			activations, activations_start,
+			neuron_count, *output_activations_start, output_length,
+			costs, costs_start,
+			Y_hat
+			);
+		break;
+	default:
+		break;
+	}
+	cudaDeviceSynchronize();
+	multiply_array kernel(1, 1) (
+		cost, 1, 1.0 / (output_length * t_count)
+		);
+	data_t host_cost = 0;
+	cudaDeviceSynchronize();
+	cudaMemcpy(&host_cost, cost, sizeof(data_t), cudaMemcpyDeviceToHost);
+	cudaDeviceSynchronize();
+	cudaFree(cost);
+	return host_cost;
 }
 
 void NN::backpropagate(
@@ -464,10 +464,22 @@ void NN::calculate_gradients(
 	}
 }
 
-/*data_t* NN::calculate_GAE_advantage(size_t t_count, data_t gamma, data_t lambda, NN* value_function_estimator, data_t* value_function_state, data_t* rewards)
+void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparamters)
 {
-	return nullptr;
-}*/
+	reset_NaNs kernel(gradient_count / 32 + (gradient_count % 32 > 0), 32) (
+		gradients + gradients_start, 0, gradient_count
+	);
+	cudaDeviceSynchronize();
+	
+	for (size_t i = 0; i < layer_count; i++)
+	{
+		ILayer* current_layer = layers[i];
+		size_t layer_length = current_layer->get_neuron_count();
+
+		current_layer->subtract_gradients(gradients, gradients_start, hyperparamters);
+	}
+	cudaDeviceSynchronize();
+}
 
 data_t *NN::calculate_GAE_advantage(
 	size_t t_count,
@@ -531,23 +543,6 @@ data_t *NN::calculate_GAE_advantage(
 	cudaFree(value_functions);
 
 	return advantages;
-}
-
-void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparamters)
-{
-	reset_NaNs kernel(gradient_count / 32 + (gradient_count % 32 > 0), 32) (
-		gradients + gradients_start, 0, gradient_count
-	);
-	cudaDeviceSynchronize();
-	
-	for (size_t i = 0; i < layer_count; i++)
-	{
-		ILayer* current_layer = layers[i];
-		size_t layer_length = current_layer->get_neuron_count();
-
-		current_layer->subtract_gradients(gradients, gradients_start, hyperparamters);
-	}
-	cudaDeviceSynchronize();
 }
 
 data_t* NN::get_hidden_state()

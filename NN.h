@@ -57,14 +57,21 @@ public:
 		data_t previous_cost = 0
 	);
 
-	data_t calculate_output_costs(
-		CostFunctions cost_function,
+	data_t training_batch(
 		size_t t_count,
+		data_t* X,
 		data_t* Y_hat,
-		data_t* activations, size_t activations_start,
-		data_t* costs, size_t costs_start
+		bool is_Y_hat_on_host_memory,
+		size_t Y_hat_value_count,
+		CostFunctions cost_function,
+		data_t** Y,
+		output_pointer_type output_type,
+		gradient_hyperparameters hyperparameters
 	);
 
+	/// <summary>
+	/// Execution function made for training data generation
+	/// </summary>
 	void training_execute(
 		size_t t_count,
 		data_t* X,
@@ -86,16 +93,12 @@ public:
 		gradient_hyperparameters hyperparameters
 	);
 
-	data_t training_batch(
-		size_t t_count,
-		data_t* X,
-		data_t* Y_hat,
-		bool is_Y_hat_on_host_memory,
-		size_t Y_hat_value_count,
+	data_t calculate_output_costs(
 		CostFunctions cost_function,
-		data_t** Y,
-		output_pointer_type output_type,
-		gradient_hyperparameters hyperparameters
+		size_t t_count,
+		data_t* Y_hat,
+		data_t* activations, size_t activations_start,
+		data_t* costs, size_t costs_start
 	);
 
 	/// <param name="gradients">- pointer to cero and to a valid array are valid</param>
@@ -121,6 +124,10 @@ public:
 		data_t* gradients, size_t gradients_start, size_t next_gradients_start,
 		data_t* derivatives, size_t derivatives_start, size_t previous_derivatives_start,
 		float dropout_rate
+	);
+
+	void subtract_gradients(
+		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	);
 
 	data_t* calculate_GAE_advantage(
