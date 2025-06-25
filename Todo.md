@@ -63,7 +63,7 @@ Modularize into 2 functions (PPO_execute, PPO_train)
 * while True: (i) (Loop for each hidden training iteration)
     * Execute NN_tmp_ on Inputs t_count times
     * Calculate PPO costs
-    * if KL_divergence > threshold, or clipped PPO is clipped:
+    * if KL_divergence > threshold (defaults to 0.01 or 0.05) or clipped PPO is clipped:
         break
     * Calculate gradients on execution values
         * Append gradients to array for later substraction to NN
