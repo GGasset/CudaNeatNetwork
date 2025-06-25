@@ -53,7 +53,8 @@ Modularize into 2 functions (PPO_execute, PPO_train)
 
 #### Execution Function
 * Save initial hidden state of first execution
-* Execute given the input appending network output for training
+* Execute given the input
+* Append input and output to different arrays
 * return execution output and cost
 
 #### Training function:
