@@ -48,7 +48,6 @@
     - Add python script for plotting it
 
 ### PPO psudocode in each PPO train batch called t_count times per batch
-Accept reward array to be accessed only at last t
 Modularize into 2 functions (PPO_execute, PPO_train)
 
 #### Execution Function
