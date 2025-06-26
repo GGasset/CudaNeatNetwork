@@ -545,6 +545,25 @@ data_t *NN::calculate_GAE_advantage(
 	return advantages;
 }
 
+data_t* NN::PPO_execute(data_t* X, data_t** initial_states, data_t** trajectory_inputs, data_t** trayectory_outputs, size_t n_executions)
+{
+	if (!initial_states || !trajectory_inputs || !trayectory_outputs || !X) return 0;
+
+	if (!n_executions) *initial_states = get_hidden_state();
+	if (n_executions && (!*trajectory_inputs || !*trayectory_outputs)) return 0;
+
+	data_t* device_output = inference_execute(X, cuda_pointer_output);
+	if (!device_output) return 0;
+
+	*trajectory_inputs = cuda_append_array(*trajectory_inputs, n_executions * input_length, X, input_length, true);
+	*trayectory_outputs = cuda_append_array(*trayectory_outputs, n_executions * output_length, device_output, output_length, true);
+
+	data_t* host_output = new data_t[output_length];
+	cudaMemcpy(host_output, device_output, sizeof(data_t) * output_length, cudaMemcpyDeviceToHost);
+	cudaFree(device_output);
+	return host_output;
+}
+
 data_t* NN::get_hidden_state()
 {
 	size_t current_array_len = 0;

@@ -140,14 +140,15 @@ public:
 	/// <summary>
 	/// Inference function to be used before calling PPO_train
 	/// PPO_train deletes the arrays generated during the calls to this function
+	/// Don't modify input/output neuron count between execution of this function, it is ok right after PPO_train and before this function
 	/// </summary>
 	/// <param name="X">Input</param>
 	/// <param name="initial_states">Saves the hidden states before its first execution, create a pointer variable set to zero and pass its pointer</param>
 	/// <param name="trajectory_inputs">Saves all inputs passed, create a pointer variable set to zero and pass its pointer</param>
 	/// <param name="trayectory_outputs">Saves all inputs passed, create a pointer variable set to zero and pass its pointer</param>
 	/// <param name="n_executions">Contains the number of times this function has been called after the last PPO_train call</param>
-	/// <returns>Network output</returns>
-	data_t* PPO_execute(data_t *X, data_t **initial_states, data_t **trajectory_inputs, data_t **trayectory_outputs, int n_executions);
+	/// <returns>Network output, 0 on error</returns>
+	data_t* PPO_execute(data_t *X, data_t **initial_states, data_t **trajectory_inputs, data_t **trayectory_outputs, size_t n_executions);
 
 	data_t* get_hidden_state();
 	void set_hidden_state(data_t *state, int free_input_state);
