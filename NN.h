@@ -47,7 +47,7 @@ public:
 	void execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type);
 	void set_up_execution_arrays(data_t** execution_values, data_t** activations, size_t t_count);
 	data_t* batch_execute(data_t* input, size_t t_count, output_pointer_type output_type = host_cpp_pointer_output);
-	data_t* inference_execute(data_t* input);
+	data_t* inference_execute(data_t* input, output_pointer_type output_type = host_cpp_pointer_output);
 
 	data_t adjust_learning_rate(
 		data_t learning_rate,

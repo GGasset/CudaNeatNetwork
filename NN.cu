@@ -110,9 +110,9 @@ data_t* NN::batch_execute(data_t* input, size_t t_count, output_pointer_type out
 	return outputs;
 }
 
-data_t* NN::inference_execute(data_t* input)
+data_t* NN::inference_execute(data_t* input, output_pointer_type output_type = host_cpp_pointer_output)
 {
-	return batch_execute(input, 1, host_cpp_pointer_output);
+	return batch_execute(input, 1, output_type);
 }
 
 data_t NN::adjust_learning_rate(
