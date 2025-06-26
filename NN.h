@@ -149,6 +149,7 @@ public:
 	/// <param name="n_executions">Contains the number of times this function has been called after the last PPO_train call</param>
 	/// <returns>Network output, 0 on error</returns>
 	data_t* PPO_execute(data_t *X, data_t **initial_states, data_t **trajectory_inputs, data_t **trayectory_outputs, size_t n_executions);
+	void PPO_train(data_t **initial_states, data_t **trajectory_inputs, data_t **trajectory_outputs, size_t t_count);
 
 	data_t* get_hidden_state();
 	void set_hidden_state(data_t *state, int free_input_state);
