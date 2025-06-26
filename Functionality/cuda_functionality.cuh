@@ -215,3 +215,11 @@ __host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
 	cudaMemcpy(out + old_len, &tmp, sizeof(T), cudaMemcpyHostToDevice);
 	return out;
 }
+
+template<typename T>
+__host__ T* cuda_append_array(T* old, size_t old_len, T* to_append, size_t to_append_len, bool free_old)
+{
+	T* out = cuda_realloc(old, old_len, old_len + to_append_len, free_old);
+	cudaMemcpy(out + old_len, to_append, to_append_len * sizeof(T), cudaMemcpyDeviceToDevice);
+	return out;
+}
