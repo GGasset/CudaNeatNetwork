@@ -44,6 +44,10 @@
     - ~~GAE (Generalized Advantage Estimator)~~
     - PPO (Proximal Policy Optimization)
 
+- Create model links for multi-model performance
+    - Create a training and execution function that accepts multiple networks and links
+    - Links just copy output to input and cost backwards, with one connected neuron per neuron, without any computation
+
 - Create logging options for training in csv format
     - Add python script for plotting it
 
