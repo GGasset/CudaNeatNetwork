@@ -490,6 +490,15 @@ data_t *NN::calculate_GAE_advantage(
 {
 	if (!value_function_estimator) return (0);
 
+	if (is_reward_on_host)
+	{
+		data_t* device_rewards = 0;
+		cudaMalloc(&device_rewards, sizeof(data_t) * t_count * value_function_estimator->get_output_length());
+		cudaMemcpy(device_rewards, rewards, sizeof(data_t) * t_count * value_function_estimator->get_output_length());
+		if (free_rewards) delete[] rewards;
+		rewards = device_rewards;
+	}
+
 	data_t *discounted_rewards = 0;
 	cudaMalloc(&discounted_rewards, sizeof(data_t) * t_count);
 	cudaDeviceSynchronize();
@@ -538,6 +547,8 @@ data_t *NN::calculate_GAE_advantage(
 	);
 	cudaDeviceSynchronize();
 
+	if (is_reward_on_host) cudaFree(rewards);
+	else if (free_rewards) delete[] rewards;
 	cudaFree(deltas);
 	cudaFree(discounted_rewards);
 	cudaFree(value_functions);
