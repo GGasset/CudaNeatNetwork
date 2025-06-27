@@ -571,7 +571,9 @@ void NN::PPO_train(size_t t_count,
 	data_t** initial_states, data_t** trajectory_inputs, data_t** trajectory_outputs,
 	data_t* rewards, bool are_rewards_at_host, NN* value_function_estimator,
 	gradient_hyperparameters value_function_hyperparameters, gradient_hyperparameters agent_hyperparameters, 
-	data_t GAE_gamma, data_t GAE_lambda, data_t kl_divergence_early_stopping_threshold)
+	data_t GAE_gamma, data_t GAE_lambda, 
+	data_t kl_divergence_early_stopping_threshold, data_t clip_ratio
+)
 {
 	if (!initial_states || !*initial_states
 		|| !trajectory_inputs || !*trajectory_inputs
@@ -581,14 +583,16 @@ void NN::PPO_train(size_t t_count,
 
 	NN* tmp_n = clone();
 
-	data_t* advatages = calculate_GAE_advantage(
+	data_t* advantages = calculate_GAE_advantage(
 		t_count,
 		GAE_gamma, GAE_lambda,
 		value_function_estimator, *trajectory_inputs,
 		value_function_hyperparameters, false, false,
 		rewards, false, false);
 
-	for (size_t i = 0;; i++)
+	data_t* collected_gradients = 0;
+	size_t i = 0;
+	for (i = 0;; i++)
 	{
 		data_t* execution_values = 0;
 		data_t* activations = 0;
@@ -598,9 +602,27 @@ void NN::PPO_train(size_t t_count,
 		data_t *costs = 0;
 		cudaMalloc(&costs, sizeof(data_t) * neuron_count * t_count);
 		cudaMemset(costs, 0, sizeof(data_t) * neuron_count * t_count);
+
+		// Calculate PPO derivative
+		if (false)
+			break;
+
+		data_t* gradients = 0;
+		tmp_n->backpropagate(
+			t_count,
+			costs, activations, execution_values, &gradients, agent_hyperparameters.dropout_rate
+		);
+		for (size_t t = 0; t < t_count; t++)
+			tmp_n->subtract_gradients(gradients, gradient_count * t, agent_hyperparameters);
+		cuda_append_array(collected_gradients, gradient_count * t_count * i,
+			gradients, gradient_count * t_count * (i + 1), true);
 	}
 
+	for (size_t i = 0; i < t_count * i; i++)
+		subtract_gradients(collected_gradients, gradient_count * i, agent_hyperparameters);
+
 	if (are_rewards_at_host) cudaFree(rewards);
+	cudaFree(advantages);
 }
 
 
