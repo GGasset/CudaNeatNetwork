@@ -575,6 +575,43 @@ data_t* NN::PPO_execute(data_t* X, data_t** initial_states, data_t** trajectory_
 	return host_output;
 }
 
+void NN::PPO_train(size_t t_count,
+	data_t** initial_states, data_t** trajectory_inputs, data_t** trajectory_outputs,
+	data_t* rewards, bool are_rewards_at_host, NN* value_function_estimator,
+	gradient_hyperparameters value_function_hyperparameters, gradient_hyperparameters agent_hyperparameters, 
+	data_t GAE_gamma, data_t GAE_lambda, data_t kl_divergence_early_stopping_threshold)
+{
+	if (!initial_states || !*initial_states
+		|| !trajectory_inputs || !*trajectory_inputs
+		|| !trajectory_outputs || !*trajectory_outputs
+		|| !rewards || !value_function_estimator)
+		return;
+
+	NN* tmp_n = clone();
+
+	data_t* advatages = calculate_GAE_advantage(
+		t_count,
+		GAE_gamma, GAE_lambda,
+		value_function_estimator, *trajectory_inputs,
+		value_function_hyperparameters, false, false,
+		rewards, false, false);
+
+	for (size_t i = 0;; i++)
+	{
+		data_t* execution_values = 0;
+		data_t* activations = 0;
+		data_t* Y = 0;
+		tmp_n->training_execute(t_count, *trajectory_inputs, &Y, cuda_pointer_output, &execution_values, &activations);
+
+		data_t *costs = 0;
+		cudaMalloc(&costs, sizeof(data_t) * neuron_count * t_count);
+		cudaMemset(costs, 0, sizeof(data_t) * neuron_count * t_count);
+	}
+
+	if (are_rewards_at_host) cudaFree(rewards);
+}
+
+
 data_t* NN::get_hidden_state()
 {
 	size_t current_array_len = 0;
