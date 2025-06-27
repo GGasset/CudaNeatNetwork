@@ -70,28 +70,3 @@ __global__ void log_likelyhood_derivative(
 	size_t cost_write = costs_start + neuron_count * t + last_layer_activations_start + tid;
 	costs[cost_write] = cost_derivative;
 }
-
-__global__ void PPO_cost(
-	data_t* activations, size_t activations_start,
-	size_t neuron_count, size_t last_layer_activations_start, size_t output_length,
-	data_t* costs, size_t costs_start,
-	data_t* rewards
-)
-{
-	size_t tid = get_tid();
-	if (tid >= output_length) return;
-	size_t t = blockIdx.y;
-
-	data_t ratio = 1;
-	if (t) ratio = 
-		activations[activations_start + neuron_count * t + last_layer_activations_start + tid] / 
-		activations[activations_start + neuron_count * (t - 1) + last_layer_activations_start + tid];
-
-	data_t reward = rewards[t];
-
-	data_t clip = device_clip(ratio, 1 + .2, 1 - .2);
-	data_t loss = device_min(ratio * reward, clip * reward);
-	
-	size_t cost_write = costs_start + neuron_count * t + last_layer_activations_start + tid;
-	costs[cost_write] = loss;
-}

@@ -43,7 +43,6 @@ enum CostFunctions : size_t
 {
 	MSE,
 	log_likelyhood,
-	PPO
 };
 
 enum optimizers_enum : size_t

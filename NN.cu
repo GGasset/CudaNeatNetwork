@@ -315,14 +315,6 @@ data_t NN::calculate_output_costs(
 			cost
 			);
 		break;
-	case CostFunctions::PPO:
-		PPO_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, activations_start,
-			neuron_count, *output_activations_start, output_length,
-			costs, costs_start,
-			Y_hat
-			);
-		break;
 	default:
 		break;
 	}
