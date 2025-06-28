@@ -33,8 +33,10 @@
 - ~~Tensorflow-like class constructor~~
 - ~~Save, Load, Cloning~~
 - ~~Modify kernel launches to have more capacity of neurons (current max 1024)~~ 
-    - New current max 65535 neurons in layer (maxGridDim.y), only applies if Dense connections are used, else infinite practically
+    - New current max 65535 neurons in layer (maxGridDim.y)
         - remove that limit (Low priority)
+            - DenseConnections
+            - Output derivative calculation
 
 ## Training
 - ~~return cost while training~~
