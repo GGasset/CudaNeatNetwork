@@ -153,9 +153,7 @@ public:
 		size_t t_count,
 		data_t **initial_states, data_t **trajectory_inputs, data_t **trajectory_outputs,
 		data_t* rewards, bool are_rewards_at_host, NN *value_function_estimator,
-		gradient_hyperparameters value_function_hyperparameters, gradient_hyperparameters agent_hyperparameters,
-		data_t GAE_gamma = .995, data_t GAE_lambda = .98, 
-		data_t kl_divergence_early_stopping_threshold = .05, data_t clip_ratio = .2
+		PPO_hyperparameters hyperparameters
 	);
 
 	data_t* get_hidden_state();
