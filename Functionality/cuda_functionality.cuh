@@ -186,7 +186,7 @@ __host__ void save_array(T *arr, size_t arr_len, FILE *file, int is_device_arr)
 	cudaMemcpyKind		memcpy_kind = cudaMemcpyHostToHost;
 	if (is_device_arr)	memcpy_kind = cudaMemcpyDeviceToHost;
 
-	cudaMemcpy(host_arr, arr, sizeof(T) * arr_len);
+	cudaMemcpy(host_arr, arr, sizeof(T) * arr_len, memcpy_kind);
 	fwrite(host_arr, sizeof(T), arr_len, file);
 
 	delete[] host_arr;
@@ -201,7 +201,7 @@ __host__ T* load_array(size_t elem_count, FILE *file, int output_to_device)
 	
 	T* device_arr = 0;
 	cudaMalloc(&device_arr, sizeof(T) * elem_count);
-	cudaMemcpy(device_arr, host_arr, sizeof(T) * elem_count);
+	cudaMemcpy(device_arr, host_arr, sizeof(T) * elem_count, cudaMemcpyHostToDevice);
 	delete[] host_arr;
 	return device_arr;
 }
