@@ -110,7 +110,7 @@ data_t* NN::batch_execute(data_t* input, size_t t_count, output_pointer_type out
 	return outputs;
 }
 
-data_t* NN::inference_execute(data_t* input, output_pointer_type output_type = host_cpp_pointer_output)
+data_t* NN::inference_execute(data_t* input, output_pointer_type output_type)
 {
 	return batch_execute(input, 1, output_type);
 }
@@ -486,7 +486,7 @@ data_t *NN::calculate_GAE_advantage(
 	{
 		data_t* device_rewards = 0;
 		cudaMalloc(&device_rewards, sizeof(data_t) * t_count * value_function_estimator->get_output_length());
-		cudaMemcpy(device_rewards, rewards, sizeof(data_t) * t_count * value_function_estimator->get_output_length());
+		cudaMemcpy(device_rewards, rewards, sizeof(data_t) * t_count * value_function_estimator->get_output_length(), cudaMemcpyHostToDevice);
 		if (free_rewards) delete[] rewards;
 		rewards = device_rewards;
 	}
