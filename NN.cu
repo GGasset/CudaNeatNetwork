@@ -588,10 +588,12 @@ void NN::PPO_train(
 		value_function_estimator, *trajectory_inputs,
 		hyperparameters.GAE.value_function, false, false,
 		rewards, false, false);
+	if (!advantages) return;
 
+	int stop = false;
 	data_t* collected_gradients = 0;
 	size_t i = 0;
-	for (i = 0;; i++)
+	for (i = 0; i < hyperparameters.max_training_steps && !stop; i++)
 	{
 		tmp_n->set_hidden_state(*initial_states, false);
 
@@ -599,14 +601,18 @@ void NN::PPO_train(
 		data_t* activations = 0;
 		data_t* Y = 0;
 		tmp_n->training_execute(t_count, *trajectory_inputs, &Y, cuda_pointer_output, &execution_values, &activations);
+		if (!Y) throw;
 
-		data_t *costs = 0;
+		data_t* costs = 0;
 		cudaMalloc(&costs, sizeof(data_t) * neuron_count * t_count);
 		cudaMemset(costs, 0, sizeof(data_t) * neuron_count * t_count);
 
-		// Calculate PPO derivative
-		if (false)
-			break;
+		stop = PPO_derivative(
+			t_count, output_length, neuron_count,
+			*trajectory_outputs, Y, advantages,
+			costs, *output_activations_start,
+			hyperparameters.clip_ratio, hyperparameters.max_kl_divergence_threshold
+		);
 
 		data_t* gradients = 0;
 		tmp_n->backpropagate(
