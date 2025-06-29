@@ -32,3 +32,11 @@ __global__ void log_likelyhood_cost(
 	data_t* rewards, size_t output_length,
 	data_t* cost
 );
+
+/// <returns>If this training iteration should be stopped</returns>
+__host__ int PPO_derivative(
+	size_t t_count, size_t output_len, size_t neuron_count,
+	data_t *trajectory_outputs, data_t *current_outputs, data_t *advantages,
+	data_t *costs, size_t last_layer_activations_start,
+	data_t clip_ratio, data_t kl_divergence_threshold
+);
