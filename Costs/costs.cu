@@ -108,7 +108,8 @@ __host__ int PPO_derivative(
 	cudaMemset(total_kl_divergence, 0, sizeof(data_t));
 	if (!total_kl_divergence) return 1;
 
-	device_PPO_derivative kernel(dim3(output_len / 32 + (output_len % 32 > 0), t_count), 32) (
+	dim3 gridDim(output_len / 32 + (output_len % 32 > 0), t_count);
+	device_PPO_derivative kernel(gridDim, 32) (
 		t_count, output_len, neuron_count,
 		trajectory_outputs, current_outputs, advantages,
 		costs, last_layer_activations_start,

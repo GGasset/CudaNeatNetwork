@@ -1,6 +1,7 @@
 #pragma once
 #include "data_type.h"
 #include "NN_enums.h"
+#include "kernel_macros.h"
 
 #include "cuda_functionality.cuh"
 #include <cmath>
