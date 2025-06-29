@@ -165,7 +165,7 @@ data_t* LSTMLayer::get_state()
 	data_t* out = 0;
 	cudaMalloc(&out, sizeof(data_t) * neuron_count * hidden_states_per_neuron);
 	cudaMemcpy(out, state, sizeof(data_t) * neuron_count * 2, cudaMemcpyDeviceToDevice);
-	cudaMemcpy(out + sizeof(data_t) * neuron_count * 2, prev_state_derivatives, sizeof(data_t) * neuron_count * 3);
+	cudaMemcpy(out + sizeof(data_t) * neuron_count * 2, prev_state_derivatives, sizeof(data_t) * neuron_count * 3, cudaMemcpyDeviceToDevice);
 	return out;
 }
 
@@ -173,7 +173,7 @@ void LSTMLayer::set_state(data_t* to_set)
 {
 	if (!to_set) return;
 	cudaMemcpy(state, to_set, sizeof(data_t) * 2 * get_neuron_count(), cudaMemcpyDeviceToDevice);
-	cudaMemcpy(prev_state_derivatives, to_set + sizeof(data_t) * 3 * get_neuron_count());
+	cudaMemcpy(prev_state_derivatives, to_set + sizeof(data_t) * 2 * get_neuron_count(), sizeof(data_t) * neuron_count * 3, cudaMemcpyDeviceToDevice);
 }
 
 void LSTMLayer::mutate_fields(evolution_metadata evolution_values)
