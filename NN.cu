@@ -630,6 +630,15 @@ void NN::PPO_train(
 
 	if (are_rewards_at_host) cudaFree(rewards);
 	cudaFree(advantages);
+
+	cudaFree(*initial_states);
+	*initial_states = 0;
+
+	cudaFree(*trajectory_inputs);
+	*trajectory_inputs = 0;
+
+	cudaFree(*trajectory_outputs);
+	*trajectory_outputs = 0;
 }
 
 
