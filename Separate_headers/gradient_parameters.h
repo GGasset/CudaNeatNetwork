@@ -1,14 +1,14 @@
 
 #include "data_type.h"
 
-typedef struct gradient_hyperparameters
+typedef struct
 {
 	data_t learning_rate = .01;
 	data_t gradient_clip = 50;
 	float  dropout_rate = .2;
 } gradient_hyperparameters;
 
-typedef struct GAE_hyperparameters
+typedef struct
 {
 	gradient_hyperparameters value_function;
 
@@ -20,9 +20,9 @@ typedef struct GAE_hyperparameters
 	// ranges [0, 1]
 	// Should be close to 1
 	data_t lambda = .98;
-};
+} GAE_hyperparameters;
 
-typedef struct PPO_hyperparameters
+typedef struct 
 {
 	gradient_hyperparameters policy;
 	GAE_hyperparameters GAE;
@@ -39,4 +39,4 @@ typedef struct PPO_hyperparameters
 	// Used for early stopping
 	// 0.01 or 0.05
 	data_t max_kl_divergence_threshold = 0.05;
-};
+} PPO_hyperparameters;
