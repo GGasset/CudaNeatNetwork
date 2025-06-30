@@ -1,14 +1,16 @@
 
+#pragma once
+
 #include "data_type.h"
 
-typedef struct
+typedef struct gradient_hyperparameters
 {
 	data_t learning_rate = .01;
 	data_t gradient_clip = 50;
 	float  dropout_rate = .2;
 } gradient_hyperparameters;
 
-typedef struct
+typedef struct GAE_hyperparameters
 {
 	gradient_hyperparameters value_function;
 
@@ -22,7 +24,7 @@ typedef struct
 	data_t lambda = .98;
 } GAE_hyperparameters;
 
-typedef struct 
+typedef struct PPO_hyperparameters
 {
 	gradient_hyperparameters policy;
 	GAE_hyperparameters GAE;
