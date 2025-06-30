@@ -574,7 +574,7 @@ void NN::PPO_train(
 	PPO_hyperparameters hyperparameters
 )
 {
-	if (!initial_states || !*initial_states
+	if (!initial_states
 		|| !trajectory_inputs || !*trajectory_inputs
 		|| !trajectory_outputs || !*trajectory_outputs
 		|| !rewards || !value_function_estimator)
@@ -671,6 +671,7 @@ data_t* NN::get_hidden_state()
 
 void NN::set_hidden_state(data_t* state, int free_input_state)
 {
+	if (!state) return;
 	size_t state_i = 0;
 	for (size_t i = 0; i < layer_count; i++)
 	{
