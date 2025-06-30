@@ -36,8 +36,8 @@ enum ActivationFunctions : size_t
 {
 	sigmoid,
 	_tanh,
-	no_activation,
-	activations_last_entry
+	activations_last_entry,
+	no_activation
 };
 
 enum CostFunctions : size_t
