@@ -36,6 +36,7 @@ enum ActivationFunctions : size_t
 {
 	sigmoid,
 	_tanh,
+	no_activation,
 	activations_last_entry
 };
 

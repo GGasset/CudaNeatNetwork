@@ -87,6 +87,51 @@ __global__ void tanh_activation(
 	);
 }
 
+__global__ void activation_function(
+	ActivationFunctions activation,
+	data_t* activations, size_t activations_start, size_t layer_activation_start, short write_activation,
+	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
+	size_t neuron_execution_values_read, size_t neuron_execution_values_write, short write_execution_values,
+	size_t layer_length
+)
+{
+	size_t tid = get_tid();
+	if (get_tid() >= layer_length) return;
+
+	size_t neuron_execution_values_start = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid;
+	switch (activation)
+	{
+	case sigmoid:
+		device_sigmoid_activation(
+			activations, activations_start,
+			layer_activation_start, write_activation,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+			neuron_execution_values_read, neuron_execution_values_write, write_execution_values
+		);
+		break;
+	case _tanh:
+		device_tanh_activation(
+			activations, activations_start, layer_activation_start, write_activation,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+			neuron_execution_values_read, neuron_execution_values_write, write_execution_values
+		);
+		break;
+	default: // No activation
+		data_t x = execution_values[neuron_execution_values_start + neuron_execution_values_read];
+		if (write_activation)
+		{
+			size_t activations_i = activations_start + layer_activation_start + tid;
+			activations[activations_i] = x;
+		}
+		if (write_execution_values)
+		{
+			size_t execution_values_i = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid + neuron_execution_values_write;
+			execution_values[execution_values_i] = x;
+		}
+		break;
+	}
+}
+
 __global__ void LSTM_execution(
 	data_t* activations, size_t activations_start, size_t layer_activations_start,
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,

@@ -59,25 +59,12 @@ void NeuronLayer::execute(
 	connections->linear_function(activations_start, activations,
 		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron
 	);
-	switch (activation)
-	{
-	case ActivationFunctions::sigmoid:
-		sigmoid_activation kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
-			activations, activations_start, layer_activations_start, true,
-			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron, 0, 0, 0,
-			neuron_count
-		);
-		break;
-	case ActivationFunctions::_tanh:
-		tanh_activation kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
-			activations, activations_start, layer_activations_start, true,
-			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron, 0, 0, 0,
-			neuron_count
-		);
-		break;
-	default:
-		break;
-	}
+	activation_function kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
+		activation,
+		activations, activations_start, layer_activations_start, true,
+		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron, 0, 0, 0,
+		neuron_count
+	);
 	cudaDeviceSynchronize();
 }
 
