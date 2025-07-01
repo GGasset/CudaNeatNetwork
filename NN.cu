@@ -558,7 +558,7 @@ data_t* NN::PPO_execute(data_t* X, data_t** initial_states, data_t** trajectory_
 	data_t* device_output = inference_execute(X, cuda_pointer_output);
 	if (!device_output) return 0;
 
-	*trajectory_inputs = cuda_append_array(*trajectory_inputs, n_executions * input_length, X, input_length, true);
+	*trajectory_inputs = cuda_append_array(*trajectory_inputs, n_executions * input_length, X, input_length, true, true);
 	*trayectory_outputs = cuda_append_array(*trayectory_outputs, n_executions * output_length, device_output, output_length, true);
 
 	data_t* host_output = new data_t[output_length];
