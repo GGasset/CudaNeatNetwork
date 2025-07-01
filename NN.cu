@@ -613,6 +613,7 @@ void NN::PPO_train(
 			costs, *output_activations_start,
 			hyperparameters.clip_ratio, hyperparameters.max_kl_divergence_threshold
 		);
+		cudaFree(Y);
 
 		data_t* gradients = 0;
 		tmp_n->backpropagate(
