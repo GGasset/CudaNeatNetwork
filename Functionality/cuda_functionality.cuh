@@ -82,8 +82,9 @@ template<typename T>
 __host__ T* cuda_realloc(T* old, size_t old_len, size_t new_len, bool free_old)
 {
 	T* out = 0;
-	cudaMalloc(&out, sizeof(T) * new_len);
-	cudaMemset(out, 0, sizeof(T) * new_len);
+	size_t new_size = sizeof(T) * new_len;
+	cudaMalloc(&out, new_size);
+	cudaMemset(out, 0, new_size);
 	cudaMemcpy(out, old, sizeof(T) * h_min(old_len, new_len), cudaMemcpyDeviceToDevice);
 	if (free_old)
 		cudaFree(old);
@@ -217,9 +218,12 @@ __host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
 }
 
 template<typename T>
-__host__ T* cuda_append_array(T* old, size_t old_len, T* to_append, size_t to_append_len, bool free_old)
+__host__ T* cuda_append_array(T* old, size_t old_len, T* to_append, size_t to_append_len, bool free_old, bool is_to_append_at_host = false)
 {
 	T* out = cuda_realloc(old, old_len, old_len + to_append_len, free_old);
-	cudaMemcpy(out + old_len, to_append, to_append_len * sizeof(T), cudaMemcpyDeviceToDevice);
+
+	cudaMemcpyKind memcpykind = cudaMemcpyDeviceToDevice;
+	if (is_to_append_at_host) memcpykind = cudaMemcpyHostToDevice;
+	cudaMemcpy(out + old_len, to_append, to_append_len * sizeof(T), memcpykind);
 	return out;
 }
