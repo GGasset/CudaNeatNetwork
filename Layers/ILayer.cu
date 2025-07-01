@@ -64,6 +64,8 @@ void ILayer::ILayerClone(ILayer* base_layer)
 	base_layer->layer_gradient_count = layer_gradient_count;
 
 	base_layer->hidden_states_per_neuron = hidden_states_per_neuron;
+
+	base_layer->optimizer = host_clone_optimizer(optimizer);
 	
 	cudaMalloc(&base_layer->neuron_gradients_starts, sizeof(size_t) * get_neuron_count());
 	if (connection_associated_gradient_counts)
