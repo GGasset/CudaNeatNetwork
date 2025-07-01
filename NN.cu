@@ -76,7 +76,7 @@ void NN::execute(data_t* input, data_t* execution_values, data_t* activations, s
 	if (output_type != no_output && output_start_pointer)
 	{
 		cudaMemcpyKind memcpy_kind = cudaMemcpyDeviceToHost;
-		if (output_type == cuda_pointer_output) cudaMemcpyDeviceToDevice;
+		if (output_type == cuda_pointer_output) memcpy_kind = cudaMemcpyDeviceToDevice;
 		cudaMemcpy(output_start_pointer + output_length * t, activations + neuron_count * t + *output_activations_start, sizeof(data_t) * output_length, memcpy_kind);
 		cudaDeviceSynchronize();
 	}
@@ -587,7 +587,7 @@ void NN::PPO_train(
 		hyperparameters.GAE.gamma, hyperparameters.GAE.lambda,
 		value_function_estimator, *trajectory_inputs,
 		hyperparameters.GAE.value_function, false, false,
-		rewards, false, false);
+		rewards, are_rewards_at_host, false);
 	if (!advantages) return;
 
 	int stop = false;
@@ -628,7 +628,6 @@ void NN::PPO_train(
 	for (size_t i = 0; i < t_count * i; i++)
 		subtract_gradients(collected_gradients, gradient_count * i, hyperparameters.policy);
 
-	if (are_rewards_at_host) cudaFree(rewards);
 	cudaFree(advantages);
 
 	cudaFree(*initial_states);
