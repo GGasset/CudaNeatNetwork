@@ -11,8 +11,11 @@ __host__ IOptimizer* host_optimizer_init(optimizers_enum optimizer, size_t param
 __global__ void call_Optimizer_destructor(IOptimizer *optimizer);
 __global__ void call_optimizer_values_alloc(IOptimizer* optimizer, size_t new_param_count, bool copy_old_values = false);
 
-// SAVING - LOADING
+// SAVING - LOADING - CLONING
 
 __global__ void get_optimizer_data_buffer(IOptimizer* optimizer, char* out_buffer, size_t out_buffer_size, size_t* buff_len);
+
 __host__ void host_save_optimizer(FILE *file, IOptimizer *optimizer);
 __host__ IOptimizer* host_load_optimizer(FILE* file);
+
+__host__ IOptimizer* host_clone_optimizer(IOptimizer* to_clone);

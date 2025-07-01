@@ -140,3 +140,54 @@ __host__ IOptimizer* host_load_optimizer(FILE *file)
 	cudaFree(device_values);
 	return (out);
 }
+
+static __global__ void clone_optimizer(IOptimizer* to_clone, IOptimizer** out, size_t* optimizer_value_count)
+{
+	if (!to_clone || !optimizer_value_count || !out || get_tid()) return;
+
+	optimizers_enum optimizer_type = to_clone->optimizer;
+
+	IOptimizer* cloned = initialize_optimizer(optimizer_type, to_clone->parameter_count);
+	if (!cloned) return;
+
+	*out = cloned;
+	*optimizer_value_count = cloned->parameter_count * cloned->values_per_parameter;
+}
+
+static __global__ void clone_optimizer_values(IOptimizer *src, IOptimizer *optimizer, size_t optimizer_value_count)
+{
+	size_t tid = get_tid();
+	if (tid >= optimizer_value_count) return;
+
+	optimizer->optimizer_values[tid] = src->optimizer_values[tid];
+}
+
+__host__ IOptimizer* host_clone_optimizer(IOptimizer* to_clone)
+{
+	if (!to_clone) return 0;
+
+	IOptimizer** cloned_out_pntr = 0;
+	cudaMalloc(&cloned_out_pntr, sizeof(IOptimizer*));
+	cudaMemset(cloned_out_pntr, 0, sizeof(IOptimizer*));
+
+	size_t* optimizer_value_count_pntr = 0;
+	cudaMalloc(&optimizer_value_count_pntr, sizeof(size_t));
+	cudaMemset(optimizer_value_count_pntr, 0, sizeof(size_t));
+
+	clone_optimizer kernel(1, 1) (to_clone, cloned_out_pntr, optimizer_value_count_pntr);
+	cudaDeviceSynchronize();
+
+	IOptimizer* cloned = 0;
+	cudaMemcpy(&cloned, cloned_out_pntr, sizeof(IOptimizer *), cudaMemcpyDeviceToHost);
+	cudaFree(cloned_out_pntr);
+
+	size_t optimizer_value_count = 0;
+	cudaMemcpy(&optimizer_value_count, optimizer_value_count_pntr, sizeof(size_t), cudaMemcpyDeviceToHost);
+	cudaFree(optimizer_value_count_pntr);
+
+	clone_optimizer_values kernel(optimizer_value_count / 32 + (optimizer_value_count % 32 > 0), 32) (
+		to_clone, cloned, optimizer_value_count
+	);
+	cudaDeviceSynchronize();
+	return cloned;
+}
