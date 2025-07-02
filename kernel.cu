@@ -206,7 +206,79 @@ static void NEAT_evolution_test()
 
 static void test_PPO()
 {
+	const size_t input_len = 2;
+	const size_t output_len = 2;
+	const size_t max_t_count = 20;
 
+	NN* value_function = NN_constructor()
+		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 1, no_activation)
+		.construct(input_len);
+
+	NN* agent = NN_constructor()
+		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, output_len)
+		.construct(input_len);
+
+	const size_t epochs = 6000;
+	for (size_t epoch_i = 0; epoch_i < epochs; epoch_i++)
+	{
+		data_t* initial_state = 0;
+		data_t* trajectory_inputs = 0;
+		data_t* trajectory_outputs = 0;
+
+		data_t X[output_len]{};
+		data_t rewards[max_t_count]{};
+		data_t* Y = 0;
+		int current_pos[2]{};
+		
+		int target_pos[2]{};
+		target_pos[0] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
+		target_pos[1] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
+
+		size_t hit_count = 0;
+		size_t t_count = 0;
+		for (size_t t = 0; t < max_t_count; t++, t_count++)
+		{
+			X[0] = target_pos[0] - current_pos[0];
+			X[0] = (X[0] != 0) - 2 * (X[0] < 0);
+
+			X[1] = target_pos[1] - current_pos[1];
+			X[1] = (X[1] != 0) - 2 * (X[1] < 0);
+
+			Y = agent->PPO_execute(X, &initial_state, &trajectory_inputs, &trajectory_outputs, t);
+
+			int movement[2]{};
+			movement[0] += Y[0] > .6;
+			movement[0] -= Y[0] < .4;
+			rewards[t] += .5 * (movement[0] == X[0]);
+
+			movement[1] += Y[1] > .6;
+			movement[1] -= Y[1] < .4;
+			rewards[t] += .5 * (movement[1] == X[1]);
+
+			current_pos[0] += movement[0];
+			current_pos[1] += movement[1];
+
+			if (current_pos[0] == target_pos[0] && current_pos[1] == target_pos[1])
+			{
+				hit_count++;
+				rewards[t] += 5;
+
+				current_pos[0] = 0;
+				current_pos[1] = 0;
+
+				target_pos[0] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
+				target_pos[1] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
+			}
+
+			delete[] Y;
+		}
+	}
 }
 
 int main()
