@@ -85,7 +85,8 @@ __host__ T* cuda_realloc(T* old, size_t old_len, size_t new_len, bool free_old)
 	size_t new_size = sizeof(T) * new_len;
 	cudaMalloc(&out, new_size);
 	cudaMemset(out, 0, new_size);
-	cudaMemcpy(out, old, sizeof(T) * h_min(old_len, new_len), cudaMemcpyDeviceToDevice);
+	if (old)
+		cudaMemcpy(out, old, sizeof(T) * h_min(old_len, new_len), cudaMemcpyDeviceToDevice);
 	if (free_old)
 		cudaFree(old);
 	return out;
