@@ -623,7 +623,7 @@ void NN::PPO_train(
 		for (size_t t = 0; t < t_count; t++)
 			tmp_n->subtract_gradients(gradients, gradient_count * t, hyperparameters.policy);
 		cuda_append_array(collected_gradients, gradient_count * t_count * i,
-			gradients, gradient_count * t_count * (i + 1), true);
+			gradients, gradient_count * t_count, true);
 	}
 
 	for (size_t i = 0; i < t_count * i; i++)
