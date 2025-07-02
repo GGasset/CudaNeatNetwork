@@ -517,7 +517,7 @@ data_t *NN::calculate_GAE_advantage(
 	cudaMalloc(&deltas, sizeof(data_t) * t_count);
 	if (!deltas) return (0);
 	cudaMemset(deltas, 0, sizeof(data_t) * t_count);
-
+	
 	calculate_deltas kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count, 
 		gamma, 
@@ -530,7 +530,7 @@ data_t *NN::calculate_GAE_advantage(
 	data_t* advantages = 0;
 	cudaMalloc(&advantages, sizeof(data_t) * t_count);
 	if (!advantages) return 0;
-	cudaMemset(advantages, 0, sizeof(data_t) * t_count);
+	cudaMemset(advantages, 0, sizeof(data_t) * t_count); 
 
 	parallel_calculate_GAE_advantage kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count,
@@ -539,10 +539,26 @@ data_t *NN::calculate_GAE_advantage(
 	);
 	cudaDeviceSynchronize();
 
+#ifdef DEBUG
+
+	printf("Discounted rewards: ");
+	print_array(discounted_rewards, t_count);
+
+	printf("Value functions: ");
+	print_array(value_functions, t_count);
+
+	printf("Deltas: ");
+	print_array(deltas, t_count);
+
+	printf("Advantages: ");
+	print_array(advantages, t_count);
+
+#endif // DEBUG
+
 	if (is_reward_on_host) cudaFree(rewards);
 	else if (free_rewards) delete[] rewards;
-	cudaFree(deltas);
 	cudaFree(discounted_rewards);
+	cudaFree(deltas);
 	cudaFree(value_functions);
 
 	return advantages;
