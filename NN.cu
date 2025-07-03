@@ -424,7 +424,7 @@ void NN::calculate_gradients(
 
 		float *random_sample = 0;
 		cudaMalloc(&random_sample, sizeof(float) * layer_len);
-		IConnections::generate_random_values(&random_sample, layer_len, 0, 1);
+		generate_random_values(random_sample, layer_len, 0, 1);
 
 		short *dropout = 0;
 		cudaMalloc(&dropout, sizeof(short) * layer_len);
@@ -540,18 +540,20 @@ data_t *NN::calculate_GAE_advantage(
 	cudaDeviceSynchronize();
 
 #ifdef DEBUG
+	if (0)
+	{
+		printf("Discounted rewards: ");
+		print_array(discounted_rewards, t_count);
 
-	printf("Discounted rewards: ");
-	print_array(discounted_rewards, t_count);
+		printf("Value functions: ");
+		print_array(value_functions, t_count);
 
-	printf("Value functions: ");
-	print_array(value_functions, t_count);
+		printf("Deltas: ");
+		print_array(deltas, t_count);
 
-	printf("Deltas: ");
-	print_array(deltas, t_count);
-
-	printf("Advantages: ");
-	print_array(advantages, t_count);
+		printf("Advantages: ");
+		print_array(advantages, t_count);
+	}
 
 #endif // DEBUG
 

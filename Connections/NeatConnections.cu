@@ -15,7 +15,7 @@ NeatConnections::NeatConnections(size_t previous_layer_start, size_t previous_la
 	cudaMalloc(&connection_neuron_i, sizeof(size_t) * connection_count);
 	cudaDeviceSynchronize();
 
-	generate_random_values(&weights, connection_count, 0, previous_layer_length);
+	generate_random_values(weights, connection_count, 0, previous_layer_length, true);
 	//cudaMemset(biases, 0, sizeof(field_t) * neuron_count);
 	//generate_random_values(&biases, neuron_count, 0, neuron_count);
 
@@ -185,7 +185,7 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 	);
 
 	weights = cuda_realloc(weights, connection_count, new_connection_count, true);
-	IConnections::generate_random_values(&weights, added_connection_count, connection_count, added_connection_count);
+	generate_random_values(weights, added_connection_count, connection_count, added_connection_count, true);
 	biases = cuda_push_back(biases, neuron_count, (field_t)0, true);
 
 	connection_count = new_connection_count;
@@ -218,7 +218,7 @@ void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connec
 	cudaMemcpy(connection_neuron_i + connection_count, added_connections_neuron_i->data(), sizeof(size_t) * added_connection_count, cudaMemcpyHostToDevice);
 
 	weights = cuda_realloc(weights, connection_count, new_connection_count, true);
-	generate_random_values(&weights, added_connection_count, connection_count, new_connection_count);
+	generate_random_values(weights, added_connection_count, connection_count, new_connection_count, true);
 
 	connection_count = new_connection_count;
 }

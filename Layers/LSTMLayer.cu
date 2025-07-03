@@ -181,7 +181,7 @@ void LSTMLayer::mutate_fields(evolution_metadata evolution_values)
 	float* arr = 0;
 	cudaMalloc(&arr, sizeof(field_t) * neuron_count * 4 * 3);
 	cudaDeviceSynchronize();
-	IConnections::generate_random_values(&arr, neuron_count * 4 * 3, 0, 1);
+	generate_random_values(arr, neuron_count * 4 * 3, 0, 1);
 	cudaDeviceSynchronize();
 
 	mutate_field_array kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
@@ -195,7 +195,7 @@ void LSTMLayer::mutate_fields(evolution_metadata evolution_values)
 void LSTMLayer::layer_specific_add_neuron()
 {
 	neuron_weights = cuda_realloc(neuron_weights, neuron_count * 4, (neuron_count + 1) * 4, true);
-	IConnections::generate_random_values(&neuron_weights, 4, neuron_count * 4, 1);
+	generate_random_values(neuron_weights, 4, neuron_count * 4, 1);
 	
 	state = cuda_realloc(state, neuron_count * 2, (neuron_count + 1) * 2, true);
 	cudaMemset(state + neuron_count * 2, 0, sizeof(data_t) * 2);

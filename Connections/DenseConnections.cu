@@ -19,7 +19,7 @@ DenseConnections::DenseConnections(size_t previous_layer_activations_start, size
 	cudaMalloc(&biases, sizeof(field_t) * neuron_count);
 	cudaDeviceSynchronize();
 
-	generate_random_values(&weights, connection_count, 0, previous_layer_length);
+	generate_random_values(weights, connection_count, 0, previous_layer_length, true);
 	//generate_random_values(&biases, neuron_count, 0, neuron_count);
 	//cudaMemset(weights, 0, sizeof(field_t) * connection_count);
 	cudaMemset(biases, 0, sizeof(field_t) * neuron_count);

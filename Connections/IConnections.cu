@@ -5,7 +5,7 @@ void IConnections::mutate_fields(evolution_metadata evolution_values)
 	float* arr0 = 0;
 	cudaMalloc(&arr0, sizeof(float) * neuron_count * 3);
 	cudaDeviceSynchronize();
-	generate_random_values(&arr0, neuron_count * 3, 0, 1);
+	generate_random_values(arr0, neuron_count * 3, 0, 1);
 	cudaDeviceSynchronize();
 
 	mutate_field_array kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
@@ -18,7 +18,7 @@ void IConnections::mutate_fields(evolution_metadata evolution_values)
 
 	cudaMalloc(&arr0, sizeof(float) * connection_count * 3);
 	cudaDeviceSynchronize();
-	generate_random_values(&arr0, connection_count * 3, 0, 1);
+	generate_random_values(arr0, connection_count * 3, 0, 1);
 	cudaDeviceSynchronize();
 
 	mutate_field_array kernel(connection_count / 32 + (connection_count % 32 > 0), 32) (

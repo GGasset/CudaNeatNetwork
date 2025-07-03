@@ -1,11 +1,13 @@
 #pragma once
 
+#include "curand.h"
 #include <functional>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
 #include "data_type.h"
+#include "kernel_macros.h"
 
 #include "functionality.h"
 #include "NN_enums.h"
@@ -245,24 +247,25 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	float* arr = 0;
 	cudaMalloc(&arr, sizeof(float) * value_count);
 	curandGenerateUniform(generator, arr, value_count);
-	multiply_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+	multiply_array<float, t> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
 		arr, value_count, 1.0 / value_divider
-		);
+	);
 	cudaDeviceSynchronize();
 
 	if (generate_negative_values)
 	{
-		add_to_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
-			arr, value_count, -.5;
+		add_to_array<float, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+			arr, value_count, -.5
 		);
 		cudaDeviceSynchronize();
-		multiply_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+		multiply_array<float, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
 			arr, value_count, 2
 		);
 		cudaDeviceSynchronize();
 	}
 
-	logical_copy kernel(value_count / 32 + (value_count % 32 > 0), 32) ((out) + start_i, value_count, arr, value_count);
+	logical_copy<T, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) ((out) + start_i, value_count, arr, value_count);
+	cudaDeviceSynchronize();
 
 	curandDestroyGenerator(generator);
 	cudaDeviceSynchronize();
