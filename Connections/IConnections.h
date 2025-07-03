@@ -36,33 +36,6 @@ public:
 	size_t connection_count = 0;
 	unsigned char contains_irregular_connections = false;
 
-	template<typename T, typename t>
-	static void generate_random_values(T** pointer, size_t value_count, size_t start_i = 0, t value_divider = 1)
-	{
-		if (!pointer || !*pointer)
-			return;
-		curandGenerator_t generator;
-		curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_XORWOW);
-#ifdef DETERMINISTIC
-		curandSetPseudoRandomGeneratorSeed(generator, 13);
-#else
-		curandSetPseudoRandomGeneratorSeed(generator, get_arbitrary_number());
-#endif
-		float* arr = 0;
-		cudaMalloc(&arr, sizeof(float) * value_count);
-		curandGenerateUniform(generator, arr, value_count);
-		multiply_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
-			arr, value_count, 1.0 / value_divider
-			);
-		cudaDeviceSynchronize();
-
-		logical_copy kernel(value_count / 32 + (value_count % 32 > 0), 32) ((*pointer) + start_i, value_count, arr, value_count);
-
-		curandDestroyGenerator(generator);
-		cudaDeviceSynchronize();
-		cudaFree(arr);
-	}
-
 	virtual void linear_function(
 		size_t activations_start, data_t* activations,
 		data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron

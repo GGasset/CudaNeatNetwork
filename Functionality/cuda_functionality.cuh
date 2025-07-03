@@ -228,3 +228,43 @@ __host__ T* cuda_append_array(T* old, size_t old_len, T* to_append, size_t to_ap
 	cudaMemcpy(out + old_len, to_append, to_append_len * sizeof(T), memcpykind);
 	return out;
 }
+
+// Generates values between 0 and 1, divides them by value_divider and transforms 50% of them if generate_negative_values is true
+template<typename T, typename t>
+void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t value_divider = 1, bool generate_negative_values = false)
+{
+	if (!out)
+		return;
+	curandGenerator_t generator;
+	curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_XORWOW);
+#ifdef DETERMINISTIC
+	curandSetPseudoRandomGeneratorSeed(generator, 13);
+#else
+	curandSetPseudoRandomGeneratorSeed(generator, get_arbitrary_number());
+#endif
+	float* arr = 0;
+	cudaMalloc(&arr, sizeof(float) * value_count);
+	curandGenerateUniform(generator, arr, value_count);
+	multiply_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+		arr, value_count, 1.0 / value_divider
+		);
+	cudaDeviceSynchronize();
+
+	if (generate_negative_values)
+	{
+		add_to_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+			arr, value_count, -.5;
+		);
+		cudaDeviceSynchronize();
+		multiply_array kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+			arr, value_count, 2
+		);
+		cudaDeviceSynchronize();
+	}
+
+	logical_copy kernel(value_count / 32 + (value_count % 32 > 0), 32) ((out) + start_i, value_count, arr, value_count);
+
+	curandDestroyGenerator(generator);
+	cudaDeviceSynchronize();
+	cudaFree(arr);
+}
