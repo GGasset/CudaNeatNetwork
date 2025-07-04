@@ -207,7 +207,7 @@ static void NEAT_evolution_test()
 static void test_PPO()
 {
 	const size_t input_len = 2;
-	const size_t output_len = 2;
+	const size_t output_len = 4;
 	const size_t max_t_count = 20;
 
 	NN* value_function = NN_constructor()
@@ -215,7 +215,7 @@ static void test_PPO()
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 1, no_activation)
-		.construct(input_len);
+		.construct(input_len, no_optimizer);
 
 	NN* agent = NN_constructor()
 		.append_layer(Dense, Neuron, 20)
@@ -223,6 +223,12 @@ static void test_PPO()
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, output_len)
 		.construct(input_len);
+
+	PPO_hyperparameters parameters;
+	parameters.max_training_steps = 20;
+	parameters.GAE.gamma = .3;
+	parameters.GAE.value_function.learning_rate = .01;
+	parameters.policy.learning_rate = .01;
 
 	const size_t epochs = 6000;
 	for (size_t epoch_i = 0; epoch_i < epochs; epoch_i++)
@@ -234,40 +240,47 @@ static void test_PPO()
 		data_t X[output_len]{};
 		data_t rewards[max_t_count]{};
 		data_t* Y = 0;
-		int current_pos[2]{};
+		data_t current_pos[2]{};
 		
-		int target_pos[2]{};
-		target_pos[0] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
-		target_pos[1] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
+		data_t target_pos[2]{};
+		size_t negatives = epoch_i % 4;
+		target_pos[0] = (3 + rand() % 5) * (1 - 2 * (negatives == 0 || negatives == 3));
+		target_pos[1] = (3 + rand() % 5) * (1 - 2 * (negatives == 1 || negatives == 3));
 
 		size_t hit_count = 0;
 		size_t t_count = 0;
+		data_t mean_output = 0;
 		for (size_t t = 0; t < max_t_count; t++, t_count++)
 		{
 			X[0] = target_pos[0] - current_pos[0];
-			X[0] = (X[0] != 0) - 2 * (X[0] < 0);
 
 			X[1] = target_pos[1] - current_pos[1];
-			X[1] = (X[1] != 0) - 2 * (X[1] < 0);
 
 			Y = agent->PPO_execute(X, &initial_state, &trajectory_inputs, &trajectory_outputs, t);
+			mean_output += Y[0];
+			mean_output += Y[1];
+			mean_output += Y[2];
+			mean_output += Y[3];
 
-			int movement[2]{};
-			movement[0] += Y[0] > .6;
-			movement[0] -= Y[0] < .4;
-			rewards[t] += .5 * (movement[0] == X[0]);
+			data_t movement[2]{};
+			movement[0] += Y[0] * (Y[0] > Y[1]);
+			movement[0] -= Y[1] * (Y[1] >= Y[0]);
+			int i = 0;
+			rewards[t] += abs(target_pos[i] - current_pos[i]) - abs(target_pos[i] - current_pos[i] + movement[i]);
 
-			movement[1] += Y[1] > .6;
-			movement[1] -= Y[1] < .4;
-			rewards[t] += .5 * (movement[1] == X[1]);
+			movement[1] += Y[2] * (Y[2] > Y[3]);
+			movement[1] -= Y[3] * (Y[3] >= Y[2]);
+			i = 1;
+			rewards[t] += abs(target_pos[i] - current_pos[i]) -  abs(target_pos[i] - current_pos[i] + movement[i]);
+
 
 			current_pos[0] += movement[0];
 			current_pos[1] += movement[1];
 
-			if (current_pos[0] == target_pos[0] && current_pos[1] == target_pos[1])
+			if (abs(current_pos[0] - target_pos[0]) < 2 && abs(current_pos[1] - target_pos[1]) < 2)
 			{
 				hit_count++;
-				rewards[t] += 5;
+				rewards[t] += 2;
 
 				current_pos[0] = 0;
 				current_pos[1] = 0;
@@ -278,6 +291,11 @@ static void test_PPO()
 
 			delete[] Y;
 		}
+		agent->PPO_train(t_count, &initial_state, &trajectory_inputs, &trajectory_outputs, rewards, true, value_function, parameters);
+		data_t mean_reward = 0;
+		for (size_t i = 0; i < t_count; i++) mean_reward += rewards[i];
+		mean_reward /= t_count;
+		printf("i: %i hit_count: %i mean reward: %.4f mean output: %.3f target pos: %.1f %.1f\n", epoch_i, hit_count, mean_reward, mean_output / t_count / output_len, target_pos[0], target_pos[1]);
 	}
 }
 
@@ -291,4 +309,5 @@ int main()
 	//bug_hunting();
 	//test_LSTM();
 	//minimal_case();
+	test_PPO();
 }
