@@ -247,11 +247,6 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	float* arr = 0;
 	cudaMalloc(&arr, sizeof(float) * value_count);
 	curandGenerateUniform(generator, arr, value_count);
-	multiply_array<float, t> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
-		arr, value_count, 1.0 / value_divider
-	);
-	cudaDeviceSynchronize();
-
 	if (generate_negative_values)
 	{
 		add_to_array<float, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
@@ -263,6 +258,11 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 		);
 		cudaDeviceSynchronize();
 	}
+	multiply_array<float, t> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
+		arr, value_count, 1.0 / value_divider
+	);
+	cudaDeviceSynchronize();
+
 
 	logical_copy<T, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) ((out) + start_i, value_count, arr, value_count);
 	cudaDeviceSynchronize();
