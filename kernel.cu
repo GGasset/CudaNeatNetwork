@@ -226,9 +226,11 @@ static void test_PPO()
 
 	PPO_hyperparameters parameters;
 	parameters.max_training_steps = 20;
-	parameters.GAE.gamma = .3;
+	parameters.GAE.gamma = .9;
 	parameters.GAE.value_function.learning_rate = .01;
-	parameters.policy.learning_rate = .01;
+	parameters.policy.learning_rate = .001;
+	parameters.clip_ratio = .1;
+	parameters.max_kl_divergence_threshold = .01;
 
 	const size_t epochs = 6000;
 	for (size_t epoch_i = 0; epoch_i < epochs; epoch_i++)
@@ -252,9 +254,8 @@ static void test_PPO()
 		data_t mean_output = 0;
 		for (size_t t = 0; t < max_t_count; t++, t_count++)
 		{
-			X[0] = target_pos[0] - current_pos[0];
-
-			X[1] = target_pos[1] - current_pos[1];
+			X[0] = (target_pos[0] - current_pos[0]) / 8.0;
+			X[1] = (target_pos[1] - current_pos[1]) / 8.0;
 
 			Y = agent->PPO_execute(X, &initial_state, &trajectory_inputs, &trajectory_outputs, t);
 			mean_output += Y[0];
@@ -263,13 +264,13 @@ static void test_PPO()
 			mean_output += Y[3];
 
 			data_t movement[2]{};
-			movement[0] += Y[0] * (Y[0] > Y[1]);
-			movement[0] -= Y[1] * (Y[1] >= Y[0]);
+			movement[0] += fmin(Y[0] * (Y[0] > Y[1]), .7);
+			movement[0] -= fmin(Y[1] * (Y[1] >= Y[0]), .7);
 			int i = 0;
 			rewards[t] += abs(target_pos[i] - current_pos[i]) - abs(target_pos[i] - current_pos[i] + movement[i]);
 
-			movement[1] += Y[2] * (Y[2] > Y[3]);
-			movement[1] -= Y[3] * (Y[3] >= Y[2]);
+			movement[1] += fmin(Y[2] * (Y[2] > Y[3]), .7);
+			movement[1] -= fmin(Y[3] * (Y[3] >= Y[2]), .7);
 			i = 1;
 			rewards[t] += abs(target_pos[i] - current_pos[i]) -  abs(target_pos[i] - current_pos[i] + movement[i]);
 
@@ -277,10 +278,10 @@ static void test_PPO()
 			current_pos[0] += movement[0];
 			current_pos[1] += movement[1];
 
-			if (abs(current_pos[0] - target_pos[0]) < 2 && abs(current_pos[1] - target_pos[1]) < 2)
+			if (abs(target_pos[0] - current_pos[0]) < 2 && abs(target_pos[1] - current_pos[1]) < 2)
 			{
 				hit_count++;
-				rewards[t] += 2;
+				rewards[t] += 4;
 
 				current_pos[0] = 0;
 				current_pos[1] = 0;
