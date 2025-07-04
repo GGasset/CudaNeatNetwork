@@ -42,9 +42,9 @@
 - ~~return cost while training~~
 - ~~adaptative learning rates~~
 - ~~Supervised learning~~
-- reinforcement learning cost functions
+- ~~reinforcement learning cost functions~~
     - ~~GAE (Generalized Advantage Estimator)~~
-    - PPO (Proximal Policy Optimization)
+    - ~~PPO (Proximal Policy Optimization)~~
 
 - Create model links for multi-model performance
     - Create a training and execution function that accepts multiple networks and links
@@ -52,31 +52,6 @@
 
 - Create logging options for training in csv format
     - Add python script for plotting it
-
-### PPO psudocode in each PPO train batch called t_count times per batch
-Modularize into 2 functions (PPO_execute, PPO_train)
-
-#### Execution Function
-* Save initial hidden state of first execution
-* Execute given the input
-* Append input and output to different arrays
-* return execution output and cost
-
-#### Training function:
-
-* Clone NN (NN_tmp), set to initial hidden state
-* Calculate GAE, train value function
-* while True: (i) (Loop for each hidden training iteration)
-    * Execute NN_tmp_ on Inputs t_count times
-    * Calculate PPO costs
-    * if KL_divergence > threshold (defaults to 0.01 or 0.05):
-        break
-    * Calculate gradients on execution values
-        * Append gradients to array for later substraction to NN
-    * Subtract gradients to NN_tmp
-
-* Subtracts all collected gradients to NN
-* Set training variables to default (affects outside of function)
 
 ## Socket
 
