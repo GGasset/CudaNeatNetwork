@@ -4,6 +4,7 @@
 ## Regularization - Optimizers
 
 - Add L1 and L2 regullarization (Take scalability into account)
+- Add entropy regularization 
 - ~~Add Optimizers (Take scalability into account)~~
 	- ~~Adam~~
     - ~~Add saving/loading to disk~~
