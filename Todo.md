@@ -48,6 +48,7 @@
 - ~~reinforcement learning cost functions~~
     - ~~GAE (Generalized Advantage Estimator)~~
     - ~~PPO (Proximal Policy Optimization)~~
+        - kl penalty 
 
 - Create model links for multi-model performance
     - Create a training and execution function that accepts multiple networks and links
