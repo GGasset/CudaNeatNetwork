@@ -278,7 +278,7 @@ static void test_PPO()
 			current_pos[0] += movement[0];
 			current_pos[1] += movement[1];
 
-			if (abs(target_pos[0] - current_pos[0]) < 2 && abs(target_pos[1] - current_pos[1]) < 2)
+			if (abs(target_pos[0] - current_pos[0]) < 1 && abs(target_pos[1] - current_pos[1]) < 1)
 			{
 				hit_count++;
 				rewards[t] += 4;
