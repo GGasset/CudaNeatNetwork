@@ -25,9 +25,9 @@ static void bug_hunting()
 
 	const bool stateful = false;
 	NN *n = NN_constructor()
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 20, ActivationFunctions::sigmoid)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 10, ActivationFunctions::sigmoid)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, output_len, ActivationFunctions::sigmoid)
+		.append_layer(Dense, Neuron, 20, sigmoid)
+		.append_layer(Dense, Neuron, 10, sigmoid)
+		.append_layer(Dense, Neuron, output_len, sigmoid)
 		.construct(input_len, Adam, stateful);
 
 	const size_t t_count = 2;
@@ -52,7 +52,7 @@ static void bug_hunting()
 		printf("\n%i %.4f\n", i, n->training_batch(
 			t_count,
 			X, Y_hat, 1, output_len * t_count,
-			CostFunctions::MSE,
+			MSE,
 			&Y, host_cpp_pointer_output, gradient_hyperparameters()
 		));
 		for (size_t j = 0; j < t_count; j++)
@@ -73,20 +73,17 @@ static void bug_hunting()
 //		and testing its long term dependency of that input.
 static void test_LSTM()
 {
-	const data_t learning_rate = .1;
-	const data_t dropout_rate = 0.2;
-
 	const size_t in_len = 1;
 	const size_t out_len = 2;
 
 	NN* n = NN_constructor()
-		.append_layer(ConnectionTypes::NEAT, NeuronTypes::LSTM, 128, ActivationFunctions::sigmoid)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 64)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 48)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::LSTM, 32)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, 32, ActivationFunctions::sigmoid)
-		.append_layer(ConnectionTypes::Dense, NeuronTypes::Neuron, out_len, ActivationFunctions::sigmoid)
-		.construct(in_len, Adam, 0);
+		.append_layer(Dense, LSTM, 128)
+		.append_layer(Dense, LSTM, 64)
+		.append_layer(Dense, LSTM, 48)
+		.append_layer(Dense, LSTM, 32)
+		.append_layer(Dense, Neuron, 32)
+		.append_layer(Dense, Neuron, out_len)
+		.construct(in_len, no_optimizer, 0);
 
 
 	const size_t t_count = 3;
@@ -96,7 +93,7 @@ static void test_LSTM()
 	for (size_t i = 0; i < in_len * t_count; i++)
 		X[i] = !i ? -.5 : 0;
 	for (size_t i = 0; i < in_len * t_count; i++)
-		X[out_len * t_count + i] = !i ? .5 : 0;
+		X[in_len * t_count + i] = !i ? .5 : 0;
 
 	for (size_t i = 0; i < t_count; i++)
 	{
@@ -108,6 +105,10 @@ static void test_LSTM()
 		Y_hat[out_len * t_count + out_len * i] = .25;
 		Y_hat[out_len * t_count + out_len * i + 1] = .75;
 	}
+
+	gradient_hyperparameters hyperparameters;
+	hyperparameters.gradient_clip = 1;
+	hyperparameters.learning_rate = .1;
 
 	const size_t epoch_n = 5000;
 	for (size_t i = 0; i < epoch_n; i++)
@@ -127,13 +128,14 @@ static void test_LSTM()
 			data_t cost = n->train(
 				t_count,
 				execution_values, activations, Y_hat + out_len * t_count * j, true, out_len * t_count,
-				CostFunctions::MSE, gradient_hyperparameters()
+				MSE, hyperparameters
 			);
 
 			if (i % 10 == 0)
-				printf("%i | %.4f | %.4f, %.4f\n", i, 0, Y[out_len * t_count - 2], Y[out_len * t_count - 1]);
+				printf("%i | %.4f | %.4f, %.4f\n", i, cost, Y[out_len * t_count - 2], Y[out_len * t_count - 1]);
 
 			delete[] Y;
+			Y = 0;
 		}
 	}
 }
@@ -221,12 +223,14 @@ static void test_PPO()
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 15)
+		.append_layer(Dense, Neuron, 10)
 		.append_layer(Dense, Neuron, output_len)
 		.construct(input_len);
 
 	PPO_hyperparameters parameters;
-	parameters.max_training_steps = 20;
-	parameters.GAE.gamma = .9;
+	parameters.max_training_steps = 15;
+	parameters.GAE.gamma = .1;
 	parameters.GAE.value_function.learning_rate = .01;
 	parameters.policy.learning_rate = .001;
 	parameters.clip_ratio = .1;
@@ -251,17 +255,15 @@ static void test_PPO()
 
 		size_t hit_count = 0;
 		size_t t_count = 0;
-		data_t mean_output = 0;
+		data_t mean_output[output_len]{};
 		for (size_t t = 0; t < max_t_count; t++, t_count++)
 		{
 			X[0] = (target_pos[0] - current_pos[0]) / 8.0;
 			X[1] = (target_pos[1] - current_pos[1]) / 8.0;
 
 			Y = agent->PPO_execute(X, &initial_state, &trajectory_inputs, &trajectory_outputs, t);
-			mean_output += Y[0];
-			mean_output += Y[1];
-			mean_output += Y[2];
-			mean_output += Y[3];
+			for (size_t i = 0; i < output_len; i++)
+				mean_output[i] += Y[i];
 
 			data_t movement[2]{};
 			movement[0] += fmin(Y[0] * (Y[0] > Y[1]), .7);
@@ -296,7 +298,10 @@ static void test_PPO()
 		data_t mean_reward = 0;
 		for (size_t i = 0; i < t_count; i++) mean_reward += rewards[i];
 		mean_reward /= t_count;
-		printf("i: %i hit_count: %i mean reward: %.4f mean output: %.3f target pos: %.1f %.1f\n", epoch_i, hit_count, mean_reward, mean_output / t_count / output_len, target_pos[0], target_pos[1]);
+		printf("i: %i hit_count: %i mean reward: %.4f target pos: %.1f %.1f mean output: ", epoch_i, hit_count, mean_reward, target_pos[0], target_pos[1]);
+		for (size_t i = 0; i < output_len; i++)
+			printf("%.2f ", mean_output[i] / t_count);
+		printf("\n");
 	}
 }
 
@@ -304,11 +309,14 @@ int main()
 {
 #ifdef DETERMINISTIC
 	srand(13);
+#else
+	srand(get_arbitrary_number());
 #endif
+
 
 	//cudaSetDevice(0);
 	//bug_hunting();
-	//test_LSTM();
+	test_LSTM();
 	//minimal_case();
-	test_PPO();
+	//test_PPO();
 }
