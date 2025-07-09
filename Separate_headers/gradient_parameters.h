@@ -31,7 +31,7 @@ typedef struct PPO_hyperparameters
 
 	// Max training steps per PPO_train call to policy
 	// May be overriden by early stopping
-	size_t max_training_steps = 50;
+	size_t max_training_steps = 15;
 
 	// Prevents each output from deviating from its initial output if it surpasses this ratio
 	// Nullifies the gradient of the output
