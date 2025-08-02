@@ -30,6 +30,7 @@
         * ~~Evolution methods~~
 
 - ~~Modularized generate random values for different data types~~
+- ~~Use Xavier initialization~~
 - ~~Make droput set cost of neuron to 0 before its gradient calculation and remove previous dropout~~
     - ~~It just nullifies the gradient to substract to dropped out weights~~
 
