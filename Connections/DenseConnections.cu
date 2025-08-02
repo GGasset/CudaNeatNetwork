@@ -1,9 +1,6 @@
 #ifndef DENSE_CONNECTIONS
 #define DENSE_CONNETIONS
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
 #include "DenseConnections.h"
 #include "stdio.h"
 
@@ -19,14 +16,14 @@ DenseConnections::DenseConnections(size_t previous_layer_activations_start, size
 	cudaMalloc(&biases, sizeof(field_t) * neuron_count);
 	cudaDeviceSynchronize();
 
-	generate_random_values(weights, connection_count, 0, previous_layer_length, true);
+	generate_random_values(weights, connection_count, 0, 1.0 / Xavier_uniform_initialization_scale_factor(previous_layer_length, neuron_count), true);
 	//generate_random_values(&biases, neuron_count, 0, neuron_count);
 	//cudaMemset(weights, 0, sizeof(field_t) * connection_count);
 	cudaMemset(biases, 0, sizeof(field_t) * neuron_count);
 	cudaDeviceSynchronize();
 
 	//add_to_array kernel (connection_count / 32 + (connection_count % 32 > 0), 32) (weights, connection_count, 1);
-	add_to_array kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (biases, neuron_count, 1);
+	//add_to_array kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (biases, neuron_count, 1);
 	cudaDeviceSynchronize();
 }
 

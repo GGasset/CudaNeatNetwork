@@ -38,7 +38,7 @@ void LSTMLayer::layer_specific_initialize_fields(size_t connection_count, size_t
 	cudaMemset(state, 0, sizeof(data_t) * neuron_count * 2);
 	cudaMemset(prev_state_derivatives, 0, sizeof(data_t) * neuron_count * 3);
 	cudaMemset(neuron_weights, 0, sizeof(field_t) * neuron_count * 4);
-	generate_random_values(neuron_weights, neuron_count * 4, 0, 1, true);
+	generate_random_values(neuron_weights, neuron_count * 4, 0, Xavier_uniform_initialization_scale_factor(neuron_count, neuron_count), true);
 	
 	add_to_array kernel(neuron_weights_count / 32 + (neuron_weights_count % 32 > 0), 32) (
 		neuron_weights, neuron_weights_count, 1
