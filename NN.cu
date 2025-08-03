@@ -257,7 +257,7 @@ data_t NN::train(
 
 	data_t* gradients = 0;
 	backpropagate(
-		t_count, costs, activations, execution_values, &gradients, hyperparameters.dropout_rate
+		t_count, costs, activations, execution_values, &gradients, hyperparameters
 	);
 
 	for (size_t t = 0; t < t_count; t++)
@@ -336,9 +336,15 @@ void NN::backpropagate(
 	data_t* activations, 
 	data_t* execution_values,
 	data_t** gradients,
-	float	dropout_rate
+	gradient_hyperparameters hyperparameters
 )
 {
+	apply_regularizations(
+		t_count,
+		costs, activations, 
+		hyperparameters.regularization
+	);
+
 	data_t* derivatives = 0;
 	if (!*gradients)
 	{
@@ -382,13 +388,26 @@ void NN::backpropagate(
 			costs, activations_start,
 			*gradients, gradients_start, next_gradient_start,
 			derivatives, derivatives_start, derivatives_start - derivative_count,
-			dropout_rate
+			hyperparameters.dropout_rate
 		);
 	}
 
 	if (!stateful && contains_recurrent_layers)
 		delete_memory();
 	if (derivative_count) cudaFree(derivatives);
+}
+
+void NN::apply_regularizations(
+	size_t t_count,
+	data_t* costs, data_t *activations,
+	regularization_hyperparameters hyperparameters
+)
+{
+	entropy_regularization(
+		t_count, neuron_count, output_length, 
+		costs, activations, *output_activations_start, 
+		hyperparameters.entropy_bonus
+	);
 }
 
 void NN::calculate_derivatives(

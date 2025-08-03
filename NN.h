@@ -1,18 +1,21 @@
 #pragma once
 
 #include <stdio.h>
-#include "costs.cuh"
+
+#include "kernel_macros.h"
 #include "functionality.h"
+
+#include "NN_enums.h"
+#include "neuron_operations.cuh"
+#include "costs.cuh"
 
 #include "DenseConnections.h"
 #include "NeatConnections.h"
 #include "NeuronLayer.h"
 #include "LSTMLayer.h"
-#include "kernel_macros.h"
 
-#include "NN_enums.h"
+#include "regularization.cuh"
 #include "GAE.cuh"
-#include "neuron_operations.cuh"
 
 class NN
 {
@@ -108,7 +111,14 @@ public:
 		data_t* activations,
 		data_t* execution_values,
 		data_t** gradients,
-		float	dropout_rate
+		gradient_hyperparameters hyperparameters
+	);
+
+	// Automatically called inside NN::backpropagate()
+	void apply_regularizations(
+		size_t t_count,
+		data_t *costs, data_t *activations,
+		regularization_hyperparameters hyperparameters
 	);
 
 	void calculate_derivatives(
