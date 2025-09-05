@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 #include "NN_constructor.h"
 
@@ -208,8 +209,8 @@ static void NEAT_evolution_test()
 
 static void test_PPO()
 {
-	const size_t input_len = 2;
-	const size_t output_len = 4;
+	const size_t input_len = 1;
+	const size_t output_len = 2;
 	const size_t max_t_count = 20;
 
 	NN* value_function = NN_constructor()
@@ -233,76 +234,54 @@ static void test_PPO()
 	parameters.GAE.gamma = .1;
 	parameters.GAE.value_function.learning_rate = .01;
 	parameters.policy.learning_rate = .001;
-	parameters.clip_ratio = .1;
-	parameters.max_kl_divergence_threshold = .01;
+	parameters.clip_ratio = .2;
+	parameters.max_kl_divergence_threshold = .05;
 
-	const size_t epochs = 6000;
-	for (size_t epoch_i = 0; epoch_i < epochs; epoch_i++)
+	data_t X[input_len] {};
+
+	std::string filename = "ppo_results.csv";
+	std::ofstream write_csv(filename, std::ios_base::out);
+	write_csv.close();
+
+	std::stringstream to_write_stream;
+	to_write_stream << "index, neuron_0, neuron_1, reward\n";
+	for (size_t i = 0; true; i++)
 	{
-		data_t* initial_state = 0;
-		data_t* trajectory_inputs = 0;
-		data_t* trajectory_outputs = 0;
+		data_t *initial_states = 0;
+		data_t *trajectory_inputs = 0;
+		data_t *trajectory_outputs = 0;
 
-		data_t X[output_len]{};
-		data_t rewards[max_t_count]{};
-		data_t* Y = 0;
-		data_t current_pos[2]{};
-		
-		data_t target_pos[2]{};
-		size_t negatives = epoch_i % 4;
-		target_pos[0] = (3 + rand() % 5) * (1 - 2 * (negatives == 0 || negatives == 3));
-		target_pos[1] = (3 + rand() % 5) * (1 - 2 * (negatives == 1 || negatives == 3));
+		data_t *Y = 0;
 
-		size_t hit_count = 0;
-		size_t t_count = 0;
-		data_t mean_output[output_len]{};
-		for (size_t t = 0; t < max_t_count; t++, t_count++)
+
+		Y = agent->PPO_execute(X, &initial_states, &trajectory_inputs, &trajectory_outputs, 0);
+		data_t reward = 0;
+		reward += Y[1];
+		reward -= Y[0];
+		agent->PPO_train(
+			1, &initial_states, &trajectory_inputs, &trajectory_outputs,
+			&reward, 1, value_function, parameters
+		);
+		if (i % 50 == 0)
 		{
-			X[0] = (target_pos[0] - current_pos[0]) / 8.0;
-			X[1] = (target_pos[1] - current_pos[1]) / 8.0;
-
-			Y = agent->PPO_execute(X, &initial_state, &trajectory_inputs, &trajectory_outputs, t);
-			for (size_t i = 0; i < output_len; i++)
-				mean_output[i] += Y[i];
-
-			data_t movement[2]{};
-			movement[0] += fmin(Y[0] * (Y[0] > Y[1]), .7);
-			movement[0] -= fmin(Y[1] * (Y[1] >= Y[0]), .7);
-			int i = 0;
-			rewards[t] += abs(target_pos[i] - current_pos[i]) - abs(target_pos[i] - current_pos[i] + movement[i]);
-
-			movement[1] += fmin(Y[2] * (Y[2] > Y[3]), .7);
-			movement[1] -= fmin(Y[3] * (Y[3] >= Y[2]), .7);
-			i = 1;
-			rewards[t] += abs(target_pos[i] - current_pos[i]) -  abs(target_pos[i] - current_pos[i] + movement[i]);
-
-
-			current_pos[0] += movement[0];
-			current_pos[1] += movement[1];
-
-			if (abs(target_pos[0] - current_pos[0]) < 1 && abs(target_pos[1] - current_pos[1]) < 1)
+			
+			to_write_stream << i << ", " << Y[0] << ", " << Y[1] << ", " << reward << "\n";
+			std::cout << to_write_stream.str();
+			
+			std::ofstream write_csv(filename, std::ios_base::app);
+			if (write_csv.fail())
 			{
-				hit_count++;
-				rewards[t] += 4;
-
-				current_pos[0] = 0;
-				current_pos[1] = 0;
-
-				target_pos[0] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
-				target_pos[1] = (3 + rand() % 5) * (1 - 2 * (rand() % 2));
+				std::cout << "log file failed " << write_csv.rdstate() << std::endl;
 			}
-
-			delete[] Y;
+			write_csv << to_write_stream.str();
+			write_csv.close();
+			to_write_stream.str("");     
+			to_write_stream.clear();
 		}
-		agent->PPO_train(t_count, &initial_state, &trajectory_inputs, &trajectory_outputs, rewards, true, value_function, parameters);
-		data_t mean_reward = 0;
-		for (size_t i = 0; i < t_count; i++) mean_reward += rewards[i];
-		mean_reward /= t_count;
-		printf("i: %i hit_count: %i mean reward: %.4f target pos: %.1f %.1f mean output: ", epoch_i, hit_count, mean_reward, target_pos[0], target_pos[1]);
-		for (size_t i = 0; i < output_len; i++)
-			printf("%.2f ", mean_output[i] / t_count);
-		printf("\n");
+		delete[] Y;
 	}
+	delete value_function;
+	delete agent;
 }
 
 int main()
@@ -316,8 +295,8 @@ int main()
 
 	//cudaSetDevice(0);
 	//bug_hunting();
-	test_LSTM();
-	//test_PPO();
+	//test_LSTM();
+	test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
