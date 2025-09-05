@@ -319,4 +319,6 @@ int main()
 	test_LSTM();
 	//minimal_case();
 	//test_PPO();
+
+	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
