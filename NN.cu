@@ -655,7 +655,7 @@ void NN::PPO_train(
 		data_t* gradients = 0;
 		tmp_n->backpropagate(
 			t_count,
-			costs, activations, execution_values, &gradients, hyperparameters.policy.dropout_rate
+			costs, activations, execution_values, &gradients, hyperparameters.policy
 		);
 		for (size_t t = 0; t < t_count; t++)
 			tmp_n->subtract_gradients(gradients, gradient_count * t, hyperparameters.policy);
