@@ -200,7 +200,11 @@ template<typename T>
 __host__ T* load_array(size_t elem_count, FILE *file, int output_to_device)
 {
 	T* host_arr = new T[elem_count];
+#ifdef WIN32
 	if (fread_s(host_arr, sizeof(T) * elem_count, sizeof(T), elem_count, file) != sizeof(T) * elem_count) throw;
+#else
+	if (fread(host_arr, sizeof(T), elem_count, file)) throw;
+#endif
 	if (!output_to_device) return host_arr;
 	
 	T* device_arr = 0;
