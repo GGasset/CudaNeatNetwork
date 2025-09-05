@@ -34,7 +34,7 @@ void entropy_regularization(
 	global_entropy_regularization kernel(block_count / 32 + (block_count % 32 > 0), 32) (
 		t_count, neuron_count, output_len,
 		activations, last_layer_activations_start,
-		hyperparameters.entropy_coefficient,
+		hyperparameters,
 		costs
 	);
 	cudaDeviceSynchronize();
