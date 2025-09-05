@@ -121,7 +121,7 @@ set(CMAKE_CUDA_COMPILER "nvcc")
 
 # -rdc=true
 if (UNIX)
-	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin='g++-13'")
+	#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin='g++-13'")
 endif()
 if (DEBUG)
 	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G -g")
