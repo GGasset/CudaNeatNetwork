@@ -317,7 +317,6 @@ int main()
 	//cudaSetDevice(0);
 	//bug_hunting();
 	test_LSTM();
-	//minimal_case();
 	//test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
