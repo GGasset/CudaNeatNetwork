@@ -18,7 +18,7 @@ __global__ void global_entropy_regularization(
 	data_t activation = activations[neuron_i];
 	data_t abs_activation = abs(activation) + 1E-10;
 
-	data_t entropy_bonus = (1 - 2 * (activation < 0)) * hyperparameters.entropy_coefficient * ((log(abs_activation) + 1) / log(10));
+	data_t entropy_bonus = (1 - 2 * (activation < 0)) * hyperparameters.entropy_coefficient * ((logf(abs_activation) + 1) / logf(10));
 	atomicAdd(costs + neuron_i, entropy_bonus);
 }
 
