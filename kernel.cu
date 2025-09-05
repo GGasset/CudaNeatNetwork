@@ -210,7 +210,7 @@ static void NEAT_evolution_test()
 static void test_PPO()
 {
 	const size_t input_len = 1;
-	const size_t output_len = 2;
+	const size_t output_len = 1;
 	const size_t max_t_count = 20;
 
 	NN* value_function = NN_constructor()
@@ -234,8 +234,11 @@ static void test_PPO()
 	parameters.GAE.gamma = .1;
 	parameters.GAE.value_function.learning_rate = .01;
 	parameters.policy.learning_rate = .001;
-	parameters.clip_ratio = .2;
-	parameters.max_kl_divergence_threshold = .05;
+	parameters.clip_ratio = .1;
+	parameters.max_kl_divergence_threshold = .001;
+
+	parameters.policy.regularization.entropy_bonus.active = true;
+	parameters.policy.regularization.entropy_bonus.entropy_coefficient = .01;
 
 	data_t X[input_len] {};
 
@@ -253,16 +256,22 @@ static void test_PPO()
 
 		data_t *Y = 0;
 
+		X[0] = 1 - 2 * (i % 2);
 
 		Y = agent->PPO_execute(X, &initial_states, &trajectory_inputs, &trajectory_outputs, 0);
 		data_t reward = 0;
-		reward += Y[1];
-		reward -= Y[0];
+
+		if (i % 2 == 0)
+			reward += Y[0];
+		else
+			reward += 1 - Y[0];
+		
+		
 		agent->PPO_train(
 			1, &initial_states, &trajectory_inputs, &trajectory_outputs,
 			&reward, 1, value_function, parameters
 		);
-		if (i % 50 == 0)
+		if (true)
 		{
 			
 			to_write_stream << i << ", " << Y[0] << ", " << Y[1] << ", " << reward << "\n";
