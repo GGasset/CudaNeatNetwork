@@ -10,7 +10,7 @@ __device__ void IOptimizer::alloc_optimizer_values(size_t param_count, bool copy
 	cudaMalloc(&optimizer_values, sizeof(field_t) * param_count * values_per_parameter);
 	initialize_optimizer_values(optimizer_values);
 	if (copy_old_values && old_optimizer_values && optimizer_values)
-		memcpy(optimizer_values, old_optimizer_values, sizeof(field_t) * __min(param_count, old_param_count) * values_per_parameter);
+		memcpy(optimizer_values, old_optimizer_values, sizeof(field_t) * (param_count < old_param_count? param_count: old_param_count) * values_per_parameter);
 	cudaFree(old_optimizer_values);
 }
 
