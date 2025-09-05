@@ -657,14 +657,20 @@ void NN::PPO_train(
 			t_count,
 			costs, activations, execution_values, &gradients, hyperparameters.policy
 		);
+		cudaFree(costs);
+		cudaFree(activations);
+		cudaFree(execution_values);
+
 		for (size_t t = 0; t < t_count; t++)
 			tmp_n->subtract_gradients(gradients, gradient_count * t, hyperparameters.policy);
 		collected_gradients = cuda_append_array(collected_gradients, gradient_count * t_count * i,
 			gradients, gradient_count * t_count, true);
+		cudaFree(gradients);
 	}
 
 	for (size_t i = 0; i < t_count; i++)
 		subtract_gradients(collected_gradients, gradient_count * i, hyperparameters.policy);
+	cudaFree(collected_gradients);
 
 	cudaFree(advantages);
 
