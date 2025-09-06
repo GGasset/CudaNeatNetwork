@@ -88,9 +88,12 @@ __global__ void device_PPO_derivative(
 	data_t ratio = output / initial_output;
 
 	size_t cost_write_i = t * neuron_count + last_layer_activations_start + tid;
-	data_t cost_derivative = -((advantage * output) / (initial_output * initial_output));
+	//data_t cost_derivative = -((advantage * output) / (initial_output * initial_output));
+	data_t cost_derivative = advantage / initial_output;
 	cost_derivative *= 1 + clip_ratio > ratio && 1 - clip_ratio < ratio;
 
+	//cost_derivative *= 0;
+	
 	costs[cost_write_i] = cost_derivative;
 
 	atomicAdd(summed_kl_divergence, initial_output * log(initial_output / output));
