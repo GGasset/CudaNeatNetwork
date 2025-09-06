@@ -222,8 +222,6 @@ static void test_PPO()
 
 	NN* agent = NN_constructor()
 		.append_layer(Dense, Neuron, 20)
-		.append_layer(Dense, Neuron, 20)
-		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 15)
 		.append_layer(Dense, Neuron, 10)
 		.append_layer(Dense, Neuron, output_len)
@@ -233,13 +231,13 @@ static void test_PPO()
 	parameters.max_training_steps = 80;
 	parameters.GAE.training_steps = 80;
 	parameters.GAE.gamma = .99;
-	parameters.GAE.value_function.learning_rate = 1e-3;
-	parameters.policy.learning_rate = 1e-4;
+	parameters.GAE.value_function.learning_rate = 1e-2;
+	parameters.policy.learning_rate = 1e-3;
 	parameters.clip_ratio = .2;
 	parameters.max_kl_divergence_threshold = .01;
 
 	parameters.policy.regularization.entropy_bonus.active = true;
-	parameters.policy.regularization.entropy_bonus.entropy_coefficient = .005;
+	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-7;
 
 	data_t X[input_len] {};
 
@@ -248,7 +246,7 @@ static void test_PPO()
 	write_csv.close();
 
 	std::stringstream to_write_stream;
-	to_write_stream << "index, neuron_0, neuron_1, reward\n";
+	//to_write_stream << "index, neuron_0, neuron_1, reward\n";
 	for (size_t i = 0; true; i++)
 	{
 		data_t *initial_states = 0;
@@ -263,16 +261,8 @@ static void test_PPO()
 		Y = agent->PPO_execute(X, &initial_states, &trajectory_inputs, &trajectory_outputs, 0);
 		data_t reward = 0;
 
-		if (true || i % 2 == 0)
-		{
-			reward += Y[0];
-			reward += Y[1];
-		}
-		/*else
-		{
-			reward += Y[1];
-			reward += 1 - Y[0];
-		}*/
+		for (size_t j = 0; j < output_len; j++)
+			reward += Y[j] * (1 - 2 * (j % 2 != 0));
 		
 		agent->PPO_train(
 			1, &initial_states, &trajectory_inputs, &trajectory_outputs,
@@ -281,7 +271,11 @@ static void test_PPO()
 		if (1 || i % 20 == 0 || i % 20 == 0)
 		{
 			
-			to_write_stream << i << ", " << Y[0] << ", " << Y[1] << ", " << reward << "\n";
+			to_write_stream << i << ", ";
+			for (size_t i = 0; i < output_len; i++)
+				to_write_stream << Y[i] << ", ";
+			to_write_stream << reward << "\n";
+			
 			std::cout << to_write_stream.str();
 			
 			std::ofstream write_csv(filename, std::ios_base::app);
