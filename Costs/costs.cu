@@ -96,7 +96,7 @@ __global__ void device_PPO_derivative(
 	atomicAdd(summed_kl_divergence, initial_output * log(initial_output / output));
 }
 
-__host__ int PPO_derivative(
+__host__ data_t PPO_derivative(
 	size_t t_count, size_t output_len, size_t neuron_count,
 	data_t* trajectory_outputs, data_t* current_outputs, data_t* advantages,
 	data_t* costs, size_t last_layer_activations_start,
@@ -122,5 +122,5 @@ __host__ int PPO_derivative(
 	cudaFree(total_kl_divergence);
 
 	data_t mean_kl_divergence = host_total_kl_divergence / t_count / output_len;
-	return mean_kl_divergence >= kl_divergence_threshold;
+	return mean_kl_divergence;
 }

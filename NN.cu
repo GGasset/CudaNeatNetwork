@@ -494,8 +494,7 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 
 data_t *NN::calculate_GAE_advantage(
 	size_t t_count,
-	data_t gamma, data_t lambda,
-	NN *value_function_estimator, data_t *value_function_state, gradient_hyperparameters estimator_hyperparameters, bool is_state_on_host, bool free_state,
+	NN *value_function_estimator, data_t *value_function_state, GAE_hyperparameters parameters, bool is_state_on_host, bool free_state,
 	data_t *rewards, bool is_reward_on_host, bool free_rewards
 )
 {
@@ -519,18 +518,22 @@ data_t *NN::calculate_GAE_advantage(
 	cudaDeviceSynchronize();
 
 	calculate_discounted_rewards kernel(t_count / 32 + (t_count % 32 > 0), 32) (
-		t_count, gamma, rewards, discounted_rewards
+		t_count, parameters.gamma, rewards, discounted_rewards
 	);
 	cudaDeviceSynchronize();
 
 	data_t* value_functions = 0;
-	value_function_estimator->training_batch(
-		t_count,
-		value_function_state, discounted_rewards, 0, t_count,
-		CostFunctions::MSE, 
-		&value_functions, cuda_pointer_output, estimator_hyperparameters
+	value_functions = value_function_estimator->batch_execute(
+		value_function_state, t_count
 	);
-
+	for (size_t i = 0; i < parameters.training_steps; i++)
+		value_function_estimator->training_batch(
+			t_count,
+			value_function_state, discounted_rewards, 0, t_count,
+			CostFunctions::MSE, 
+			0, no_output, parameters.value_function
+		);
+	
 
 	data_t *deltas = 0;
 	cudaMalloc(&deltas, sizeof(data_t) * t_count);
@@ -539,7 +542,7 @@ data_t *NN::calculate_GAE_advantage(
 	
 	calculate_deltas kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count, 
-		gamma, 
+		parameters.gamma, 
 		rewards, 
 		value_functions, 
 		deltas
@@ -553,7 +556,7 @@ data_t *NN::calculate_GAE_advantage(
 
 	parallel_calculate_GAE_advantage kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count,
-		gamma, lambda,
+		parameters.gamma, parameters.lambda,
 		deltas, advantages
 	);
 	cudaDeviceSynchronize();
@@ -621,13 +624,13 @@ void NN::PPO_train(
 
 	data_t* advantages = calculate_GAE_advantage(
 		t_count,
-		hyperparameters.GAE.gamma, hyperparameters.GAE.lambda,
 		value_function_estimator, *trajectory_inputs,
-		hyperparameters.GAE.value_function, false, false,
+		hyperparameters.GAE, false, false,
 		rewards, are_rewards_at_host, false);
 	if (!advantages) return;
 
 	int stop = false;
+	data_t total_kl_divergence = 0;
 	data_t* collected_gradients = 0;
 	size_t i = 0;
 	for (i = 0; i < hyperparameters.max_training_steps && !stop; i++)
@@ -644,12 +647,13 @@ void NN::PPO_train(
 		cudaMalloc(&costs, sizeof(data_t) * neuron_count * t_count);
 		cudaMemset(costs, 0, sizeof(data_t) * neuron_count * t_count);
 
-		stop = PPO_derivative(
+		total_kl_divergence += PPO_derivative(
 			t_count, output_length, neuron_count,
 			*trajectory_outputs, Y, advantages,
 			costs, *output_activations_start,
 			hyperparameters.clip_ratio, hyperparameters.max_kl_divergence_threshold
 		);
+		stop = fabs(total_kl_divergence / (i + 1)) > hyperparameters.max_kl_divergence_threshold;
 		cudaFree(Y);
 
 		data_t* gradients = 0;

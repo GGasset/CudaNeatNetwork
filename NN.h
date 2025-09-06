@@ -142,8 +142,7 @@ public:
 
 	data_t* calculate_GAE_advantage(
 		size_t t_count,
-		data_t gamma, data_t lambda,
-		NN* value_function_estimator, data_t* value_function_state, gradient_hyperparameters estimator_hyperparameters, bool is_state_on_host, bool free_state,
+		NN* value_function_estimator, data_t* value_function_state, GAE_hyperparameters parameters, bool is_state_on_host, bool free_state,
 		data_t* rewards, bool is_reward_on_host, bool free_rewards
 	);
 

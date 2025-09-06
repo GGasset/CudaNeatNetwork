@@ -40,6 +40,9 @@ typedef struct GAE_hyperparameters
 	// ranges [0, 1]
 	// Should be close to 1
 	data_t lambda = .98;
+
+	// Number of times value function will be trained
+	size_t training_steps = 15;
 } GAE_hyperparameters;
 
 typedef struct PPO_hyperparameters
