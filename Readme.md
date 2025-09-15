@@ -9,7 +9,7 @@
 ### Planned-WIP
  - L1, L2 regularization (Planned)
  - C++ Socket bindings (WIP)
- - [PPO](https://arxiv.org/abs/1707.06347) Reinforcement Learning Policy Gradient Method used in ChatGPT (Planned)
+ - [PPO](https://arxiv.org/abs/1707.06347) Reinforcement Learning Policy Gradient Method used in ChatGPT (Testing)
  - [MinLSTM](https://arxiv.org/abs/2410.01201) Simpler versions of LSTM (Planned)
 
 ### Done
