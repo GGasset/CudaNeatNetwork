@@ -34,6 +34,16 @@ Optimizer_values Optimizers::load_values_of(size_t optimizer_i, FILE *file)
     out.values = load_array<data_t>(arr_len, file, true);
 }
 
+void Optimizers::initialize_values(long parameter_start_i, size_t parameter_count)
+{
+    data_t *adam = optimizer_values[Adam].values;
+    adam[0] = initialization_hyperparameters.adam.beta_1;
+    adam[1] = initialization_hyperparameters.adam.beta_2;
+    adam[2] = initialization_hyperparameters.adam.epsilon;
+    adam[5] = adam[0];
+    adam[6] = adam[1];
+}
+
 void Optimizers::allocate_values()
 {
     for (size_t i = 0; i < optimizers_enum::last_optimizer_entry; i++)
@@ -41,14 +51,17 @@ void Optimizers::allocate_values()
         if (!optimizer_values[i].value_count_per_parameter)
             continue;
         cudaFree(optimizer_values[i].values);
-        cudaMalloc(&optimizer_values[i].values, sizeof(data_t) * parameter_count * optimizer_values[i].value_count_per_parameter);
+
+        size_t len = parameter_count * optimizer_values[i].value_count_per_parameter;
+        cudaMalloc(&optimizer_values[i].values, sizeof(data_t) * len);
+        cudaMemset(optimizer_values[i].values, 0, sizeof(data_t) * len);
     }
 }
 
 Optimizers::Optimizers()
 {
     optimizer_values_per_parameter[Adam] = 7;
-    optimizer_values_per_parameter[ElasticNet] = 2;
+    optimizer_values_per_parameter[ElasticNet] = 0;
 
     for (size_t i = 0; i < last_optimizer_entry; i++)
         optimizer_values[i].value_count_per_parameter 
