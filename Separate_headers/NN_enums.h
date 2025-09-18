@@ -49,6 +49,7 @@ enum CostFunctions : size_t
 enum optimizers_enum : size_t
 {
 	Adam,
+	ElasticNet,
 	last_optimizer_entry,
 	no_optimizer
 };
