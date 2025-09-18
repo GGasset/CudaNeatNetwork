@@ -17,6 +17,14 @@ typedef struct
 	size_t  value_count_per_parameter = 0;
 } Optimizer_values;
 
+__device__ void subtract_gradient(field_t *parameter, data_t gradient, gradient_hyperparameters hyperparameters);
+
+// Applies learning rate and gradient clip
+__device__ data_t apply_hyperparameters(data_t gradient, gradient_hyperparameters hyperparameters);
+// Returns new gradient after applying adam
+__device__ data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i);
+__device__ data_t apply_ElasticNet(data_t gradient, gradient_hyperparameters hyperparameters);
+
 class Optimizers
 {	
 private:
@@ -25,11 +33,13 @@ private:
 
 	Add it to optimizers enum before last optimizer_entry and without a set value
 	Add its value_count per parameter to Optimizers default constructor
+	create the function for it
+	use the function in subtract_gradient
 	*/
 	Optimizer_values optimizer_values[last_optimizer_entry];
 	int optimizer_values_per_parameter[last_optimizer_entry];
 	size_t parameter_count = 0;
-	optimizers_hyperparameters initialization_hyperparameters;
+	optimizer_hyperparameters initialization_hyperparameters;
 
 	// Does not allocate values
 	void copy_values_of(size_t optimizer_i, Optimizers dst);
@@ -43,7 +53,7 @@ private:
 public:
 	Optimizers();
 	// optimizer_options is used for hyperparameter initialization
-	Optimizers(size_t parameter_count, optimizers_hyperparameters optimizer_options);
+	Optimizers(size_t parameter_count, optimizer_hyperparameters optimizer_options);
 	Optimizers Clone();
 	~Optimizers();
 
@@ -51,7 +61,7 @@ public:
 	static Optimizers *load(FILE *file);
 
 	// sets the hyperparameters that will be used for initialization
-	void set_initialization(optimizers_hyperparameters new_initialization);
+	void set_initialization(optimizer_hyperparameters new_initialization);
 
 	// Adds values to fit new parameters, also initializes them
 	//
