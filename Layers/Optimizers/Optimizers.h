@@ -17,14 +17,6 @@ typedef struct
 	size_t  value_count_per_parameter = 0;
 } Optimizer_values;
 
-__device__ void subtract_gradient(field_t *parameter, data_t gradient, gradient_hyperparameters hyperparameters);
-
-// Applies learning rate and gradient clip
-__device__ data_t apply_hyperparameters(data_t gradient, gradient_hyperparameters hyperparameters);
-// Returns new gradient after applying adam
-__device__ data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i);
-__device__ data_t apply_ElasticNet(data_t gradient, gradient_hyperparameters hyperparameters);
-
 class Optimizers
 {	
 private:
@@ -73,4 +65,15 @@ public:
 	// block_start_i: the start position of the deleted parameters, < 0 to remove from the end (i.e. -1)
 	void remove_parameters(size_t removed_count, long removed_i);
 
+	__device__ void subtract_gradient(
+		field_t *parameter, size_t parameter_i, data_t gradient,
+		gradient_hyperparameters hyperparameters
+	);
+	
+	// Applies learning rate and gradient clip
+	__device__ data_t apply_hyperparameters(data_t gradient, gradient_hyperparameters hyperparameters);
+	// Returns new gradient after applying adam
+	__device__ data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i);
+	__device__ data_t apply_ElasticNet(data_t gradient, gradient_hyperparameters hyperparameters);
 };
+
