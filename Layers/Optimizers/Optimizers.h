@@ -74,6 +74,6 @@ public:
 	__device__ data_t apply_hyperparameters(data_t gradient, gradient_hyperparameters hyperparameters);
 	// Returns new gradient after applying adam
 	__device__ data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i);
-	__device__ data_t apply_ElasticNet(data_t gradient, gradient_hyperparameters hyperparameters);
+	__device__ data_t apply_ElasticNet(field_t parameter, data_t gradient, gradient_hyperparameters hyperparameters);
 };
 
