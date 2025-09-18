@@ -23,6 +23,8 @@ endfunction()
 # Add files for compilation
 
 SET(NETWORK_INCLUDE_DIRECTORIES)
+list(APPEND NETWORK_INCLUDE_DIRECTORIES Separate_headers/ Separate_headers/hyperparameters/)
+
 
 # Basic Files
 SET(FUNCTIONALITY_FILES
@@ -173,7 +175,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC curand)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES "native")
 target_include_directories(${PROJECT_NAME} PRIVATE
-	Connections Costs Functionality Layers Layers/Optimizers Separate_headers socket)
+	${NETWORK_INCLUDE_DIRECTORIES})
 if (DEBUG)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
