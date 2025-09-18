@@ -10,6 +10,7 @@
 
 #include "cuda_functionality.cuh"
 
+// Holds variables to share between calls to subtract gradients, in which optimization hyperparameters is passed.
 typedef struct
 {
 	data_t  *values = 0;
