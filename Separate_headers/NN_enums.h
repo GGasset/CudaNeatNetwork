@@ -48,8 +48,9 @@ enum CostFunctions : size_t
 
 enum optimizers_enum : size_t
 {
-	no_optimizer,
-	Adam
+	Adam,
+	last_optimizer_entry,
+	no_optimizer
 };
 
 enum action_enum : size_t

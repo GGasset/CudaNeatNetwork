@@ -1,32 +1,8 @@
 
 #pragma once
 
-#include "data_type.h"
-
-// Entropy regulariztion, adds a bonus term to the loss that moves values towards + - .367
-//	-.367 is added for compatibility with negative activation functions such as tanh
-// Encourages exploration and prevents suboptimal convergence
-typedef struct
-{
-	bool active = false;
-
-	// Sets the strength of the regularization, normally 0.01 or less
-	data_t entropy_coefficient = .01;
-} entropy_bonus_hyperparameters;
-
-typedef struct
-{
-	entropy_bonus_hyperparameters entropy_bonus;
-} regularization_hyperparameters;
-
-typedef struct gradient_hyperparameters
-{
-	data_t learning_rate = .01;
-	data_t gradient_clip = 1;
-	float  dropout_rate = .2;
-
-	regularization_hyperparameters regularization;
-} gradient_hyperparameters;
+#include "gradient_parameters.h"
+#include <cstddef>
 
 typedef struct GAE_hyperparameters
 {
@@ -63,3 +39,4 @@ typedef struct PPO_hyperparameters
 	// 0.01 or 0.05
 	data_t max_kl_divergence_threshold = 0.05;
 } PPO_hyperparameters;
+
