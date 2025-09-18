@@ -12,7 +12,7 @@ typedef struct Adam_hyperparameters
 	data_t alpha = .001;
 	data_t beta_1 = .9;
 	data_t beta_2 = .999;
-	data_t e = 1e-8;
+	data_t epsilon = 1e-8;
 } Adam_hyperparameters;
 
 // Mix of L1 and L2, applied independently of the gradient
