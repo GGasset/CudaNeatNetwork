@@ -9,7 +9,6 @@ typedef struct Adam_hyperparameters
 {
 	bool active = true;
 
-	data_t alpha = .001;
 	data_t beta_1 = .9;
 	data_t beta_2 = .999;
 	data_t epsilon = 1e-8;
@@ -42,7 +41,7 @@ typedef struct optimizers_hyperparameters
 
 typedef struct gradient_hyperparameters
 {
-	data_t learning_rate = .01;
+	data_t learning_rate = .001;
 	data_t gradient_clip = 1;
 	float  dropout_rate = .2;
 
