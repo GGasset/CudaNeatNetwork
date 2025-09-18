@@ -8,6 +8,8 @@
 #include "NN_enums.h"
 #include "neuron_operations.cuh"
 #include "costs.cuh"
+#include "gradient_parameters.h"
+#include "RL_parameters.h"
 
 #include "DenseConnections.h"
 #include "NeatConnections.h"
