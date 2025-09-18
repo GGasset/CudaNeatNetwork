@@ -26,7 +26,7 @@ typedef struct ElasticNet_hyperparameters
 	data_t alpha = .1;
 } ElasticNet_hyperparameters;
 
-typedef struct optimizers_hyperparameters
+typedef struct optimizer_hyperparameters
 {
 	// Adaptive moment estimation, improves efficiency of learning with momentum
 	Adam_hyperparameters adam;
@@ -36,7 +36,7 @@ typedef struct optimizers_hyperparameters
 	// L1 can lead a weight to 0, it does feature selection and is less sensitive to outliers
 	// L2 never leads a weight to 0, it leads outlier weights to 0 more strongly than the ones closer to 0
 	ElasticNet_hyperparameters L_regularization;
-} optimizers_hyperparameters;
+} optimizer_hyperparameters;
 
 
 typedef struct gradient_hyperparameters
@@ -45,5 +45,6 @@ typedef struct gradient_hyperparameters
 	data_t gradient_clip = 1;
 	float  dropout_rate = .2;
 
-	regularization_hyperparameters regularization;
+	regularization_hyperparameters	regularization;
+	optimizer_hyperparameters		optimization;
 } gradient_hyperparameters;
