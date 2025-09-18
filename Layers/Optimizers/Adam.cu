@@ -12,7 +12,7 @@ __device__ void AdamOptimizer::initialize_optimizer_values(field_t* values)
 	field_t tmp[7]{};
 	tmp[0] = 0.9;
 	tmp[1] = 0.999;
-	tmp[2] = 10E-8;
+	tmp[2] = 1E-8;
 	tmp[3] = 0;
 	tmp[4] = 0;
 	tmp[5] = tmp[0];
