@@ -123,5 +123,5 @@ data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i)
 	data_t bias_corrected_v = v / (1 - optimizer_values[values_starting_i + 6]);
 
     data_t new_gradient = bias_corrected_m / (sqrt(abs(bias_corrected_v)) + optimizer_values[values_starting_i + 2]);
-    return (new_gradient)
+    return (new_gradient);
 }
