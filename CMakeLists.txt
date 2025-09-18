@@ -52,6 +52,8 @@ SET(OPTIMIZER_FILES
 
 		IOptimizer.cu
 		Adam.cu
+
+		Optimizers.cu
 	)
 SET(OPTIMIZER_FOLDER Optimizers)
 ADD_PREFIX_INPLACE(${OPTIMIZER_FOLDER}/ OPTIMIZER_FILES)
