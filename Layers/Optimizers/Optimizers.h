@@ -26,8 +26,8 @@ private:
 	Add its value_count per parameter to Optimizers default constructor
 	*/
 	Optimizer_values optimizer_values[last_optimizer_entry];
-	size_t parameter_count = 0;
 	int optimizer_values_per_parameter[last_optimizer_entry];
+	size_t parameter_count = 0;
 	optimizers_hyperparameters initialization_hyperparameters;
 
 	// Does not allocate values
