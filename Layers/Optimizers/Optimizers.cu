@@ -102,14 +102,24 @@ void Optimizers::set_initialization(optimizer_hyperparameters new_initialization
     initialization_hyperparameters = new_initialization;
 }
 
-__device__ data_t apply_hyperparameters(data_t gradient, gradient_hyperparameters hyperparameters)
+__device__ void Optimizers::subtract_gradient(
+	field_t *parameter, size_t parameter_i, data_t gradient,
+	gradient_hyperparameters hyperparameters
+)
+{
+    gradient = apply_adam(gradient, optimizer_values[Adam], parameter_i);
+    gradient = apply_hyperparameters(gradient, hyperparameters);
+    atomicAdd(parameter, -gradient);
+}
+
+__device__ data_t Optimizers::apply_hyperparameters(data_t gradient, gradient_hyperparameters hyperparameters)
 {
     gradient *= hyperparameters.learning_rate;
     gradient = device_clip(gradient, -hyperparameters.gradient_clip, hyperparameters.gradient_clip);
     return gradient;
 }
 
-data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i)
+data_t Optimizers::apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i)
 {
    	size_t values_starting_i = values.value_count_per_parameter * parameter_i;
 
