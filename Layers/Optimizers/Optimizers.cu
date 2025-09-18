@@ -68,7 +68,7 @@ Optimizers::Optimizers()
             = optimizer_values_per_parameter[i];
 }
 
-Optimizers::Optimizers(size_t parameter_count, optimizers_hyperparameters optimizer_options)
+Optimizers::Optimizers(size_t parameter_count, optimizer_hyperparameters optimizer_options)
 {
     *this = Optimizers();
 
@@ -97,7 +97,31 @@ Optimizers::~Optimizers()
     
 }
 
-void Optimizers::set_initialization(optimizers_hyperparameters new_initialization)
+void Optimizers::set_initialization(optimizer_hyperparameters new_initialization)
 {
     initialization_hyperparameters = new_initialization;
+}
+
+data_t apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i)
+{
+   	size_t values_starting_i = values.value_count_per_parameter * parameter_i;
+
+    data_t *optimizer_values = values.values;
+    	data_t m = optimizer_values[values_starting_i + 3] =
+		optimizer_values[values_starting_i] * optimizer_values[values_starting_i + 3] +
+		(1 - optimizer_values[values_starting_i]) * gradient;
+
+	data_t v = optimizer_values[values_starting_i + 4] =
+		optimizer_values[values_starting_i + 1] * optimizer_values[values_starting_i + 4] +
+		(1 - optimizer_values[values_starting_i + 1]) * gradient * gradient;
+
+
+	optimizer_values[values_starting_i + 5] *= optimizer_values[values_starting_i];
+	data_t bias_corrected_m = m / (1 - optimizer_values[values_starting_i + 5]);
+
+	optimizer_values[values_starting_i + 6] *= optimizer_values[values_starting_i + 1];
+	data_t bias_corrected_v = v / (1 - optimizer_values[values_starting_i + 6]);
+
+    data_t new_gradient = bias_corrected_m / (sqrt(abs(bias_corrected_v)) + optimizer_values[values_starting_i + 2]);
+    return (new_gradient)
 }
