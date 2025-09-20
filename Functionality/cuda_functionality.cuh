@@ -215,6 +215,20 @@ __host__ T* load_array(size_t elem_count, FILE *file, int output_to_device)
 }
 
 template<typename T>
+__host__ T load_value(FILE *file)
+{
+	T out;
+	memset(&T, 0, sizeof(T));
+
+#ifdef WIN32
+	if (fread_s(&out, sizeof(T), sizeof(T), 1, file) != sizeof(T)) throw;
+#else
+	if (fread(&out, sizeof(T), 1, file)) throw;
+#endif
+	return out;
+}
+
+template<typename T>
 __host__ T* cuda_push_back(T *old, size_t old_len, T new_last, bool free_old)
 {
 	T* out = cuda_realloc(old, old_len, old_len + 1, free_old);
