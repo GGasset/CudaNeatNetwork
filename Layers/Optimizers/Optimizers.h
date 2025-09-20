@@ -50,7 +50,7 @@ public:
 	~Optimizers();
 
 	void save(FILE *file);
-	static Optimizers *load(FILE *file);
+	static Optimizers load(FILE *file);
 
 	// sets the hyperparameters that will be used for initialization
 	void set_initialization(optimizer_hyperparameters new_initialization);
