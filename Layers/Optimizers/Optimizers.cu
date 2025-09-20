@@ -97,6 +97,24 @@ Optimizers::~Optimizers()
 	
 }
 
+void Optimizers::save(FILE *file)
+{
+	save_array(&parameter_count, 1, file, false);
+	save_array(&initialization_hyperparameters, 1, file, false);
+	for (size_t i = 0; i < last_optimizer_entry; i++)
+		save_values_of(i, file);
+}
+
+Optimizers Optimizers::load(FILE *file)
+{
+	Optimizers out = Optimizers();
+	out.parameter_count = load_value<size_t>(file);
+	out.initialization_hyperparameters = load_value<optimizer_hyperparameters>(file);
+	for (size_t i = 0; i < last_optimizer_entry; i++)
+		out.optimizer_values[i] = out.load_values_of(i, file);
+	return out;
+}
+
 void Optimizers::set_initialization(optimizer_hyperparameters new_initialization)
 {
 	initialization_hyperparameters = new_initialization;
