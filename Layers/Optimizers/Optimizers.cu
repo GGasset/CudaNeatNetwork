@@ -107,10 +107,12 @@ __device__ void Optimizers::subtract_gradient(
 	gradient_hyperparameters hyperparameters
 )
 {
+	if (!parameter) return;
+
 	if (hyperparameters.optimization.adam.active)
 		gradient = apply_adam(gradient, optimizer_values[Adam], parameter_i);
 	if (hyperparameters.optimization.L_regularization.active)
-		gradient = apply_hyperparameters(gradient, hyperparameters);
+		gradient = apply_ElasticNet(*parameter, gradient, hyperparameters);
 	gradient = apply_hyperparameters(gradient, hyperparameters);
 	atomicAdd(parameter, -gradient);
 }
