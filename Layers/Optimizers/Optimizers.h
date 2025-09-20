@@ -24,8 +24,8 @@ private:
 	Steps to add an optimizer:
 
 	Add it to optimizers enum before last optimizer_entry and without a set value
+	create the function that applies the optimizer
 	Add its value_count per parameter to Optimizers default constructor
-	create the function for it
 	use the function in subtract_gradient
 	*/
 	Optimizer_values optimizer_values[last_optimizer_entry];
