@@ -137,6 +137,23 @@ void Optimizers::add_parameters(size_t added_parameter_count, long insert_i)
 	parameter_count += added_parameter_count;
 }
 
+void Optimizers::remove_parameters(size_t removed_count, long removed_i)
+{
+	for (size_t i = 0; i < last_optimizer_entry; i++)
+	{
+		Optimizer_values values = optimizer_values[i];
+
+		size_t values_per_parameter = values.value_count_per_parameter;
+		if (values_per_parameter) continue;
+
+		size_t value_count = parameter_count * values_per_parameter;
+		values.values = cuda_remove_elements(
+			values.values, value_count, removed_i * values_per_parameter, removed_count * values_per_parameter, true
+		);
+	}
+	parameter_count -= removed_count;
+}
+
 __device__ void Optimizers::subtract_gradient(
 	field_t *parameter, size_t parameter_i, data_t gradient,
 	gradient_hyperparameters hyperparameters
