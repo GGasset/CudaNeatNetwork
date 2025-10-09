@@ -130,7 +130,9 @@ void Optimizers::add_parameters(size_t added_parameter_count, long insert_i)
 		if (!values_per_parameter) continue;
 
 		size_t value_count = parameter_count * values_per_parameter;
-		values.values = cuda_insert_zeros(values.values, value_count, insert_i * values_per_parameter, values_per_parameter, true);
+		values.values = cuda_insert_zeros(
+			values.values, value_count, insert_i * values_per_parameter, values_per_parameter * added_parameter_count, true
+		);
 	}
 	parameter_count += added_parameter_count;
 }
