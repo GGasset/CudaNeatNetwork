@@ -15,5 +15,5 @@ public:
 	NN_constructor();
 
 	NN_constructor append_layer(ConnectionTypes connections_type, NeuronTypes neurons_type, size_t neuron_count, ActivationFunctions activation = ActivationFunctions::sigmoid);
-	NN* construct(size_t input_length, optimizers_enum e_optimizer = Adam, bool stateful = false);
+	NN* construct(size_t input_length, optimizer_hyperparameters optimizer_options, bool stateful = false);
 };

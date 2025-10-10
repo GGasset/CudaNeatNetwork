@@ -17,6 +17,7 @@
 #include "LSTMLayer.h"
 
 #include "regularization.cuh"
+#include "Optimizers.h"
 #include "GAE.cuh"
 
 class NN
@@ -40,7 +41,7 @@ public:
 	NN();
 
 	evolution_metadata evolution_values;
-	optimizers_enum default_optimizer = no_optimizer;
+	optimizer_hyperparameters optimizer_initialization;
 	bool stateful = false;
 
 	size_t get_input_length();
