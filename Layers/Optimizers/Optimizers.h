@@ -21,12 +21,11 @@ class Optimizers
 {	
 private:
 	/*
-	Steps to add an optimizer:
-
-	Add it to optimizers enum before last optimizer_entry and without a set value
-	create the function that applies the optimizer
-	Add its value_count per parameter to Optimizers default constructor
-	use the function in subtract_gradient
+	## Steps to add an optimizer:
+	1. Add it to optimizers enum before last optimizer_entry and without a set value
+	2. Create the function that applies the optimizer and use it in subtract gradients
+	3. Add its value_count per parameter to Optimizers default constructor
+	4. Add the optimizer initialization in initialize_values
 	*/
 	Optimizer_values optimizer_values[last_optimizer_entry];
 	size_t optimizer_values_per_parameter[last_optimizer_entry];
