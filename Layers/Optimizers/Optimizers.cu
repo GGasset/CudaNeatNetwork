@@ -71,6 +71,7 @@ void Optimizers::allocate_values()
 
 Optimizers::Optimizers()
 {
+	memset(optimizer_values_per_parameter, 0, sizeof(size_t) * last_optimizer_entry);
 	optimizer_values_per_parameter[Adam] = 7;
 	optimizer_values_per_parameter[ElasticNet] = 0;
 
