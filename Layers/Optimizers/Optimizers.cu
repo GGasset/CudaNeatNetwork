@@ -144,6 +144,9 @@ void Optimizers::add_parameters(size_t added_parameter_count, long insert_i)
 		values.values = cuda_insert_zeros(
 			values.values, value_count, insert_i * values_per_parameter, values_per_parameter * added_parameter_count, true
 		);
+
+		size_t initialization_start = insert_i + (parameter_count - insert_i) * (insert_i < 0);
+		initialize_values(initialization_start, added_parameter_count);
 	}
 	parameter_count += added_parameter_count;
 }
