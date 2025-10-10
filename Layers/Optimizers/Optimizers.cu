@@ -83,6 +83,8 @@ Optimizers::Optimizers()
 
 Optimizers::Optimizers(size_t parameter_count, optimizer_hyperparameters optimizer_options)
 {
+	Optimizers();
+
 	this->parameter_count = parameter_count;
 	initialization_hyperparameters = optimizer_options;
 
