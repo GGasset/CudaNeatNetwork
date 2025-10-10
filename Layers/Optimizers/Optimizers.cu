@@ -153,6 +153,7 @@ void Optimizers::add_parameters(size_t added_parameter_count, long insert_i)
 
 void Optimizers::remove_parameters(size_t removed_count, long removed_i)
 {
+	if (removed_i < 0) removed_i = parameter_count - removed_count;
 	for (size_t i = 0; i < last_optimizer_entry; i++)
 	{
 		Optimizer_values values = optimizer_values[i];
