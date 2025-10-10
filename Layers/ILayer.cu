@@ -136,9 +136,9 @@ void ILayer::mutate_fields(evolution_metadata evolution_values)
 
 void ILayer::add_neuron(size_t previous_layer_length, size_t previous_layer_activations_start, float previous_layer_connection_probability, size_t min_connections)
 {
-	size_t added_connection_count = connections->connection_count;
+	size_t previous_connection_count = connections->connection_count;
 	connections->add_neuron(previous_layer_length, previous_layer_activations_start, previous_layer_connection_probability, min_connections);
-	added_connection_count = connections->connection_count - added_connection_count;
+	size_t added_connection_count = connections->connection_count - previous_connection_count;
 
 	if (connection_associated_gradient_counts)
 		connection_associated_gradient_counts = cuda_push_back(connection_associated_gradient_counts, sizeof(size_t) * neuron_count, 1 + added_connection_count, true);
@@ -158,7 +158,14 @@ void ILayer::add_neuron(size_t previous_layer_length, size_t previous_layer_acti
 	layer_derivative_count += derivatives_per_neuron;
 	layer_gradient_count += added_connection_count + gradients_per_neuron + 1;
 
+	size_t layer_added_parameter_count = get_weight_count();
 	layer_specific_add_neuron();
+	layer_added_parameter_count = get_weight_count() - layer_added_parameter_count;
+	layer_added_parameter_count -= neuron_count + connections->connection_count;
+
+	optimizer.add_parameters(1, neuron_count);
+	optimizer.add_parameters(added_connection_count, neuron_count + previous_connection_count);
+	optimizer.add_parameters(layer_added_parameter_count, -1);
 
 	set_neuron_count(neuron_count + 1);
 }
