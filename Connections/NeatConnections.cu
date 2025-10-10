@@ -159,7 +159,6 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 		size_t remaining_connection_count = previous_layer_length - added_connection_count;
 		size_t remaining_connection_i_to_add = rand() % remaining_connection_count;
 
-		size_t to_add_neuron_i = 0;
 		for (size_t i = 0, counter = 0; i < previous_layer_length; i++)
 		{
 			counter += (added_connection_point_layer_neuron_i.count(i) == 0);
