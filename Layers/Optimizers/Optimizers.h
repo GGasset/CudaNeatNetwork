@@ -64,6 +64,12 @@ public:
 	// block_start_i: the start position of the deleted parameters, < 0 to remove from the end (i.e. -1)
 	void remove_parameters(size_t removed_count, long removed_i);
 
+	/*
+	## Notes of usage of order of parameters (applies to parameter_i):
+	1. Bias parameters goes first 
+	2. Connection weights go after
+	3. Layer weights go last
+	*/
 	__device__ void subtract_gradient(
 		field_t *parameter, size_t parameter_i, data_t gradient,
 		gradient_hyperparameters hyperparameters
