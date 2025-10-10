@@ -50,8 +50,8 @@ public:
 
     void add_neuron(size_t previous_layer_length, size_t previous_layer_activations_start, float previous_layer_connection_probability, size_t min_connections) override;
     void adjust_to_added_neuron(size_t added_neuron_i, float connection_probability, std::vector<size_t>* added_connections_neuron_i) override;
-    void remove_neuron(size_t neuron_i) override;
-    void adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i) override;
+    void remove_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_i) override;
+    void adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i, std::vector<size_t>* removed_connections_i) override;
 
     void specific_save(FILE* file) override;
     void load(FILE* file) override;

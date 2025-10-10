@@ -204,6 +204,7 @@ void LSTMLayer::layer_specific_add_neuron()
 
 void LSTMLayer::layer_specific_remove_neuron(size_t layer_neuron_i)
 {
+	optimizer.remove_parameters(4, neuron_count + connections->connection_count + layer_neuron_i * 4);
 	neuron_weights = cuda_remove_elements(neuron_weights, neuron_count * 4, layer_neuron_i * 4, 4, true);
 	state = cuda_remove_elements(state, neuron_count * 2, layer_neuron_i * 2, 2, true);
 	prev_state_derivatives = cuda_remove_elements(prev_state_derivatives, neuron_count * 3, layer_neuron_i * 3, 3, true);

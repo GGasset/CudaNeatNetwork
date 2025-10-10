@@ -35,11 +35,11 @@ void IConnections::add_neuron(size_t previous_layer_length, size_t previous_laye
 {
 }
 
-void IConnections::remove_neuron(size_t neuron_i)
+void IConnections::remove_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_i)
 {
 }
 
-void IConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i)
+void IConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i, std::vector<size_t>* removed_connections_i)
 {
 }
 

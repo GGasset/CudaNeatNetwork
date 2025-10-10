@@ -902,14 +902,11 @@ void NN::remove_neuron(size_t layer_i, size_t layer_neuron_i)
 {
 	size_t removed_neuron_i = layers[layer_i]->layer_activations_start + layer_neuron_i;
 	layers[layer_i]->remove_neuron(layer_neuron_i);
-	call_optimizer_values_alloc kernel(1, 1) (layers[layer_i]->optimizer, layers[layer_i]->get_weight_count());
 	for (size_t i = layer_i + 1; i < layer_count; i++)
 	{
 		size_t old_param_count = layers[i]->get_weight_count();
 		layers[i]->adjust_to_removed_neuron(removed_neuron_i);
 		size_t new_param_count = layers[i]->get_weight_count();
-		if (old_param_count != new_param_count)
-			call_optimizer_values_alloc kernel(1, 1) (layers[i]->optimizer, new_param_count);
 	}
 	cudaDeviceSynchronize();
 	set_fields();

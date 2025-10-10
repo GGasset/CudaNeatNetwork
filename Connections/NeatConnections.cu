@@ -221,8 +221,16 @@ void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connec
 	connection_count = new_connection_count;
 }
 
-void NeatConnections::remove_neuron(size_t neuron_i)
+void NeatConnections::remove_neuron(size_t neuron_i, std::vector<size_t> *removed_connections_i)
 {
+	size_t *host_connection_neuron_i = new size_t[connection_count];
+	cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
+	for (size_t i = 0; i < connection_count && host_connection_neuron_i && removed_connections_i; i++)
+		if (host_connection_neuron_i[i] == neuron_i)
+			removed_connections_i->push_back(i);
+
+	delete[] host_connection_neuron_i;
+
 	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
 
 	connection_points = cuda_remove_occurrences(connection_neuron_i, neuron_i, connection_points, connection_count, true);
@@ -236,7 +244,7 @@ void NeatConnections::remove_neuron(size_t neuron_i)
 	cudaDeviceSynchronize();
 }
 
-void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i)
+void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i, std::vector<size_t>* removed_connections_i)
 {
 	size_t to_delete_connection_count = get_connection_count_at(neuron_i);
 	if (!to_delete_connection_count) return;
@@ -246,9 +254,12 @@ void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size
 
 	size_t *host_connection_neuron_i = new size_t[connection_count];
 	cudaMemcpy(host_connection_neuron_i, connection_neuron_i, sizeof(size_t) * connection_count, cudaMemcpyDeviceToHost);
-	for (size_t i = 0; i < connection_count; i++)
+	for (size_t i = 0; i < connection_count && removed_connections_neuron_i && removed_connections_i; i++)
 		if (host_connection_points[i] == neuron_i)
+		{
+			removed_connections_i->push_back(i);
 			removed_connections_neuron_i->push_back(host_connection_neuron_i[i]);
+		}
 
 	delete[] host_connection_points;
 	delete[] host_connection_neuron_i;

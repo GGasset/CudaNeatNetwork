@@ -203,8 +203,9 @@ void ILayer::adjust_to_added_neuron(size_t added_neuron_i, float connection_prob
 
 void ILayer::remove_neuron(size_t layer_neuron_i)
 {
+	std::vector<size_t> removed_connections_i;
 	size_t removed_connection_count = connections->connection_count;
-	connections->remove_neuron(layer_neuron_i);
+	connections->remove_neuron(layer_neuron_i, &removed_connections_i);
 	removed_connection_count -= connections->connection_count;
 
 	size_t removed_gradients = removed_connection_count + gradients_per_neuron + 1;
@@ -230,6 +231,12 @@ void ILayer::remove_neuron(size_t layer_neuron_i)
 
 	layer_specific_remove_neuron(layer_neuron_i);
 
+	for (size_t i = removed_connections_i.size(); i > 0; i++)
+		optimizer.remove_parameters(1, neuron_count + removed_connections_i[i - 1]);
+	
+	optimizer.remove_parameters(1, layer_neuron_i);
+
+
 	set_neuron_count(neuron_count - 1);
 }
 
@@ -239,10 +246,13 @@ void ILayer::layer_specific_remove_neuron(size_t layer_neuron_i)
 
 void ILayer::adjust_to_removed_neuron(size_t neuron_i)
 {
+	size_t before_connection_count = connections->connection_count;
 	auto removed_connections_neuron_i = std::vector<size_t>();
-	connections->adjust_to_removed_neuron(neuron_i, &removed_connections_neuron_i);
+	auto removed_connections_i = std::vector<size_t>();
+	connections->adjust_to_removed_neuron(neuron_i, &removed_connections_neuron_i, &removed_connections_i);
 	for (size_t i = 0; i < removed_connections_neuron_i.size(); i++)
 	{
+		optimizer.remove_parameters(1, neuron_count + before_connection_count - removed_connections_i[i]);
 		layer_gradient_count--;
 		size_t removed_connection_neuron_i = removed_connections_neuron_i[i];
 		size_t remaining_neuron_count = neuron_count - removed_connection_neuron_i - 1;

@@ -95,6 +95,8 @@ public:
 	void adjust_to_added_neuron(size_t added_neuron_i, float connection_probability);
 
 	void remove_neuron(size_t layer_neuron_i);
+
+	// Also remove parameters from optimizer in the implementation
 	virtual void layer_specific_remove_neuron(size_t layer_neuron_i);
 	void adjust_to_removed_neuron(size_t neuron_i);
 
