@@ -212,7 +212,6 @@ static void test_PPO()
 {
 	const size_t input_len = 4;
 	const size_t output_len = 4;
-	const size_t max_t_count = 20;
 
 	optimizer_hyperparameters value_function_optimizer;
 	NN* value_function = NN_constructor()
@@ -244,6 +243,7 @@ static void test_PPO()
 
 	const size_t board_side_len = 4;
 	const size_t board_square_count = board_side_len * board_side_len;
+	const size_t max_t_count = board_side_len;
 
 	size_t total_frames = 0;
 	for (size_t epoch = 0; true; epoch++)
