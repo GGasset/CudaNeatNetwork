@@ -41,7 +41,7 @@ public:
 
     void subtract_gradients(
         data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-        gradient_hyperparameters hyperparameters, IOptimizer* optimizer
+        gradient_hyperparameters hyperparameters, Optimizers optimizer
     ) override;
 
     size_t get_connection_count_at(size_t neuron_i) override;
