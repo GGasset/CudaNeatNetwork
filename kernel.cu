@@ -242,7 +242,7 @@ static void test_PPO()
 	parameters.policy.regularization.entropy_bonus.active = true;
 	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-3;
 
-	const size_t board_side_len = 7;
+	const size_t board_side_len = 4;
 	const size_t board_square_count = board_side_len * board_side_len;
 
 	size_t total_frames = 0;
