@@ -241,9 +241,9 @@ static void test_PPO()
 	parameters.policy.regularization.entropy_bonus.active = true;
 	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-3;
 
-	const size_t board_side_len = 4;
+	const size_t board_side_len = 3;
 	const size_t board_square_count = board_side_len * board_side_len;
-	const size_t max_t_count = board_side_len;
+	const size_t max_t_count = board_side_len - 1;
 
 	size_t total_frames = 0;
 	for (size_t epoch = 0; true; epoch++)
@@ -334,7 +334,7 @@ static void test_PPO()
 			}
 			else if (i == max_t_count - 1)
 			{
-				rewards[i] = -.7;
+				rewards[i] = -.5;
 			}
 
 			agent_position_i = agent_updated_position;
