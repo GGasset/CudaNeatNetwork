@@ -210,17 +210,16 @@ static void NEAT_evolution_test()
 
 static void test_PPO()
 {
-	const size_t input_len = 1;
-	const size_t output_len = 2;
+	const size_t input_len = 4;
+	const size_t output_len = 4;
 	const size_t max_t_count = 20;
 
 	optimizer_hyperparameters value_function_optimizer;
-	value_function_optimizer.adam.active = false;
 	NN* value_function = NN_constructor()
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 20)
-		.append_layer(Dense, Neuron, 20)
-		.append_layer(Dense, Neuron, 1, no_activation)
+		.append_layer(Dense, Neuron, 20, _tanh)
+		.append_layer(Dense, Neuron, 1, _tanh)
 		.construct(input_len, value_function_optimizer);
 
 	optimizer_hyperparameters agent_optimizer;
@@ -232,67 +231,122 @@ static void test_PPO()
 		.construct(input_len, agent_optimizer);
 
 	PPO_hyperparameters parameters;
-	parameters.max_training_steps = 80;
-	parameters.GAE.training_steps = 80;
-	parameters.GAE.gamma = .99;
+	parameters.max_training_steps = 50;
+	parameters.GAE.training_steps = 50;
+	//parameters.GAE.gamma = .99;
 	parameters.GAE.value_function.learning_rate = 1e-2;
 	parameters.policy.learning_rate = 1e-3;
 	parameters.clip_ratio = .2;
 	parameters.max_kl_divergence_threshold = .01;
 
 	parameters.policy.regularization.entropy_bonus.active = true;
-	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-7;
+	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-3;
 
-	data_t X[input_len] {};
+	const size_t board_side_len = 7;
+	const size_t board_square_count = board_side_len * board_side_len;
 
-	std::string filename = "ppo_results.csv";
-	std::ofstream write_csv(filename, std::ios_base::out);
-	write_csv.close();
-
-	std::stringstream to_write_stream;
-	//to_write_stream << "index, neuron_0, neuron_1, reward\n";
-	for (size_t i = 0; true; i++)
+	size_t total_frames = 0;
+	for (size_t epoch = 0; true; epoch++)
 	{
 		data_t *initial_states = 0;
 		data_t *trajectory_inputs = 0;
 		data_t *trajectory_outputs = 0;
 
-		data_t *Y = 0;
-
-		//X[0] = 1 - 2 * (i % 2);
-		X[0] = 0;
-
-		Y = agent->PPO_execute(X, &initial_states, &trajectory_inputs, &trajectory_outputs, 0);
-		data_t reward = 0;
-
-		for (size_t j = 0; j < output_len; j++)
-			reward += Y[j] * (1 - 2 * (j % 2 != 0));
+		int agent_position_i = rand() % board_square_count;
+		int goal_i = rand() % (board_square_count - 1);
+		goal_i += goal_i >= agent_position_i;
 		
-		agent->PPO_train(
-			1, &initial_states, &trajectory_inputs, &trajectory_outputs,
-			&reward, 1, value_function, parameters
-		);
-		if (1 || i % 20 == 0 || i % 20 == 0)
+		bool achieved_objective = false;
+
+		data_t rewards[max_t_count]{};
+		bool finished = false;
+		size_t i;
+		for   (i = 0; i < max_t_count && !finished; i++, total_frames++)
 		{
-			
-			to_write_stream << i << ", ";
-			for (size_t i = 0; i < output_len; i++)
-				to_write_stream << Y[i] << ", ";
-			to_write_stream << reward << "\n";
-			
-			std::cout << to_write_stream.str();
-			
-			std::ofstream write_csv(filename, std::ios_base::app);
-			if (write_csv.fail())
+			int delta_y = goal_i / board_side_len - agent_position_i / board_side_len;
+			int delta_x = goal_i % board_side_len - agent_position_i % board_side_len;
+
+			int norm_delta_y = delta_y > 0;
+			norm_delta_y -= !norm_delta_y;
+			int norm_delta_x = delta_x > 0;
+			norm_delta_x -= !norm_delta_x;
+
+			data_t X[input_len] {};
+			X[0] = norm_delta_x;
+			X[1] = -norm_delta_x;
+			X[2] = norm_delta_y;
+			X[3] = -norm_delta_y;
+
+			data_t *Y = 0;
+			Y = agent->PPO_execute(
+				X,
+				&initial_states, &trajectory_inputs, &trajectory_outputs,
+				i
+			);
+
+			data_t x_probs_magnitude = Y[0] + Y[1];
+			data_t left_probability = Y[0];
+			data_t right_probability = Y[1];
+			if (x_probs_magnitude > 1)
 			{
-				std::cout << "log file failed " << write_csv.rdstate() << std::endl;
+				left_probability /= x_probs_magnitude;
+				right_probability /= x_probs_magnitude;
 			}
-			write_csv << to_write_stream.str();
-			write_csv.close();
-			to_write_stream.str("");     
-			to_write_stream.clear();
+			data_t r = get_random_float();
+			int x_action = 0;
+			x_action -= r < left_probability;
+			x_action += r < left_probability + right_probability && !x_action;
+
+			data_t y_probs_magnitude = Y[2] + Y[3];
+			data_t down_probability = Y[2];
+			data_t up_probability = Y[3];
+			if (y_probs_magnitude > 1)
+			{
+				down_probability /= y_probs_magnitude;
+				up_probability /= y_probs_magnitude;
+			}
+			r = get_random_float();
+			int y_action = 0;
+			y_action -= r < down_probability;
+			y_action += r < down_probability + up_probability && !y_action;
+
+			int agent_updated_position = agent_position_i + x_action + board_side_len * y_action;
+			/*if (agent_position_i == 10)
+			{
+				printf("Now ");
+			}*/
+			if (
+				agent_position_i / board_side_len != (agent_position_i + x_action) / board_side_len
+				|| 
+				agent_updated_position < 0 || agent_updated_position / board_side_len >= board_side_len
+			)
+			{ // Agent out of bounds
+				rewards[i] = -.7;
+				finished = true;
+				//printf("%i %i Out of bounds ", agent_position_i / board_side_len != (agent_position_i + x_action) / board_side_len, agent_position_i);
+			}
+
+			if (agent_updated_position == goal_i)
+			{
+				rewards[i] = .7;
+				finished = true;
+				achieved_objective = true;
+			}
+			else if (i == max_t_count - 1)
+			{
+				rewards[i] = -.7;
+			}
+
+			agent_position_i = agent_updated_position;
+			delete[] Y;
 		}
-		delete[] Y;
+
+		agent->PPO_train(
+			i, &initial_states, &trajectory_inputs, &trajectory_outputs,
+			rewards, true, value_function, parameters
+		);
+
+		printf("%i, %i, %zi, %zi\n", (int)achieved_objective, i, epoch, total_frames);
 	}
 	delete value_function;
 	delete agent;
@@ -309,8 +363,8 @@ int main()
 
 	//cudaSetDevice(0);
 	//bug_hunting();
-	test_LSTM();
-	//test_PPO();
+	//test_LSTM();
+	test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
