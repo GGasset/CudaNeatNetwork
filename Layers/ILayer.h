@@ -90,6 +90,7 @@ public:
 	virtual void mutate_fields(evolution_metadata evolution_values);
 
 	void add_neuron(size_t previous_layer_length, size_t previous_layer_activations_start, float previous_layer_connection_probability, size_t min_connections);
+	// Add parameters to the end of the weight array for compatibility with automatic optimizer adjustement
 	virtual void layer_specific_add_neuron();
 	void adjust_to_added_neuron(size_t added_neuron_i, float connection_probability);
 
