@@ -84,14 +84,9 @@ static void test_LSTM()
 
 	optimizer_hyperparameters optimizer;
 	NN* n = NN_constructor()
-		.append_layer(Dense, LSTM, 128)
-		.append_layer(Dense, LSTM, 64)
-		.append_layer(Dense, LSTM, 48)
 		.append_layer(Dense, LSTM, 32)
-		.append_layer(Dense, Neuron, 32)
 		.append_layer(Dense, Neuron, out_len)
-		.construct(in_len, optimizer, 0);
-
+		.construct(in_len, optimizer);
 
 	const size_t t_count = 3;
 	data_t X[in_len * t_count * 2] {};
@@ -114,8 +109,7 @@ static void test_LSTM()
 	}
 
 	gradient_hyperparameters hyperparameters;
-	hyperparameters.gradient_clip = 1;
-	hyperparameters.learning_rate = .1;
+	hyperparameters.optimization = optimizer;
 
 	const size_t epoch_n = 5000;
 	for (size_t i = 0; i < epoch_n; i++)
@@ -123,7 +117,7 @@ static void test_LSTM()
 		data_t* Y = 0;
 		data_t* activations = 0;
 		data_t* execution_values = 0;
-		if (i % 10 == 0)
+		if (i % 1 == 0)
 			printf("\n");
 		for (size_t j = 0; j < 2; j++)
 		{
@@ -138,7 +132,7 @@ static void test_LSTM()
 				MSE, hyperparameters
 			);
 
-			if (i % 10 == 0)
+			if (i % 1 == 0)
 				printf("%i | %.4f | %.4f, %.4f\n", i, cost, Y[out_len * t_count - 2], Y[out_len * t_count - 1]);
 
 			delete[] Y;
@@ -314,8 +308,8 @@ int main()
 
 
 	//cudaSetDevice(0);
-	bug_hunting();
-	//test_LSTM();
+	//bug_hunting();
+	test_LSTM();
 	//test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
