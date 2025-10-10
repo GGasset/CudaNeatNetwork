@@ -65,7 +65,7 @@ void ILayer::ILayerClone(ILayer* base_layer)
 
 	base_layer->hidden_states_per_neuron = hidden_states_per_neuron;
 
-	base_layer->optimizer = host_clone_optimizer(optimizer);
+	base_layer->optimizer = optimizer.Clone();
 	
 	cudaMalloc(&base_layer->neuron_gradients_starts, sizeof(size_t) * get_neuron_count());
 	if (connection_associated_gradient_counts)
@@ -93,7 +93,7 @@ void ILayer::save(FILE* file)
 	if (contains_connection_gradient_counts)
 		save_array(connection_associated_gradient_counts, neuron_count, file, true);
 
-	host_save_optimizer(file, optimizer);
+	optimizer.save(file);
 
 	specific_save(file);
 }
@@ -114,14 +114,11 @@ void ILayer::ILayer_load(FILE* file)
 	if (contains_connection_associated_gradient_counts)
 		load_array<size_t>(neuron_count, file, true);
 
-	optimizer = host_load_optimizer(file);
+	optimizer = Optimizers::load(file);
 }
 
 void ILayer::deallocate()
 {
-	call_Optimizer_destructor kernel(1, 1) (optimizer);
-	cudaDeviceSynchronize();
-
 	connections->deallocate();
 	layer_specific_deallocate();
 	cudaDeviceSynchronize();

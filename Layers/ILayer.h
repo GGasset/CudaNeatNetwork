@@ -7,7 +7,6 @@
 #include "gradients.cuh"
 
 #include "IConnections.h"
-#include "Optimizer_init.h"
 
 class ILayer
 {
@@ -22,7 +21,7 @@ public:
 
 	bool is_recurrent = false;
 	IConnections* connections = 0;
-	IOptimizer* optimizer = 0;
+	Optimizers optimizer;
 
 	size_t layer_activations_start = 0;
 
