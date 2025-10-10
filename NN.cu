@@ -867,7 +867,6 @@ void NN::add_neuron(size_t layer_i)
 	}
 	size_t added_neuron_i = layers[layer_i]->layer_activations_start + layers[layer_i]->get_neuron_count();
 
-	ILayer *layer = layers[layer_i];
 	layers[layer_i]->add_neuron(previous_layer_length, previous_layer_activations_start, 1, 0);
 	cudaDeviceSynchronize();
 
