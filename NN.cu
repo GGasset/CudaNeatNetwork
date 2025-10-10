@@ -811,7 +811,7 @@ void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 		throw "Neuron_type not added to evolve method";
 		break;
 	}
-	new_layer->optimizer = host_optimizer_init(default_optimizer, new_layer->get_weight_count());
+	new_layer->optimizer = Optimizers(new_layer->get_weight_count(), optimizer_initialization);
 	add_layer(insert_i, new_layer);
 }
 
@@ -866,8 +866,9 @@ void NN::add_neuron(size_t layer_i)
 		previous_layer_activations_start = previous_layer->layer_activations_start;
 	}
 	size_t added_neuron_i = layers[layer_i]->layer_activations_start + layers[layer_i]->get_neuron_count();
+
+	ILayer *layer = layers[layer_i];
 	layers[layer_i]->add_neuron(previous_layer_length, previous_layer_activations_start, 1, 0);
-	call_optimizer_values_alloc kernel(1, 1) (layers[layer_i]->optimizer, layers[layer_i]->get_weight_count());
 	cudaDeviceSynchronize();
 
 	adjust_to_added_neuron(layer_i, added_neuron_i);
