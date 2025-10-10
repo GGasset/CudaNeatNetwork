@@ -36,12 +36,23 @@ Optimizer_values Optimizers::load_values_of(size_t optimizer_i, FILE *file)
 
 void Optimizers::initialize_values(long parameter_start_i, size_t parameter_count)
 {
-	data_t *adam = optimizer_values[Adam].values;
-	adam[0] = initialization_hyperparameters.adam.beta_1;
-	adam[1] = initialization_hyperparameters.adam.beta_2;
-	adam[2] = initialization_hyperparameters.adam.epsilon;
-	adam[5] = adam[0];
-	adam[6] = adam[1];
+	Optimizer_values adam = optimizer_values[Adam];
+	data_t adam_initialization[7] {};
+	adam_initialization[0] = initialization_hyperparameters.adam.beta_1;
+	adam_initialization[1] = initialization_hyperparameters.adam.beta_2;
+	adam_initialization[2] = initialization_hyperparameters.adam.epsilon;
+	adam_initialization[5] = adam_initialization[0];
+	adam_initialization[6] = adam_initialization[1];
+
+	// Insert Memcpys here
+	for (size_t i = 0; i < parameter_count; i++)
+	{
+		cudaMemcpy(
+			adam.values + adam.value_count_per_parameter * i, adam_initialization,
+			sizeof(data_t) * adam.value_count_per_parameter, cudaMemcpyHostToDevice
+		);
+		
+	}
 }
 
 void Optimizers::allocate_values()
@@ -70,8 +81,6 @@ Optimizers::Optimizers()
 
 Optimizers::Optimizers(size_t parameter_count, optimizer_hyperparameters optimizer_options)
 {
-	*this = Optimizers();
-
 	this->parameter_count = parameter_count;
 	initialization_hyperparameters = optimizer_options;
 
