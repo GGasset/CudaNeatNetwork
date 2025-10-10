@@ -29,7 +29,7 @@ private:
 	use the function in subtract_gradient
 	*/
 	Optimizer_values optimizer_values[last_optimizer_entry];
-	int optimizer_values_per_parameter[last_optimizer_entry];
+	size_t optimizer_values_per_parameter[last_optimizer_entry];
 	size_t parameter_count = 0;
 	optimizer_hyperparameters initialization_hyperparameters;
 
