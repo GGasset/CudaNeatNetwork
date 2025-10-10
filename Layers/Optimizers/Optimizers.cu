@@ -32,6 +32,7 @@ Optimizer_values Optimizers::load_values_of(size_t optimizer_i, FILE *file)
 	if (!arr_len) return out;
 
 	out.values = load_array<data_t>(arr_len, file, true);
+	return out;
 }
 
 void Optimizers::initialize_values(long parameter_start_i, size_t parameter_count)
@@ -195,9 +196,9 @@ __device__ data_t Optimizers::apply_hyperparameters(data_t gradient, gradient_hy
 	return gradient;
 }
 
-data_t Optimizers::apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i)
+__device__ data_t Optimizers::apply_adam(data_t gradient, Optimizer_values values, size_t parameter_i)
 {
-	if (!values.values) throw;
+	if (!values.values) return gradient;
 
    	size_t values_starting_i = values.value_count_per_parameter * parameter_i;
 
