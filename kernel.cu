@@ -48,6 +48,9 @@ static void bug_hunting()
 		Y_hat[i * output_len + 1] = !odd ? .25 : .75;
 	}
 
+	gradient_hyperparameters hyperparameters;
+	hyperparameters.learning_rate = .1;
+
 	const size_t epochs = 6000;
 	for (size_t i = 0; i < epochs || 1; i++)
 	{
@@ -56,7 +59,7 @@ static void bug_hunting()
 			t_count,
 			X, Y_hat, 1, output_len * t_count,
 			MSE,
-			&Y, host_cpp_pointer_output, gradient_hyperparameters()
+			&Y, host_cpp_pointer_output, hyperparameters
 		));
 		for (size_t j = 0; j < t_count; j++)
 		{	
