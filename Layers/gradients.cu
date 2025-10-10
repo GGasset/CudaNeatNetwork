@@ -128,7 +128,7 @@ __global__ void LSTM_gradient_calculation(
 __global__ void LSTM_gradient_subtraction(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts, size_t* connection_associated_gradient_counts,
 	field_t* neuron_weights,
-	gradient_hyperparameters hyperparameters, IOptimizer* optimizer,
+	gradient_hyperparameters hyperparameters, Optimizers optimizer,
 	size_t layer_length, size_t connections_weight_count
 )
 {
@@ -140,8 +140,10 @@ __global__ void LSTM_gradient_subtraction(
 	size_t neuron_weights_start = static_cast<size_t>(4) * tid;
 
 	for (size_t i = 0; i < 4; i++)
-		optimizer->hyperparameter_subtract_gradient(
-			neuron_weights + neuron_weights_start + i, gradients[neuron_gradients_start_i + i], connections_weight_count + neuron_weights_start + i, hyperparameters
+		optimizer.subtract_gradient(
+			neuron_weights + neuron_weights_start + i, connections_weight_count + neuron_weights_start + i, 
+			gradients[neuron_gradients_start_i + i], 
+			hyperparameters
 		);
 }
 
