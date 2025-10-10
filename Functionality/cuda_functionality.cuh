@@ -218,7 +218,7 @@ template<typename T>
 __host__ T load_value(FILE *file)
 {
 	T out;
-	memset(&T, 0, sizeof(T));
+	memset(&out, 0, sizeof(T));
 
 #ifdef WIN32
 	if (fread_s(&out, sizeof(T), sizeof(T), 1, file) != sizeof(T)) throw;
