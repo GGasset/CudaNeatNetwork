@@ -135,6 +135,7 @@ void Optimizers::set_initialization(optimizer_hyperparameters new_initialization
 
 void Optimizers::add_parameters(size_t added_parameter_count, long insert_i)
 {
+	if (!added_parameter_count) return;
 	for (size_t i = 0; i < last_optimizer_entry; i++)
 	{
 		Optimizer_values values = optimizer_values[i];
@@ -155,6 +156,7 @@ void Optimizers::add_parameters(size_t added_parameter_count, long insert_i)
 
 void Optimizers::remove_parameters(size_t removed_count, long removed_i)
 {
+	if (!removed_count) return;
 	if (removed_i < 0) removed_i = parameter_count - removed_count;
 	for (size_t i = 0; i < last_optimizer_entry; i++)
 	{
