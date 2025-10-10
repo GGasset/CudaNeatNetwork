@@ -25,11 +25,13 @@ static void bug_hunting()
 	const size_t output_len = 2;
 
 	const bool stateful = false;
+
+	optimizer_hyperparameters optimizers;
 	NN *n = NN_constructor()
 		.append_layer(Dense, Neuron, 20, sigmoid)
 		.append_layer(Dense, Neuron, 10, sigmoid)
 		.append_layer(Dense, Neuron, output_len, sigmoid)
-		.construct(input_len, Adam, stateful);
+		.construct(input_len, optimizers, stateful);
 
 	const size_t t_count = 2;
 	data_t X[input_len * t_count];
@@ -77,6 +79,7 @@ static void test_LSTM()
 	const size_t in_len = 1;
 	const size_t out_len = 2;
 
+	optimizer_hyperparameters optimizer;
 	NN* n = NN_constructor()
 		.append_layer(Dense, LSTM, 128)
 		.append_layer(Dense, LSTM, 64)
@@ -84,7 +87,7 @@ static void test_LSTM()
 		.append_layer(Dense, LSTM, 32)
 		.append_layer(Dense, Neuron, 32)
 		.append_layer(Dense, Neuron, out_len)
-		.construct(in_len, no_optimizer, 0);
+		.construct(in_len, optimizer, 0);
 
 
 	const size_t t_count = 3;
@@ -159,11 +162,12 @@ static void NEAT_evolution_test()
 		Y_hat[i] = .5;
 	}*/
 
+	optimizer_hyperparameters optimizer;
 	NN* n = NN_constructor()
 		//.append_layer(NEAT, Neuron, 1, sigmoid)
 		.append_layer(NEAT, Neuron, 5, sigmoid)
 		.append_layer(NEAT, Neuron, output_len, activations_last_entry)
-		.construct(input_len, no_optimizer);
+		.construct(input_len, optimizer);
 	
 	gradient_hyperparameters hyperparameters;
 	hyperparameters.learning_rate = .01;
@@ -213,19 +217,22 @@ static void test_PPO()
 	const size_t output_len = 2;
 	const size_t max_t_count = 20;
 
+	optimizer_hyperparameters value_function_optimizer;
+	value_function_optimizer.adam.active = false;
 	NN* value_function = NN_constructor()
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 1, no_activation)
-		.construct(input_len, no_optimizer);
+		.construct(input_len, value_function_optimizer);
 
+	optimizer_hyperparameters agent_optimizer;
 	NN* agent = NN_constructor()
 		.append_layer(Dense, Neuron, 20)
 		.append_layer(Dense, Neuron, 15)
 		.append_layer(Dense, Neuron, 10)
 		.append_layer(Dense, Neuron, output_len)
-		.construct(input_len);
+		.construct(input_len, agent_optimizer);
 
 	PPO_hyperparameters parameters;
 	parameters.max_training_steps = 80;
@@ -304,9 +311,9 @@ int main()
 
 
 	//cudaSetDevice(0);
-	//bug_hunting();
+	bug_hunting();
 	//test_LSTM();
-	test_PPO();
+	//test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
