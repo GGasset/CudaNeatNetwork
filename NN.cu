@@ -886,8 +886,6 @@ void NN::adjust_to_added_neuron(int layer_i, size_t neuron_i)
 		size_t old_parameter_count = layers[i]->get_weight_count();
 		layers[i]->adjust_to_added_neuron(neuron_i, connection_probability);
 		size_t new_parameter_count = layers[i]->get_weight_count();
-		if (old_parameter_count != new_parameter_count)
-			call_optimizer_values_alloc kernel(1, 1) (layers[i]->optimizer, new_parameter_count);
 	}
 	cudaDeviceSynchronize();
 }

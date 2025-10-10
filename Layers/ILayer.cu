@@ -177,8 +177,11 @@ void ILayer::layer_specific_add_neuron()
 
 void ILayer::adjust_to_added_neuron(size_t added_neuron_i, float connection_probability)
 {
+	size_t previous_connection_count = connections->connection_count;
 	auto added_connections_neuron_i = std::vector<size_t>();
 	connections->adjust_to_added_neuron(added_neuron_i, connection_probability, &added_connections_neuron_i);
+	optimizer.add_parameters(added_connections_neuron_i.size(), neuron_count + previous_connection_count);
+
 	for (size_t i = 0; i < added_connections_neuron_i.size(); i++)
 	{
 		layer_gradient_count++;
