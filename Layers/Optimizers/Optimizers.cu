@@ -47,10 +47,11 @@ void Optimizers::initialize_values(long parameter_start_i, size_t parameter_coun
 	// Insert Memcpys here
 	for (size_t i = 0; i < parameter_count; i++)
 	{
-		cudaMemcpy(
-			adam.values + adam.value_count_per_parameter * i, adam_initialization,
-			sizeof(data_t) * adam.value_count_per_parameter, cudaMemcpyHostToDevice
-		);
+		if (adam.values)
+			cudaMemcpy(
+				adam.values + adam.value_count_per_parameter * i, adam_initialization,
+				sizeof(data_t) * adam.value_count_per_parameter, cudaMemcpyHostToDevice
+			);
 		
 	}
 }
