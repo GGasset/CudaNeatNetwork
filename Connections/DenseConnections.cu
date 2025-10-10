@@ -79,7 +79,7 @@ void DenseConnections::calculate_gradients(
 
 void DenseConnections::subtract_gradients(
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
-	gradient_hyperparameters hyperparameters, IOptimizer* optimizer
+	gradient_hyperparameters hyperparameters, Optimizers optimizer
 )
 {
 	cud_dense_gradient_subtraction kernel(dim3(previous_layer_length / 32 + (previous_layer_length % 32 > 0), neuron_count), 32) (
