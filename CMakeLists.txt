@@ -48,10 +48,9 @@ ADD_PREFIX_INPLACE(${CONNECTIONS_FOLDER}/ CONNECTION_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${CONNECTIONS_FOLDER})
 
 SET(OPTIMIZER_FILES
-		Optimizer_init.cu
-
-		IOptimizer.cu
-		Adam.cu
+		#Optimizer_init.cu
+		#IOptimizer.cu
+		#Adam.cu
 
 		Optimizers.cu
 	)
