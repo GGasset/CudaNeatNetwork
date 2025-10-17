@@ -45,7 +45,7 @@ __global__ void LSTM_derivative_calculation(
 	data_t output_weight = neuron_weights[neuron_weights_start + 3];
 
 
-	data_t linear_function_derivative = derivatives[neuron_derivatives_start];
+	//data_t linear_function_derivative = derivatives[neuron_derivatives_start];
 
 	data_t previous_hidden_derivative_to_tanh = prev_state_derivatives[tid * 3];
 	data_t previous_hidden_derivative_to_sigmoid = prev_state_derivatives[tid * 3 + 1];
