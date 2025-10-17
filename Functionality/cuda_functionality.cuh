@@ -53,6 +53,18 @@ __global__ void add_to_array(T* arr, size_t arr_value_count, t to_add)
 	arr[tid] += to_add;
 }
 
+// Only the values whose index is less than the min len
+// Parameter Write_arr may be a or b
+// Parameters Invert [a,b]: the corresponding array values will be multiplied by -1 in the sum
+template<typename T, typename t>
+__global__ void add_arrays(T *write_arr, T *a, t *b, size_t a_len, size_t b_len, bool invert_a = false, bool invert_b = false)
+{
+	size_t tid = get_tid();
+	if (tid >= device_min(a_len, b_len)) return;
+
+	write_arr[tid] += a[tid] * (1 - (2 * invert_a)) + b[tid] * (1 - (2 * invert_b));
+}
+
 template <typename T, typename t>
 __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 {
