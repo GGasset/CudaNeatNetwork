@@ -230,8 +230,8 @@ static void test_PPO()
 		.construct(input_len, agent_optimizer);
 
 	PPO_hyperparameters parameters;
-	parameters.max_training_steps = 50;
-	parameters.GAE.training_steps = 50;
+	parameters.max_training_steps = 20;
+	parameters.GAE.training_steps = 5;
 	//parameters.GAE.gamma = .99;
 	parameters.GAE.value_function.learning_rate = 1e-2;
 	parameters.policy.learning_rate = 1e-3;
@@ -243,7 +243,7 @@ static void test_PPO()
 
 	const size_t board_side_len = 3;
 	const size_t board_square_count = board_side_len * board_side_len;
-	const size_t max_t_count = board_side_len - 1;
+	const size_t max_t_count = board_side_len + 5;
 
 	size_t total_frames = 0;
 	for (size_t epoch = 0; true; epoch++)
