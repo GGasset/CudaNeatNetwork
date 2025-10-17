@@ -524,7 +524,7 @@ data_t *NN::calculate_GAE_advantage(
 
 	data_t* value_functions = 0;
 	value_functions = value_function_estimator->batch_execute(
-		value_function_state, t_count
+		value_function_state, t_count, cuda_pointer_output
 	);
 	for (size_t i = 0; i < parameters.training_steps; i++)
 		value_function_estimator->training_batch(
@@ -539,12 +539,13 @@ data_t *NN::calculate_GAE_advantage(
 		data_t *advantages = 0;
 		cudaMalloc(&advantages, sizeof(data_t) * t_count);
 		if (!advantages) throw;
-		cudaMemset(&advantages, 0, sizeof(data_t) * t_count);
+		cudaMemset(advantages, 0, sizeof(data_t) * t_count);
 
 		add_arrays n_threads(t_count) (
 			advantages, discounted_rewards, value_functions,
 			t_count, t_count, false, true
 		);
+		cudaDeviceSynchronize();
 
 		if (is_reward_on_host) cudaFree(rewards);
 		else if (free_rewards) delete[] rewards;
