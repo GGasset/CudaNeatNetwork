@@ -19,6 +19,9 @@ typedef struct GAE_hyperparameters
 
 	// Number of times value function will be trained
 	size_t training_steps = 15;
+
+	// If false just subtracts value function predictions from empirical return to calculate advantage
+	bool use_GAE = false;
 } GAE_hyperparameters;
 
 typedef struct PPO_hyperparameters
