@@ -208,33 +208,48 @@ static void NEAT_evolution_test()
 	}
 }
 
+// TODO:
+// Softmax
+// vision of distance borders of map
 static void test_PPO()
 {
 	const size_t input_len = 4;
 	const size_t output_len = 4;
 
 	optimizer_hyperparameters value_function_optimizer;
+	value_function_optimizer.adam.epsilon = 1e-5;
 	NN* value_function = NN_constructor()
-		.append_layer(Dense, Neuron, 20)
-		.append_layer(Dense, Neuron, 20)
+		.append_layer(Dense, Neuron, 128)
+		.append_layer(Dense, Neuron, 80)
+		.append_layer(Dense, Neuron, 50)
+		.append_layer(Dense, Neuron, 50)
 		.append_layer(Dense, Neuron, 20, _tanh)
 		.append_layer(Dense, Neuron, 1, _tanh)
 		.construct(input_len, value_function_optimizer);
 
 	optimizer_hyperparameters agent_optimizer;
+	agent_optimizer.adam.epsilon = 1e-5;
 	NN* agent = NN_constructor()
-		.append_layer(Dense, Neuron, 20)
-		.append_layer(Dense, Neuron, 15)
-		.append_layer(Dense, Neuron, 10)
+		.append_layer(Dense, Neuron, 128)
+		.append_layer(Dense, Neuron, 80)
+		.append_layer(Dense, Neuron, 50)
+		.append_layer(Dense, Neuron, 50)
+		.append_layer(Dense, Neuron, 20, _tanh)
 		.append_layer(Dense, Neuron, output_len)
 		.construct(input_len, agent_optimizer);
 
+	const double learning_rate_anhealing_coeff = 1 - 1e-4;
 	PPO_hyperparameters parameters;
-	parameters.max_training_steps = 20;
+
 	parameters.GAE.training_steps = 5;
-	//parameters.GAE.gamma = .99;
+	parameters.GAE.gamma = .9;
 	parameters.GAE.value_function.learning_rate = 1e-2;
+	parameters.GAE.value_function.gradient_clip = .5;
+
+	parameters.policy.gradient_clip = .5;
 	parameters.policy.learning_rate = 1e-3;
+
+	parameters.max_training_steps = 20;
 	parameters.clip_ratio = .2;
 	parameters.max_kl_divergence_threshold = .01;
 
@@ -334,7 +349,7 @@ static void test_PPO()
 			}
 			else if (i == max_t_count - 1)
 			{
-				rewards[i] = -.5;
+				rewards[i] = -.3;
 			}
 
 			agent_position_i = agent_updated_position;
@@ -346,7 +361,9 @@ static void test_PPO()
 			rewards, true, value_function, parameters
 		);
 
-		printf("%i, %i, %zi, %zi\n", (int)achieved_objective, i, epoch, total_frames);
+		printf("%i, %i, %zi, %zi, %.8f\n", (int)achieved_objective, i, epoch, total_frames, parameters.policy.learning_rate);
+		parameters.policy.learning_rate *= learning_rate_anhealing_coeff;
+		parameters.GAE.value_function.learning_rate *= learning_rate_anhealing_coeff;
 	}
 	delete value_function;
 	delete agent;

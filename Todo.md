@@ -3,9 +3,8 @@
 
 ## Regularization - Optimizers
 
-- Add L1 and L2 regullarization
+- ~~Add L1 and L2 regullarization~~
 - ~~Add entropy regularization~~
-- Add layer regularization
 - Learning rate scheduling
 - ~~Add Optimizers (Take scalability into account)~~
 	- ~~Adam~~
@@ -30,7 +29,9 @@
         * ~~Evolution methods~~
 
 - ~~Modularized generate random values for different data types~~
-- ~~Use Xavier initialization~~
+- Modular weight initialization
+- ~~Add Xavier initialization~~
+- Add Orthogonal initialization
 - ~~Make droput set cost of neuron to 0 before its gradient calculation and remove previous dropout~~
     - ~~It just nullifies the gradient to substract to dropped out weights~~
 
@@ -50,6 +51,8 @@
     - ~~GAE (Generalized Advantage Estimator)~~
     - ~~PPO (Proximal Policy Optimization)~~
         - kl penalty 
+        - MiniBatches
+        - Value loss clipping
 
 - Create model links for multi-model performance
     - Create a training and execution function that accepts multiple networks and links
