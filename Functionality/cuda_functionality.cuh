@@ -107,6 +107,17 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
 	return out;
 }
 
+__global__ void extract_execution_values(
+	data_t *execution_values, data_t *write_arr, size_t neuron_count,
+	size_t execution_values_per_neuron, size_t neuron_read_i
+)
+{
+	size_t tid = get_tid();
+	if (tid >= neuron_count || !execution_values || !write_arr) return;
+
+	write_arr[tid] = execution_values[execution_values_per_neuron * tid + neuron_read_i];
+}
+
 template <typename T, typename t>
 __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 {
