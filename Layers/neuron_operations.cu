@@ -205,6 +205,7 @@ __host__ void activation_function(
 		);
 		break;
 	}
+	cudaDeviceSynchronize();
 }
 
 
