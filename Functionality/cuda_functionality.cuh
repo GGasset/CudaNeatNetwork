@@ -118,6 +118,21 @@ __global__ void extract_execution_values(
 	write_arr[tid] = execution_values[execution_values_per_neuron * tid + neuron_read_i];
 }
 
+__host__ data_t *host_extract_execution_values(
+	data_t *execution_values, data_t *write_arr, size_t neuron_count,
+	size_t execution_values_per_neuron, size_t neuron_read_i
+)
+{
+	data_t *out = 0;
+	cudaMalloc(&out, sizeof(data_t) * neuron_count);
+	extract_execution_values n_threads(neuron_count) (
+		execution_values, write_arr, neuron_count,
+		execution_values_per_neuron, neuron_read_i
+	);
+	cudaDeviceSynchronize();
+	return (out);
+}
+
 template <typename T, typename t>
 __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 {
