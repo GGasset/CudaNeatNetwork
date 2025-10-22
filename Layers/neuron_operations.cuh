@@ -20,7 +20,14 @@ __global__ void tanh_activation(
 	size_t layer_length
 );
 
-__global__ void activation_function(
+__global__ void softmax_activation(
+	data_t* activations, size_t activations_start, size_t layer_activation_start, short write_activation,
+	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
+	size_t neuron_execution_values_read, size_t neuron_execution_values_write, short write_execution_values,
+	size_t layer_length
+);
+
+__host__ void activation_function(
 	ActivationFunctions activation,
 	data_t* activations, size_t activations_start, size_t layer_activation_start, short write_activation,
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,

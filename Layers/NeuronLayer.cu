@@ -59,7 +59,7 @@ void NeuronLayer::execute(
 	connections->linear_function(activations_start, activations,
 		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron
 	);
-	activation_function n_threads(neuron_count) (
+	activation_function (
 		activation,
 		activations, activations_start, layer_activations_start, true,
 		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron, 0, 0, 0,

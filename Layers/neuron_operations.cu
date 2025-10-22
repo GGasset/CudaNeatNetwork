@@ -87,7 +87,58 @@ __global__ void tanh_activation(
 	);
 }
 
-__global__ void activation_function(
+__global__ void softmax_activation
+(
+	data_t *activations, size_t activations_start, size_t layer_activation_start, short write_activation, 
+	data_t *execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron, 
+	size_t neuron_execution_values_read, size_t neuron_execution_values_write, short write_execution_values, 
+	size_t layer_length, data_t exponent_sum
+)
+{
+	size_t tid = get_tid();
+	if (tid >= layer_length) return;
+	size_t neuron_execution_values_start = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid;
+
+	data_t x = execution_values[neuron_execution_values_start + neuron_execution_values_read];
+
+	data_t activation = exp(x) / exponent_sum;
+	if (write_activation)
+	{
+		size_t activations_i = activations_start + layer_activation_start + tid;
+		activations[activations_i] = activation;
+	}
+	if (write_execution_values)
+	{
+		size_t execution_values_i = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid + neuron_execution_values_write;
+		execution_values[execution_values_i] = activation;
+	}
+}
+
+__device__ data_t device_no_activation
+(
+	data_t* activations, size_t activations_start, size_t layer_activation_start, short write_activation,
+	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
+	size_t neuron_execution_values_read, size_t neuron_execution_values_write, short write_execution_values
+)
+{
+	size_t tid = get_tid();
+	size_t neuron_execution_values_start = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid;
+
+	data_t activation = execution_values[neuron_execution_values_start + neuron_execution_values_read];
+	if (write_activation)
+	{
+		size_t activations_i = activations_start + layer_activation_start + tid;
+		activations[activations_i] = activation;
+	}
+	if (write_execution_values)
+	{
+		size_t execution_values_i = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid + neuron_execution_values_write;
+		execution_values[execution_values_i] = activation;
+	}
+	return activation;
+}
+
+__global__ void global_activation_function(
 	ActivationFunctions activation,
 	data_t* activations, size_t activations_start, size_t layer_activation_start, short write_activation,
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
@@ -117,20 +168,45 @@ __global__ void activation_function(
 		);
 		break;
 	default: // No activation
-		data_t x = execution_values[neuron_execution_values_start + neuron_execution_values_read];
-		if (write_activation)
-		{
-			size_t activations_i = activations_start + layer_activation_start + tid;
-			activations[activations_i] = x;
-		}
-		if (write_execution_values)
-		{
-			size_t execution_values_i = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid + neuron_execution_values_write;
-			execution_values[execution_values_i] = x;
-		}
+		device_no_activation(
+			activations, activations_start, layer_activation_start, write_activation,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+			neuron_execution_values_read, neuron_execution_values_write, write_execution_values
+		);
 		break;
 	}
 }
+
+__host__ void activation_function(
+	ActivationFunctions activation,
+	data_t* activations, size_t activations_start, size_t layer_activation_start, short write_activation,
+	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
+	size_t neuron_execution_values_read, size_t neuron_execution_values_write, short write_execution_values,
+	size_t layer_length
+)
+{
+	switch (activation)
+	{
+	/*case softmax:
+		softmax_activation n_threads(layer_length) (
+			activations, activations_start, layer_activation_start, write_activation,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+			neuron_execution_values_read, neuron_execution_values_write, write_execution_values,
+			layer_length, exponent_sum
+		);
+		break;*/
+	default:
+		global_activation_function n_threads(layer_len) (
+			activation,
+			activations, activations_start, layer_activations_start, write_activations,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+			neuron_execution_values_read, neuron_execution_values_write, write_execution_values,
+			layer_length
+		);
+		break;
+	}
+}
+
 
 __global__ void LSTM_execution(
 	data_t* activations, size_t activations_start, size_t layer_activations_start,
