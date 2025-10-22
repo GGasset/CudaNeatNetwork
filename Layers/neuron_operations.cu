@@ -188,6 +188,13 @@ __host__ void activation_function(
 	switch (activation)
 	{
 	/*case softmax:
+		data_t *linear_funcs = host_extract_execution_values(
+			execution_values, layer_length,
+			execution_values_per_neuron, 0
+		);
+		// TODO create apply function and make linear funcs be its exponents
+		T exponent_sum = PRAM_reduce_add(linear_funcs, layer_length);
+		cudaFree(linear_funcs);
 		softmax_activation n_threads(layer_length) (
 			activations, activations_start, layer_activation_start, write_activation,
 			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
