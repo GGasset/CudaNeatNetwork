@@ -12,7 +12,6 @@
 #include "functionality.h"
 #include "NN_enums.h"
 
-//__global__ template void apply_to_array<typename t>(t* array, size_t array_length, std::function<bool(t, t)> if_function, t right_if_function_parameter, std::function<t(t)> to_apply);
 __device__ data_t device_min(data_t a, data_t b);
 __device__ data_t device_max(data_t a, data_t b);
 __device__ data_t device_closest_to_zero(data_t a, data_t b);
@@ -63,6 +62,49 @@ __global__ void add_arrays(T *write_arr, T *a, t *b, size_t a_len, size_t b_len,
 	if (tid >= device_min(a_len, b_len)) return;
 
 	write_arr[tid] += a[tid] * (1 - (2 * invert_a)) + b[tid] * (1 - (2 * invert_b));
+}
+
+// write_arr requires an avalible length of n_inputs / 2 + n_inputs % 2
+template<typename T>
+__global__ void global_PRAM_reduce_add(T* input, T* write_arr, size_t n_inputs)
+{
+	size_t tid = get_tid();
+	if (tid >= n_inputs / 2 + n_inputs % 2 || !input || !write_arr) return;
+	if (tid == n_inputs / 2 + 1)
+	{
+		write_arr[tid] = input[n_inputs - 1];
+		return;
+	}
+	write_arr[tid] = input[tid * 2] + input[tid * 2 + 1];
+}
+
+template<typename T>
+__host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
+{
+	T *tmp = 0;
+
+	cudaMalloc(&tmp, sizeof(T) * arr_len);
+
+	cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
+	if (is_arr_in_host) kind = cudaMemcpyHostToDevice;
+	cudaMemcpy(tmp, arr, sizeof(T) * arr_len, kind);
+
+	while (arr_len > 1)
+	{
+		if (!tmp) throw;
+		size_t new_arr_len = arr_len / 2 + arr_len % 2
+		T* new_arr = 0;
+		cudaMalloc(&tmp_arr, sizeof(T) * new_arr_len);
+		global_PRAM_reduce_add n_thread(new_arr_len) (
+			tmp, new_arr, arr_len
+		);
+		cudaFree(tmp);
+		tmp = new_arr;
+		arr_len = new_arr_len;
+	}
+	T out;
+	cudaMemcpy(&out, tmp, sizeof(T), cudaMemcpyDeviceToHost);
+	return out;
 }
 
 template <typename T, typename t>
