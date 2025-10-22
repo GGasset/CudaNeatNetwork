@@ -119,14 +119,14 @@ __global__ void extract_execution_values(
 }
 
 __host__ data_t *host_extract_execution_values(
-	data_t *execution_values, data_t *write_arr, size_t neuron_count,
+	data_t *execution_values,  size_t neuron_count,
 	size_t execution_values_per_neuron, size_t neuron_read_i
 )
 {
 	data_t *out = 0;
 	cudaMalloc(&out, sizeof(data_t) * neuron_count);
 	extract_execution_values n_threads(neuron_count) (
-		execution_values, write_arr, neuron_count,
+		execution_values, out, neuron_count,
 		execution_values_per_neuron, neuron_read_i
 	);
 	cudaDeviceSynchronize();
