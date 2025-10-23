@@ -153,13 +153,16 @@ __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 }
 
 template<typename T>
-__global__ void count_value(T value, T* array, size_t array_length, unsigned int* output)
+__host__ size_t count_value(T value, T* array, size_t array_length)
 {
-	size_t tid = get_tid();
-	if (tid >= array_length) return;
-	if (array[tid] != value) return;
+	T *tmp = cuda_clone_arr(array, array_length);
+	if (!tmp) throw;
 
-	atomicAdd(output, 1);
+	nullify_unless_equals n_threads(array_length) (tmp, array_length, value);
+	cudaDeviceSynchronize();
+	size_t out = (size_t)PRAM_reduce_add(tmp, array_length);
+	cudaFree(tmp);
+	return out;
 }
 
 __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length);
