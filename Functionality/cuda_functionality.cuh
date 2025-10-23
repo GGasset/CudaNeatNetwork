@@ -273,6 +273,15 @@ __global__ void nullify_unless_equals(T* arr, size_t value_count, T no_nullify_v
 }
 
 template<typename T>
+__global__ void booleanize(T *arr, size_t value_count)
+{
+	size_t tid = get_tid();
+	if (tid >= value_count) return;
+
+	arr[tid] = arr[tid] != 0;
+}
+
+template<typename T>
 __host__ void print_array(T* arr, size_t arr_len)
 {
 	T* host_arr = new T[arr_len];
