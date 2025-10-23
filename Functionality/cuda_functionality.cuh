@@ -107,6 +107,7 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
 		global_PRAM_reduce_add n_thread(new_arr_len) (
 			tmp, new_arr, arr_len
 		);
+		cudaDeviceSynchronize();
 		cudaFree(tmp);
 		tmp = new_arr;
 		arr_len = new_arr_len;
