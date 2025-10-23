@@ -118,20 +118,7 @@ void NeatConnections::subtract_gradients(
 
 size_t NeatConnections::get_connection_count_at(size_t neuron_i)
 {
-	unsigned int* device_count = 0;
-	cudaMalloc(&device_count, sizeof(unsigned int));
-	cudaDeviceSynchronize();
-
-	cudaMemset(device_count, 0, sizeof(unsigned int));
-	count_value kernel(connection_count / 32 + (connection_count % 32 > 0), 32) (neuron_i, connection_neuron_i, connection_count, device_count);
-	cudaDeviceSynchronize();
-
-	unsigned int count = 0;
-	cudaMemcpy(&count, device_count, sizeof(unsigned int), cudaMemcpyDeviceToHost);
-	cudaDeviceSynchronize();
-
-	cudaFree(device_count);
-	return (size_t)count;
+	return count_value(neuron_i, connection_neuron_i, connection_count);
 }
 
 void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_layer_activations_start, float previous_layer_connection_probability, size_t min_connections)
