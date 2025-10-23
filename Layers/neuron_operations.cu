@@ -192,8 +192,8 @@ __host__ void activation_function(
 			execution_values, layer_length,
 			execution_values_per_neuron, 0
 		);
-		apply_func n_threads(layer_length) (linear_funcs, layer_length, exp);
-		T exponent_sum = PRAM_reduce_add(linear_funcs, layer_length);
+		apply_func<data_t, float, float> n_threads(layer_length) (linear_funcs, layer_length, exp);
+		size_t exponent_sum = PRAM_reduce_add(linear_funcs, layer_length);
 		cudaFree(linear_funcs);
 		softmax_activation n_threads(layer_length) (
 			activations, activations_start, layer_activation_start, write_activation,
@@ -203,9 +203,9 @@ __host__ void activation_function(
 		);
 		break;
 	default:
-		global_activation_function n_threads(layer_len) (
+		global_activation_function n_threads(layer_length) (
 			activation,
-			activations, activations_start, layer_activations_start, write_activations,
+			activations, activations_start, layer_activation_start, write_activation,
 			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
 			neuron_execution_values_read, neuron_execution_values_write, write_execution_values,
 			layer_length
