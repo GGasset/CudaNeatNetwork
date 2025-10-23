@@ -261,6 +261,15 @@ __host__ T* cuda_add_to_occurrences(t* compare_arr, int (*compare_func)(t val, t
 }
 
 template<typename T>
+__global__ void nullify_unless_equals(T* arr, size_t value_count, T no_nullify_value)
+{
+	size_t tid = get_tid();
+	if (tid >= value_count) return;
+
+	arr[tid] *= arr[tid] == no_nullify_value;
+}
+
+template<typename T>
 __host__ void print_array(T* arr, size_t arr_len)
 {
 	T* host_arr = new T[arr_len];
