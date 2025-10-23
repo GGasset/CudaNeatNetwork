@@ -1,3 +1,8 @@
+
+#ifndef CUDA_FUNCTIONALITY_CUH
+# define CUDA_FUNCTIONALITY_CUH
+# include "cuda_functionality.cuh"
+
 #pragma once
 
 #include "curand.h"
@@ -101,10 +106,10 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
 	while (arr_len > 1)
 	{
 		if (!tmp) throw;
-		size_t new_arr_len = arr_len / 2 + arr_len % 2
+		size_t new_arr_len = arr_len / 2 + arr_len % 2;
 		T* new_arr = 0;
-		cudaMalloc(&tmp_arr, sizeof(T) * new_arr_len);
-		global_PRAM_reduce_add n_thread(new_arr_len) (
+		cudaMalloc(&new_arr, sizeof(T) * new_arr_len);
+		global_PRAM_reduce_add n_threads(new_arr_len) (
 			tmp, new_arr, arr_len
 		);
 		cudaDeviceSynchronize();
@@ -143,6 +148,16 @@ __host__ data_t *host_extract_execution_values(
 	return (out);
 }
 
+template<typename T>
+__host__ T *cuda_clone_arr(T *arr, size_t arr_len)
+{
+	if (!arr) return 0;
+	T *out = 0;
+	cudaMalloc(&out, sizeof(T) * arr_len);
+	cudaMemcpy(out, arr, sizeof(T) * arr_len, cudaMemcpyDefault);
+	return out;
+}
+
 template <typename T, typename t>
 __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 {
@@ -150,6 +165,24 @@ __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 	if (tid >= device_min(dst_len, src_len)) return;
 
 	dst[tid] = src[tid];
+}
+
+template<typename T>
+__global__ void nullify_unless_equals(T* arr, size_t value_count, T no_nullify_value)
+{
+	size_t tid = get_tid();
+	if (tid >= value_count) return;
+
+	arr[tid] *= arr[tid] == no_nullify_value;
+}
+
+template<typename T>
+__global__ void booleanize(T *arr, size_t value_count)
+{
+	size_t tid = get_tid();
+	if (tid >= value_count) return;
+
+	arr[tid] = arr[tid] != 0;
 }
 
 template<typename T>
@@ -266,24 +299,6 @@ __host__ T* cuda_add_to_occurrences(t* compare_arr, int (*compare_func)(t val, t
 }
 
 template<typename T>
-__global__ void nullify_unless_equals(T* arr, size_t value_count, T no_nullify_value)
-{
-	size_t tid = get_tid();
-	if (tid >= value_count) return;
-
-	arr[tid] *= arr[tid] == no_nullify_value;
-}
-
-template<typename T>
-__global__ void booleanize(T *arr, size_t value_count)
-{
-	size_t tid = get_tid();
-	if (tid >= value_count) return;
-
-	arr[tid] = arr[tid] != 0;
-}
-
-template<typename T>
 __host__ void print_array(T* arr, size_t arr_len)
 {
 	T* host_arr = new T[arr_len];
@@ -293,16 +308,6 @@ __host__ void print_array(T* arr, size_t arr_len)
 	printf("\n");
 
 	delete[] host_arr;
-}
-
-template<typename T>
-__host__ T *cuda_clone_arr(T *arr, size_t arr_len)
-{
-	if (!arr) return 0;
-	T *out = 0;
-	cudaMalloc(&out, sizeof(T) * arr_len);
-	cudaMemcpy(out, arr, sizeof(T) * arr_len, cudaMemcpyDefault)
-	return out;
 }
 
 template<typename T>
@@ -440,3 +445,6 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	cudaDeviceSynchronize();
 	cudaFree(arr);
 }
+
+#endif
+
