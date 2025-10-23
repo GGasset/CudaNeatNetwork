@@ -160,6 +160,8 @@ __host__ size_t count_value(T value, T* array, size_t array_length)
 
 	nullify_unless_equals n_threads(array_length) (tmp, array_length, value);
 	cudaDeviceSynchronize();
+	booleanize n_threads(array_length) (tmp, array_length);
+	cudaDeviceSynchronize();
 	size_t out = (size_t)PRAM_reduce_add(tmp, array_length);
 	cudaFree(tmp);
 	return out;
