@@ -9,8 +9,8 @@
 - ~~Add Optimizers (Take scalability into account)~~
 	- ~~Adam~~
     - ~~Add saving/loading to disk~~
-    - Add hyperparameter structure for optimizers
-        - If that structure decides which optimizers to use at the last moment would be great. i.e. by passing it during subtract gradients and using the active hyperparameters, use a list that searches for a hyperparameter id (enum) and if it doesn't exists, it allocates more memory for it
+    - ~~Add hyperparameter structure for optimizers~~
+        - ~~If that structure decides which optimizers to use at the last moment would be great. i.e. by passing it during subtract gradients and using the active hyperparameters, use a list that searches for a hyperparameter id (enum) and if it doesn't exists, it allocates more memory for it~~
 
 ## Code optimization
 - Paralelize layer derivative calculation calls withing CPU
