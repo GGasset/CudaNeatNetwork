@@ -25,6 +25,15 @@ __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type out
 /// <returns></returns>
 __device__ size_t get_tid();
 
+template<typename T, typename param_t, typename return_t>
+__global__ void apply_func(T *arr, size_t arr_len, return_t (*func)(param_t x))
+{
+	size_t tid = get_tid();
+	if (tid >= arr_len) return;
+
+	arr[tid] = (T)func((param_t)arr[tid]);
+}
+
 template<typename T, typename t>
 __global__ void multiply_array(T* arr, size_t arr_value_count, t multiply_by_value)
 {
