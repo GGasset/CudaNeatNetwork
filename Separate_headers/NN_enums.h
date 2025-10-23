@@ -37,6 +37,7 @@ enum ActivationFunctions : size_t
 	sigmoid,
 	_tanh,
 	activations_last_entry,
+	softmax,
 	no_activation
 };
 
