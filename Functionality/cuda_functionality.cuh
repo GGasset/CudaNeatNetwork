@@ -282,6 +282,16 @@ __host__ void print_array(T* arr, size_t arr_len)
 }
 
 template<typename T>
+__host__ T *cuda_clone_arr(T *arr, size_t arr_len)
+{
+	if (!arr) return 0;
+	T *out = 0;
+	cudaMalloc(&out, sizeof(T) * arr_len);
+	cudaMemcpy(out, arr, sizeof(T) * arr_len, cudaMemcpyDefault)
+	return out;
+}
+
+template<typename T>
 __host__ void save_array(T *arr, size_t arr_len, FILE *file, int is_device_arr)
 {
 	if (!arr) return;
