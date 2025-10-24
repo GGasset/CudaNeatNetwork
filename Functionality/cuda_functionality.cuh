@@ -99,7 +99,7 @@ __global__ void global_PRAM_reduce_add(T* input, T* write_arr, size_t n_inputs)
 }
 
 template<typename T>
-__host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
+__host__ T PRAM_reduce_add(T* arr, size_t arr_len, T *output_write = 0, bool is_arr_in_host = false)
 {
 	T *tmp = 0;
 
@@ -123,6 +123,8 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
 		tmp = new_arr;
 		arr_len = new_arr_len;
 	}
+	if (device_write) cudaMemcpy(device_write, tmp, sizeof(T), cudaMemcpyDefault);
+
 	T out;
 	cudaMemcpy(&out, tmp, sizeof(T), cudaMemcpyDeviceToHost);
 	return out;
