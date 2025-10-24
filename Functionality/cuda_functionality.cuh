@@ -145,7 +145,7 @@ template<typename T>
 __global__ void repetitive_copy(T *dst, size_t dst_len, T *src, size_t src_len)
 {
 	size_t tid = get_tid();
-	if (tid >= device_min(dst_len, src_len) || !dst || !src) return;
+	if (tid >= dst_len || !dst || !src) return;
 
 	dst[tid] = src[tid % src_len];
 }
