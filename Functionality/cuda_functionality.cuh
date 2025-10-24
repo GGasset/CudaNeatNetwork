@@ -138,6 +138,16 @@ __host__ T *cuda_clone_arr(T *arr, size_t arr_len)
 	return out;
 }
 
+// Tries to copy, when src is copied and dst has free space, starts from the beginning
+template<typename T>
+__global__ void repetitive_copy(T *dst, size_t dst_len, T *src, size_t src_len)
+{
+	size_t tid = get_tid();
+	if (tid >= device_min(dst_len, src_len)) return;
+
+	dst[tid] = src[tid % src_len];
+}
+
 template <typename T, typename t>
 __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 {
