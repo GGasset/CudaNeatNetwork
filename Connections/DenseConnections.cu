@@ -36,7 +36,7 @@ void DenseConnections::linear_function(size_t activations_start, data_t* activat
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
 )
 {
-	if (previous_layer_length > 1e3)
+	if (connection_count > 1e3)
 	{
 		data_t *input_arr = 0;
 		cudaMalloc(&input_arr, sizeof(data_t) * connection_count);
@@ -45,16 +45,19 @@ void DenseConnections::linear_function(size_t activations_start, data_t* activat
 			activations + activations_start + previous_layer_activations_start, previous_layer_length
 		);
 		cudaDeviceSynchronize();
+
 		element_wise_multiply n_threads(connection_count) (input_arr, weights, connection_count);
 		cudaDeviceSynchronize();
-		for (size_t i = 0; i < neuron_count; i++)
-		{
-			PRAM_reduce_add(
-				input_arr + i * previous_layer_length, previous_layer_length,
-				execution_values + execution_values_start + execution_values_layer_start + i * layer_execution_values_per_neuron
-			);
-		}
+
+		data_t *linear_funcs = multi_PRAM_add(input_arr, previous_layer_length, neuron_count);
 		cudaFree(input_arr);
+
+		set_execution_values n_threads(neuron_count) (
+			execution_values + execution_values_start + execution_values_layer_start, linear_funcs,
+			layer_execution_values_per_neuron, 0, neuron_count
+		);
+		cudaFree(linear_funcs);
+		cudaDeviceSynchronize();
 	}
 	else
 		cud_dense_linear_function kernel(dim3(previous_layer_length / 32 + (previous_layer_length % 32 > 0), neuron_count, 1), 32) (
