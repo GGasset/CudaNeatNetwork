@@ -56,7 +56,7 @@
         - MiniBatches
         - Value loss clipping
 
-- Create model links for multi-model performance
+- Create model links for multi-model networks
     - Create a training and execution function that accepts multiple networks and links
     - Links just copy output to input and cost backwards, with one connected neuron per neuron, without any computation
 
