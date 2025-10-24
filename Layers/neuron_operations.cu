@@ -189,7 +189,7 @@ __host__ void activation_function(
 	case softmax:
 	{
 		data_t *linear_funcs = host_extract_execution_values(
-			execution_values, layer_length,
+			execution_values + execution_values_start + execution_values_layer_start, layer_length,
 			execution_values_per_neuron, 0
 		);
 		apply_func<data_t, float, float> n_threads(layer_length) (linear_funcs, layer_length, exp);
