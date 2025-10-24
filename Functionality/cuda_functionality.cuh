@@ -45,6 +45,18 @@ __global__ void apply_func(T *arr, size_t arr_len, return_t (*func)(param_t x))
 	arr[tid] = (T)func((param_t)arr[tid]);
 }
 
+template<typename T>
+__host__ void print_array(T* arr, size_t arr_len)
+{
+	T* host_arr = new T[arr_len];
+	cudaMemcpy(host_arr, arr, sizeof(T) * arr_len, cudaMemcpyDefault);
+
+	for (size_t i = 0; i < arr_len; i++) printf("%.2f ", (float)(host_arr[i]));
+	printf("\n");
+
+	delete[] host_arr;
+}
+
 template<typename T, typename t>
 __global__ void multiply_array(T* arr, size_t arr_value_count, t multiply_by_value)
 {
@@ -88,9 +100,11 @@ __global__ void add_arrays(T *write_arr, T *a, t *b, size_t a_len, size_t b_len,
 template<typename T>
 __global__ void global_PRAM_reduce_add(T* input, T* write_arr, size_t n_inputs)
 {
+	size_t write_arr_len = n_inputs / 2 + n_inputs % 2;
+
 	size_t tid = get_tid();
-	if (tid >= n_inputs / 2 + n_inputs % 2 || !input || !write_arr) return;
-	if (tid == n_inputs / 2 + 1)
+	if (tid >= write_arr_len || !input || !write_arr) return;
+	if (tid == n_inputs / 2)
 	{
 		write_arr[tid] = input[n_inputs - 1];
 		return;
@@ -288,18 +302,6 @@ __host__ T* cuda_add_to_occurrences(t* compare_arr, int (*compare_func)(t val, t
 
 	if (free_updated) cudaFree(to_update_arr);
 	return out;
-}
-
-template<typename T>
-__host__ void print_array(T* arr, size_t arr_len)
-{
-	T* host_arr = new T[arr_len];
-	cudaMemcpy(host_arr, arr, sizeof(T) * arr_len, cudaMemcpyDefault);
-
-	for (size_t i = 0; i < arr_len; i++) printf("%.2f ", (float)(host_arr[i]));
-	printf("\n");
-
-	delete[] host_arr;
 }
 
 template<typename T>
