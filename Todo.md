@@ -16,6 +16,7 @@
 - Paralelize layer derivative calculation calls withing CPU
 
 - ~~Add execution with output to GPU~~
+- Optimize PRAM for reduced kernel call number in connections (add multi array support)
 - Optimize NEAT-Dense Connections with PRAM reduce
 - Create Tensor NEAT-Dense Connections
 
