@@ -1,8 +1,4 @@
 
-#ifndef CUDA_FUNCTIONALITY_CUH
-# define CUDA_FUNCTIONALITY_CUH
-# include "cuda_functionality.cuh"
-
 #pragma once
 
 #include "curand.h"
@@ -29,6 +25,16 @@ __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type out
 /// </summary>
 /// <returns></returns>
 __device__ size_t get_tid();
+
+__global__ void extract_execution_values(
+	data_t *execution_values, data_t *write_arr, size_t neuron_count,
+	size_t execution_values_per_neuron, size_t neuron_read_i
+);
+
+__host__ data_t *host_extract_execution_values(
+	data_t *execution_values,  size_t neuron_count,
+	size_t execution_values_per_neuron, size_t neuron_read_i
+);
 
 template<typename T, typename param_t, typename return_t>
 __global__ void apply_func(T *arr, size_t arr_len, return_t (*func)(param_t x))
@@ -120,32 +126,6 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, bool is_arr_in_host = false)
 	T out;
 	cudaMemcpy(&out, tmp, sizeof(T), cudaMemcpyDeviceToHost);
 	return out;
-}
-
-__global__ void extract_execution_values(
-	data_t *execution_values, data_t *write_arr, size_t neuron_count,
-	size_t execution_values_per_neuron, size_t neuron_read_i
-)
-{
-	size_t tid = get_tid();
-	if (tid >= neuron_count || !execution_values || !write_arr) return;
-
-	write_arr[tid] = execution_values[execution_values_per_neuron * tid + neuron_read_i];
-}
-
-__host__ data_t *host_extract_execution_values(
-	data_t *execution_values,  size_t neuron_count,
-	size_t execution_values_per_neuron, size_t neuron_read_i
-)
-{
-	data_t *out = 0;
-	cudaMalloc(&out, sizeof(data_t) * neuron_count);
-	extract_execution_values n_threads(neuron_count) (
-		execution_values, out, neuron_count,
-		execution_values_per_neuron, neuron_read_i
-	);
-	cudaDeviceSynchronize();
-	return (out);
 }
 
 template<typename T>
@@ -445,6 +425,3 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	cudaDeviceSynchronize();
 	cudaFree(arr);
 }
-
-#endif
-
