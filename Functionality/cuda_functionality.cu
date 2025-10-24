@@ -86,6 +86,19 @@ __host__ data_t *host_extract_execution_values(data_t *execution_values, size_t 
 	return (out);
 }
 
+__global__ void set_execution_values(
+	data_t *execution_values_layer_start, data_t *read_arr,
+	size_t execution_values_per_neuron, size_t neuron_write_i,
+	size_t neuron_count
+)
+{
+	size_t tid = get_tid();
+	if (tid >= neuron_count || !execution_values_layer_start || !read_arr) return;
+
+	size_t write_i = execution_values_per_neuron * tid + neuron_write_i;
+	execution_values_layer_start[write_i] = read_arr[tid];
+}
+
 __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length)
 {
 	size_t tid = get_tid();

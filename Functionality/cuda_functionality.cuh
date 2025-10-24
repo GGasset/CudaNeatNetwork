@@ -27,13 +27,19 @@ __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type out
 __device__ size_t get_tid();
 
 __global__ void extract_execution_values(
-	data_t *execution_values, data_t *write_arr, size_t neuron_count,
+	data_t *execution_values_layer_start, data_t *write_arr, size_t neuron_count,
 	size_t execution_values_per_neuron, size_t neuron_read_i
 );
 
 __host__ data_t *host_extract_execution_values(
-	data_t *execution_values,  size_t neuron_count,
+	data_t *execution_values_layer_start,  size_t neuron_count,
 	size_t execution_values_per_neuron, size_t neuron_read_i
+);
+
+__global__ void set_execution_values(
+	data_t *execution_values_layer_start, data_t *read_arr,
+	size_t execution_values_per_neuron, size_t neuron_write_i,
+	size_t neuron_count
 );
 
 template<typename T, typename param_t, typename return_t>
@@ -126,7 +132,7 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, T *output_write = 0, bool is_
 	while (arr_len > 1)
 	{
 		if (!tmp) throw;
-		size_t new_arr_len = arr_len / 2 + arr_len % 2;
+		size_t new_arr_len = arr_len / 2 + arr_len & 1;
 		T* new_arr = 0;
 		cudaMalloc(&new_arr, sizeof(T) * new_arr_len);
 		global_PRAM_reduce_add n_threads(new_arr_len) (
@@ -142,6 +148,53 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, T *output_write = 0, bool is_
 	T out;
 	cudaMemcpy(&out, tmp, sizeof(T), cudaMemcpyDeviceToHost);
 	return out;
+}
+
+// 00000 00000 00000
+//  012   345   678
+//   01   1 2   34
+template<typename T>
+__global__ void global_multi_PRAM_add(T *input, size_t arr_count, size_t arr_len, T *write_arr)
+{
+	size_t tid = get_tid();
+	size_t new_arr_len = arr_len / 2 + (arr_len & 1);
+	if (tid >= arr_count * new_arr_len) return;
+
+	size_t arr_i = tid / new_arr_len;
+
+	size_t write_elem_i = tid % new_arr_len;
+	if (write_elem_i == new_arr_len - 1 && new_arr_len & 1)
+	{
+		size_t read_i = arr_len * arr_i + arr_len - 1;
+		write_arr[tid] = input[read_i];
+		return;
+	}
+
+	size_t read_i = tid * 2 + arr_i * (arr_len & 1);
+	write_arr[tid] = input[read_i] + input[read_i + 1];
+}
+
+template<typename T>
+__host__ T *multi_PRAM_add(T *arrs, size_t arr_len, size_t arr_count = 1)
+{
+	if (!arr_count || !arr_len || !arrs) return 0;
+	T *tmp = 0;
+	cudaMalloc(&tmp, sizeof(T) * arr_len * arr_count);
+	cudaMemcpy(tmp, arrs, sizeof(T) * arr_len * arr_count, cudaMemcpyDefault);
+	while (arr_len > 1)
+	{
+		size_t new_arr_len = arr_len / 2 + arr_len & 1;
+		T *new_arr = 0;
+		cudaMalloc(&new_arr, sizeof(T) * new_arr_len * arr_count);
+		global_multi_PRAM_add n_threads(new_arr_len) (
+			tmp, arr_count, arr_len, new_arr
+		);
+		cudaDeviceSynchronize();
+		arr_len = new_arr_len;
+		cudaFree(tmp);
+		tmp = new_arr;
+	}
+	return tmp;
 }
 
 template<typename T>
