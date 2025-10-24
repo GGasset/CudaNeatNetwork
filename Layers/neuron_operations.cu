@@ -149,7 +149,6 @@ __global__ void global_activation_function(
 	size_t tid = get_tid();
 	if (get_tid() >= layer_length) return;
 
-	size_t neuron_execution_values_start = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid;
 	switch (activation)
 	{
 	case sigmoid:
@@ -188,12 +187,13 @@ __host__ void activation_function(
 	switch (activation)
 	{
 	case softmax:
+	{
 		data_t *linear_funcs = host_extract_execution_values(
 			execution_values, layer_length,
 			execution_values_per_neuron, 0
 		);
 		apply_func<data_t, float, float> n_threads(layer_length) (linear_funcs, layer_length, exp);
-		size_t exponent_sum = PRAM_reduce_add(linear_funcs, layer_length);
+		data_t exponent_sum = PRAM_reduce_add(linear_funcs, layer_length);
 		cudaFree(linear_funcs);
 		softmax_activation n_threads(layer_length) (
 			activations, activations_start, layer_activation_start, write_activation,
@@ -201,6 +201,7 @@ __host__ void activation_function(
 			neuron_execution_values_read, neuron_execution_values_write, write_execution_values,
 			layer_length, exponent_sum
 		);
+	}
 		break;
 	default:
 		global_activation_function n_threads(layer_length) (
