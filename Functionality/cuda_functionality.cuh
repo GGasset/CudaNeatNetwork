@@ -27,7 +27,7 @@ __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type out
 __device__ size_t get_tid();
 
 __global__ void extract_execution_values(
-	data_t *execution_values_layer_start, data_t *write_arr, size_t neuron_count,
+	data_t *execution_values_layer_start, data_t *write_arr, size_t layer_length,
 	size_t execution_values_per_neuron, size_t neuron_read_i
 );
 
