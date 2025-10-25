@@ -147,12 +147,13 @@ __global__ void LSTM_gradient_subtraction(
 		);
 }
 
-__global__ void neuron_gradient_calculation(
+__global__ void global_neuron_gradient_calculation(
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start,
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
 	data_t* costs, size_t costs_start, size_t layer_costs_start,
 	ActivationFunctions activation,
-	size_t layer_length
+	size_t layer_length,
+	data_t *vars
 )
 {
 	size_t tid = get_tid();
@@ -174,6 +175,50 @@ __global__ void neuron_gradient_calculation(
 	}
 	size_t gradient_write_i = gradients_start + layer_gradients_start + neuron_gradients_starts[tid];
 	gradients[gradient_write_i] = bias_gradient;
+}
+
+__host__ void neuron_gradient_calculation(
+	data_t *execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
+	data_t *gradients, size_t gradients_start, size_t layer_gradients_start, size_t *neuron_gradients_starts,
+	data_t *costs, size_t costs_start, size_t layer_costs_start, 
+	ActivationFunctions activation, 
+	size_t layer_length)
+{
+	switch (activation)
+	{
+	case softmax:
+	{
+		data_t *linear_funcs = host_extract_execution_values(
+			execution_values + execution_values_start + execution_values_layer_start, layer_length,
+			execution_values_per_neuron, 0
+		);
+		apply_func<data_t, float, float> n_threads(layer_length) (linear_funcs, layer_length, exp);
+		cudaDeviceSynchronize();
+		data_t exponent_sum = cuda_sum(linear_funcs, layer_length);
+		cudaFree(linear_funcs);
+
+		global_neuron_gradient_calculation n_threads(layer_length) (
+			execution_values, execution_values_start, execution_values_layer_start,
+			gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
+			costs, costs_start, layer_costs_start,
+			activation,
+			layer_length,
+			&exponent_sum
+		);
+		break;
+	}
+	
+	default:
+		global_neuron_gradient_calculation n_threads(layer_length) (
+			execution_values, execution_values_start, execution_values_layer_start,
+			gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
+			costs, costs_start, layer_costs_start,
+			activation,
+			layer_length,
+			0
+		);
+		break;
+	}
 }
 
 __global__ void cud_set_dropout(

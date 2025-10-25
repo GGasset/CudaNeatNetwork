@@ -76,7 +76,7 @@ void NeuronLayer::calculate_gradients(
 	data_t* costs, size_t costs_start
 )
 {
-	neuron_gradient_calculation n_threads(neuron_count) (
+	neuron_gradient_calculation(
 		execution_values, execution_values_start, execution_values_layer_start,
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 		costs, costs_start, layer_activations_start,
