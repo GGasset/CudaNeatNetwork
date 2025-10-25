@@ -8,17 +8,16 @@
 ## Technologies used
 ### Planned-WIP
  - Input / Reward / Advantage Normalization
- - SoftMax Activation
  - C++ Socket bindings (WIP)
  - [PPO](https://arxiv.org/abs/1707.06347) Reinforcement Learning Policy Gradient Method used in ChatGPT (Testing)
  - [MinLSTM](https://arxiv.org/abs/2410.01201) Simpler versions of LSTM (Planned)
 
 ### Done
+ - [SoftMax Activation](https://en.wikipedia.org/wiki/Softmax_function)
  - [L1, L2 regularization](https://developers.google.com/machine-learning/glossary#l1-loss)
  - [Adam optimizer](https://arxiv.org/abs/1412.6980)
- - [GAE](https://arxiv.org/abs/1506.02438) Generalized Advantage Estimator
- - LSTM architecture
-	![LSTM architecture](https://i.sstatic.net/RHNrZ.jpg) 
+ - [GAE](https://arxiv.org/abs/1506.02438) (Generalized Advantage Estimator)
+ - [LSTM architecture](https://i.sstatic.net/RHNrZ.jpg) 
 
 ## How?
 * It has been my 7th iteration on an AI framework, and I wouldn't say I've learnt a lot otherwise, I've learnt a lot.

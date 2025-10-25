@@ -13,12 +13,9 @@
         - ~~If that structure decides which optimizers to use at the last moment would be great. i.e. by passing it during subtract gradients and using the active hyperparameters, use a list that searches for a hyperparameter id (enum) and if it doesn't exists, it allocates more memory for it~~
 
 ## Code optimization
-- Paralelize layer derivative calculation calls withing CPU
+- Paralelize layer derivative calculation calls
 
 - ~~Add execution with output to GPU~~
-- Optimize PRAM for reduced kernel call number in connections (add multi array support and irregular multi array support)
-    - Minimum connection count for PRAM use maybe should be removed when implemented
-    - As it would literally be a times neuron count performance benefit
 - Optimize NEAT-Dense Connections with PRAM reduce
 - Create Tensor NEAT-Dense Connections
 
