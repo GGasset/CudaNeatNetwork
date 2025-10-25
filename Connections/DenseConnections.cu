@@ -36,7 +36,7 @@ void DenseConnections::linear_function(size_t activations_start, data_t* activat
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
 )
 {
-	if (connection_count > 1e3)
+	if (connection_count > PRAM_THRESHOLD)
 	{
 		data_t *input_arr = 0;
 		cudaMalloc(&input_arr, sizeof(data_t) * connection_count);
