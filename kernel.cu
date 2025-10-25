@@ -28,9 +28,7 @@ static void bug_hunting()
 
 	optimizer_hyperparameters optimizers;
 	NN *n = NN_constructor()
-		.append_layer(Dense, Neuron, 20, sigmoid)
-		.append_layer(Dense, Neuron, 10, sigmoid)
-		.append_layer(Dense, Neuron, output_len, sigmoid)
+		.append_layer(Dense, Neuron, output_len, softmax)
 		.construct(input_len, optimizers, stateful);
 
 	const size_t t_count = 2;
@@ -49,7 +47,7 @@ static void bug_hunting()
 	}
 
 	gradient_hyperparameters hyperparameters;
-	hyperparameters.learning_rate = .1;
+	hyperparameters.learning_rate = .01;
 
 	const size_t epochs = 6000;
 	for (size_t i = 0; i < epochs || 1; i++)
@@ -379,9 +377,9 @@ int main()
 
 
 	//cudaSetDevice(0);
-	//bug_hunting();
+	bug_hunting();
 	//test_LSTM();
-	test_PPO();
+	//test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
