@@ -99,6 +99,14 @@ __global__ void set_execution_values(
 	execution_values_layer_start[write_i] = read_arr[tid];
 }
 
+__global__ void exp_arr(data_t *arr, size_t arr_value_count)
+{
+	size_t tid = get_tid();
+	if (tid >= arr_value_count || !arr) return;
+
+	arr[tid] = expf(arr[tid]);
+}
+
 __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length)
 {
 	size_t tid = get_tid();
