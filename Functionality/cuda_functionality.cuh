@@ -26,6 +26,14 @@ __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type out
 /// <returns></returns>
 __device__ size_t get_tid();
 
+template <typename T, typename t>
+__global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
+{
+	size_t tid = get_tid();
+	if (tid >= device_min(dst_len, src_len)) return;
+
+	dst[tid] = src[tid];
+}
 __global__ void extract_execution_values(
 	data_t *execution_values_layer_start, data_t *write_arr, size_t layer_length,
 	size_t execution_values_per_neuron, size_t neuron_read_i
@@ -148,8 +156,8 @@ __host__ T PRAM_reduce_add(T* arr, size_t arr_len, T *output_write = 0)
 	return out;
 }
 
-template<typename T>
-__global__ void atomic_sum(T *input, size_t in_len, T *out_pntr)
+template<typename T, typename t>
+__global__ void atomic_sum(T *input, size_t in_len, t *out_pntr)
 {
 	size_t tid = get_tid();
 	if (tid >= in_len || !input || !out_pntr) return ;
@@ -157,21 +165,27 @@ __global__ void atomic_sum(T *input, size_t in_len, T *out_pntr)
 	atomicAdd(out_pntr, input[tid]);
 }
 
-template<typename T>
+template<typename T, typename tmp_var_T>
 __host__ T cuda_sum(T *input, size_t in_len)
 {
 	if (in_len > PRAM_THRESHOLD)
 		return PRAM_reduce_add(input, in_len);
-	T *device_write = 0;
-	cudaMalloc(&device_write, sizeof(T));
+	tmp_var_T *device_write = 0;
+	cudaMalloc(&device_write, sizeof(tmp_var_T));
 	if (!device_write) throw;
-	cudaMemset(device_write, 0, sizeof(T));
+	cudaMemset(device_write, 0, sizeof(tmp_var_T));
 	atomic_sum n_threads(in_len) (input, in_len, device_write);
 	cudaDeviceSynchronize();
 
-	T out = 0;
-	cudaMemcpy(&out, device_write, sizeof(T), cudaMemcpyDeviceToHost);
+	T *casted_var = 0;
+	cudaMalloc(&casted_var, sizeof(T));
+	logical_copy n_threads(1) (casted_var, 1, device_write, 1);
+	cudaDeviceSynchronize();
 	cudaFree(device_write);
+
+	T out = 0;
+	cudaMemcpy(&out, casted_var, sizeof(T), cudaMemcpyDeviceToHost);
+	cudaFree(casted_var);
 	return out;
 }
 
@@ -239,15 +253,6 @@ __global__ void repetitive_copy(T *dst, size_t dst_len, T *src, size_t src_len)
 	dst[tid] = src[tid % src_len];
 }
 
-template <typename T, typename t>
-__global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
-{
-	size_t tid = get_tid();
-	if (tid >= device_min(dst_len, src_len)) return;
-
-	dst[tid] = src[tid];
-}
-
 template<typename T>
 __global__ void nullify_unless_equals(T* arr, size_t value_count, T no_nullify_value)
 {
@@ -276,7 +281,7 @@ __host__ size_t count_value(T value, T* array, size_t array_length)
 	cudaDeviceSynchronize();
 	booleanize n_threads(array_length) (tmp, array_length);
 	cudaDeviceSynchronize();
-	size_t out = (size_t)cuda_sum(tmp, array_length);
+	size_t out = (size_t)cuda_sum<T, unsigned long long>(tmp, array_length);
 	cudaFree(tmp);
 	return out;
 }
