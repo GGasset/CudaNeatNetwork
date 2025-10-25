@@ -192,7 +192,7 @@ __host__ void activation_function(
 			execution_values + execution_values_start + execution_values_layer_start, layer_length,
 			execution_values_per_neuron, 0
 		);
-		apply_func<data_t, float, float> n_threads(layer_length) (linear_funcs, layer_length, exp);
+		exp_arr n_threads(layer_length) (linear_funcs, layer_length);
 		cudaDeviceSynchronize();
 		data_t exponent_sum = cuda_sum<data_t, data_t>(linear_funcs, layer_length);
 		cudaFree(linear_funcs);

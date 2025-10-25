@@ -148,12 +148,12 @@ __global__ void LSTM_gradient_subtraction(
 }
 
 __global__ void global_neuron_gradient_calculation(
-	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start,
+	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
 	data_t* costs, size_t costs_start, size_t layer_costs_start,
 	ActivationFunctions activation,
 	size_t layer_length,
-	data_t *vars
+	data_t softmax_exponent_sum = 0
 )
 {
 	size_t tid = get_tid();
@@ -170,6 +170,9 @@ __global__ void global_neuron_gradient_calculation(
 	case _tanh:
 		bias_gradient *= device_tanh_derivative(activation_input);
 		break;
+	case softmax:
+		bias_gradient *= device_softmax_derivative(activation_input, softmax_exponent_sum);
+		break;
 	default:
 		break;
 	}
@@ -182,7 +185,8 @@ __host__ void neuron_gradient_calculation(
 	data_t *gradients, size_t gradients_start, size_t layer_gradients_start, size_t *neuron_gradients_starts,
 	data_t *costs, size_t costs_start, size_t layer_costs_start, 
 	ActivationFunctions activation, 
-	size_t layer_length)
+	size_t layer_length
+)
 {
 	switch (activation)
 	{
@@ -192,25 +196,25 @@ __host__ void neuron_gradient_calculation(
 			execution_values + execution_values_start + execution_values_layer_start, layer_length,
 			execution_values_per_neuron, 0
 		);
-		apply_func<data_t, float, float> n_threads(layer_length) (linear_funcs, layer_length, exp);
+		exp_arr n_threads(layer_length) (linear_funcs, layer_length);
 		cudaDeviceSynchronize();
 		data_t exponent_sum = cuda_sum<data_t, data_t>(linear_funcs, layer_length);
 		cudaFree(linear_funcs);
 
 		global_neuron_gradient_calculation n_threads(layer_length) (
-			execution_values, execution_values_start, execution_values_layer_start,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
 			gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 			costs, costs_start, layer_costs_start,
 			activation,
 			layer_length,
-			&exponent_sum
+			exponent_sum
 		);
 		break;
 	}
 	
 	default:
 		global_neuron_gradient_calculation n_threads(layer_length) (
-			execution_values, execution_values_start, execution_values_layer_start,
+			execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
 			gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 			costs, costs_start, layer_costs_start,
 			activation,

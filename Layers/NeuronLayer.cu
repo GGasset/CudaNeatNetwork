@@ -77,13 +77,12 @@ void NeuronLayer::calculate_gradients(
 )
 {
 	neuron_gradient_calculation(
-		execution_values, execution_values_start, execution_values_layer_start,
+		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
 		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 		costs, costs_start, layer_activations_start,
 		activation,
 		neuron_count
 	);
-	cudaDeviceSynchronize();
 	connections->calculate_gradients(
 		activations, activations_start, gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
 		costs, costs_start

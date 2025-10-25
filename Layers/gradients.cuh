@@ -24,17 +24,17 @@ __global__ void LSTM_gradient_subtraction(
 	size_t layer_length, size_t connections_weight_count
 );
 
-__global__ void global_neuron_gradient_calculation(
+/*__global__ void global_neuron_gradient_calculation(
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
 	data_t* costs, size_t costs_start, size_t layer_costs_start,
 	ActivationFunctions activation,
 	size_t layer_length,
 	data_t *vars
-);
+);*/
 
 __host__ void neuron_gradient_calculation(
-	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start,
+	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t execution_values_per_neuron,
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
 	data_t* costs, size_t costs_start, size_t layer_costs_start,
 	ActivationFunctions activation,
