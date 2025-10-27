@@ -58,14 +58,18 @@
             - Gather a fixed number of steps from a fixed number of parallel environments and then train on the data
             - Each environment is not resetted with training and there is no need to finish the episode
             - If the environment finishes and the number of steps is not reached, it is restarted
-        - MiniBatches (After calculating advantages, inside the training loop of the training function)
+        - MiniBatches 
+            - After calculating advantages, inside the training loop of the training function
+            - Shuffling is made to a copy of the arrays
+            - With number of minibatches parameter.
             - Non recurrent version
-                - Shuffles every index of every environment
+                - Gets how many data_points per minibatch
+                - Shuffles every index of every environment and environments too
                 - Gets sequentially a mini-batch size of data point (the shuffled data) at a time
                     - trains on them
                     - appends the resulting gradients
             - Recurrent version
-                - With a number of minibatches parameter, get how many environments per minibatch
+                - Get how many environments per minibatch
                 - Shuffles the environments indices
                 - if there are multiple environments per minibatch, just append its data
                     - The baselines implementation adds an assert nenvs % nminibatches == 0 for simplicity
