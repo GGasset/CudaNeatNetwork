@@ -15,6 +15,7 @@
 ## Code optimization
 - Paralelize layer derivative calculation calls
 
+- Optimize PRAM reduce
 - ~~Add execution with output to GPU~~
 - Optimize NEAT-Dense Connections with PRAM reduce
 - Create Tensor NEAT-Dense Connections
