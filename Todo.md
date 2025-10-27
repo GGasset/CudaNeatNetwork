@@ -53,9 +53,15 @@
 - ~~reinforcement learning cost functions~~
     - ~~GAE (Generalized Advantage Estimator)~~
     - ~~PPO (Proximal Policy Optimization)~~
-        - kl penalty 
+        - kl penalty
+        - Vectorized environment
+            - Gather a fixed number of steps from a fixed number of parallel environments and then train on the data
+            - Each environment is not resetted with training and there is no need to finish the episode
+            - If the environment finishes and the number of steps is not reached, it is restarted
         - MiniBatches
-        - Value loss clipping
+        - Global gradient clipping (scaling gradients in the update such as the l2 )
+        - ~~Value loss clipping~~ (Not done, Irrelevant for results)
+        - learning_rate_anhealing (Left to implement in main code, Note leave it small as the performace gain are also small)
 
 - Create model links for multi-model networks
     - Create a training and execution function that accepts multiple networks and links
