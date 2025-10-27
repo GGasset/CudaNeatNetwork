@@ -1,16 +1,5 @@
 #include "cuda_functionality.cuh"
 
-/*__global__ template void apply_to_array<typename t>(t* array, size_t array_length, std::function<bool(t, t)> if_function, t right_if_function_parameter, std::function<t(t)> to_apply)
-{
-	size_t tid = get_tid();
-	if (tid >= array_length) return;
-
-	t value = arrray[tid];
-	if (if_function(value, right_if_function))
-		array[tid] = to_apply(value);
-}*/
-
-
 
 __device__ data_t device_abs(data_t a)
 {
