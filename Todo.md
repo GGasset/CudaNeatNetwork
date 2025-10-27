@@ -58,8 +58,20 @@
             - Gather a fixed number of steps from a fixed number of parallel environments and then train on the data
             - Each environment is not resetted with training and there is no need to finish the episode
             - If the environment finishes and the number of steps is not reached, it is restarted
-        - MiniBatches
-        - Global gradient clipping (scaling gradients in the update such as the l2 )
+        - MiniBatches (After calculating advantages, inside the training loop of the training function)
+            - Non recurrent version
+                - Shuffles every index of every environment
+                - Gets sequentially a mini-batch size of data point (the shuffled data) at a time
+                    - trains on them
+                    - appends the resulting gradients
+            - Recurrent version
+                - With a number of minibatches parameter, get how many environments per minibatch
+                - Shuffles the environments indices
+                - if there are multiple environments per minibatch, just append its data
+                    - The baselines implementation adds an assert nenvs % nminibatches == 0 for simplicity
+        - Global gradient clipping 
+            - scaling gradients in the update such as the l2 norm (sum of all values squared) does not exceed .5
+            - basically a normalization
         - ~~Value loss clipping~~ (Not done, Irrelevant for results)
         - learning_rate_anhealing (Left to implement in main code, Note leave it small as the performace gain are also small)
 
