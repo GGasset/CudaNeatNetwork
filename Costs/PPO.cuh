@@ -13,6 +13,7 @@ struct PPO_internal_memory
 	std::vector<data_t *>	initial_states;
 	std::vector<data_t *>	trajectory_inputs;
 	std::vector<data_t *>	trajectory_outputs;
+	std::vector<data_t *>	rewards;
 	std::vector<size_t>		n_env_executions;
 	size_t					n_env = 0;
 };
