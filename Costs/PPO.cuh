@@ -29,7 +29,7 @@ data_t *PPO_execute_train(
 );
 
 void add_reward(
-	data_t reward, PPO_internal_memory *save_this_for_me
+	data_t reward, size_t env_i, PPO_internal_memory *save_this_for_me
 );
 
 void free_PPO_data(PPO_internal_memory *mem);
