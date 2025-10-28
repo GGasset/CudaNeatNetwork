@@ -1,5 +1,8 @@
 #pragma once
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
 #define PRAM_THRESHOLD 1e3
 
 #define kernel(blocks, threads) <<<blocks, threads>>>
