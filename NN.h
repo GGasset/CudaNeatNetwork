@@ -162,7 +162,7 @@ public:
 		PPO_hyperparameters hyperparameters
 	);
 
-	data_t* get_hidden_state();
+	data_t* get_hidden_state(size_t *arr_value_count = 0);
 	void set_hidden_state(data_t *state, int free_input_state);
 
 	void evolve();
