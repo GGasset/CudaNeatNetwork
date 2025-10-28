@@ -33,6 +33,19 @@ typedef struct PPO_hyperparameters
 	// May be overriden by early stopping
 	size_t max_training_steps = 15;
 
+	// Number of minibatches per training
+	// If value or policy network are recurrent
+	// mini_batch size % vec environment count MUST be 0
+	size_t mini_batch_size = 4;
+
+	// Environment frames before training is calculated and applied
+	size_t steps_before_training = 30;
+
+	// number of (independent) vector environments
+	// if the execution count of an environment reach steps_before_training 
+	// without the other environments having reached steps_before_training, an exception will be thrown
+	size_t vecenvironment_count = 1;
+
 	// Prevents each output from deviating from its initial output if it surpasses this ratio
 	// Nullifies the gradient of the output
 	// Typically from .1 to .3
