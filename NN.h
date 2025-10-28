@@ -143,12 +143,6 @@ public:
 		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	);
 
-	data_t* calculate_GAE_advantage(
-		size_t t_count,
-		NN* value_function_estimator, data_t* value_function_state, GAE_hyperparameters parameters, bool is_state_on_host, bool free_state,
-		data_t* rewards, bool is_reward_on_host, bool free_rewards
-	);
-
 	/// <summary>
 	/// Inference function to be used before calling PPO_train
 	/// PPO_train deletes the arrays generated during the calls to this function

@@ -3,8 +3,9 @@
 #include "NN_enums.h"
 
 #include "cuda_functionality.cuh"
-#include <cmath>
+#include "NN.h"
 
+#include <cmath>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -34,4 +35,8 @@ __global__ void parallel_calculate_GAE_advantage(
 	data_t *advantages
 );
 
-
+data_t* calculate_GAE_advantage(
+	size_t t_count,
+	NN* value_function_estimator, data_t* value_function_state, GAE_hyperparameters parameters, bool is_state_on_host, bool free_state,
+	data_t* rewards, bool is_reward_on_host, bool free_rewards
+);
