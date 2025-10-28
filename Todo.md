@@ -77,6 +77,7 @@
             - scaling gradients in the update such as the l2 norm (sum of all values squared) does not exceed .5
             - basically a normalization
         - ~~Value loss clipping~~ (Not done, Irrelevant for results)
+        - Advantage normalization, subtracting its mean and dividing by std (does not affect performance much, low priority)
         - learning_rate_anhealing (Left to implement in main code, Note leave it small as the performace gain are also small)
 
 - Create model links for multi-model networks
