@@ -20,5 +20,5 @@
  - [LSTM architecture](https://i.sstatic.net/RHNrZ.jpg) 
 
 ## Why?
-* CudaNeatNetwrok seeks model structure flexibility without trading significant speed loss.
+* CudaNeatNetwrok trades model structure flexibility for inference time.
 	* Tensor core unit usage is not implemented yet.
