@@ -2,6 +2,7 @@
 
 #include "kernel_macros.h"
 #include "data_type.h"
+#include "NN_enums.h"
 
 #include "RL_parameters.h"
 
@@ -25,7 +26,7 @@ struct PPO_internal_memory
 data_t *PPO_execute_train(
 	data_t *X,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *save_this_for_me
+	PPO_internal_memory *save_this_for_me, output_pointer_type output_kind
 );
 
 void add_reward(
