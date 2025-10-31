@@ -46,6 +46,7 @@ public:
 
 	size_t get_input_length();
 	size_t get_output_length();
+	bool   is_recurrent();
 
 	~NN();
 	NN(ILayer** layers, size_t input_length, size_t layer_count);

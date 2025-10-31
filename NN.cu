@@ -13,6 +13,11 @@ size_t NN::get_output_length()
 	return output_length;
 }
 
+bool NN::is_recurrent()
+{
+	return contains_recurrent_layers;
+}
+
 NN::NN(ILayer** layers, size_t input_length, size_t layer_count)
 {
 	this->layers = layers;
