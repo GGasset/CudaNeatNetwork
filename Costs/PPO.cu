@@ -47,6 +47,38 @@ void initialize_mem(
 	mem_pntr->is_initialized = 1;
 }
 
+void PPO_initialization(
+	data_t *X,
+	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
+	PPO_internal_memory *mem_pntr, size_t env_i
+)
+{
+	// Checks
+	PPO_internal_memory mem = *mem_pntr;
+	if (!hyperparameters.vecenvironment_count
+		|| !X || !value_function || !policy
+		|| value_function->get_input_length() != policy->get_input_length()
+		|| mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i]
+		|| !hyperparameters.steps_before_training
+		|| !hyperparameters.max_training_steps
+		|| !hyperparameters.mini_batch_size
+	 )
+		(free_PPO_data(mem_pntr), throw);
+	
+	// Initialization
+	if (!mem.n_env)
+	{
+		initialize_mem(value_function, policy, hyperparameters, mem_pntr);
+		mem = *mem_pntr;
+	}
+	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
+	if (!mem.is_initialized) // states should be initialized and n_env, everything else should not
+	{
+
+	}
+	*mem_pntr = mem;
+}
+
 void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 {
 	PPO_internal_memory mem = *mem_pntr;
@@ -85,30 +117,13 @@ data_t *PPO_execute_train(
 	bool delete_memory_before
 )
 {
-	// Checks
 	PPO_internal_memory mem = *mem_pntr;
-	if (!hyperparameters.vecenvironment_count
-		|| !X || !value_function || !policy
-		|| value_function->get_input_length() != policy->get_input_length()
-		|| mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i]
-		|| !hyperparameters.steps_before_training
-		|| !hyperparameters.max_training_steps
-		|| !hyperparameters.mini_batch_size
-	 )
-		(free_PPO_data(mem_pntr), throw);
-	
-	// Initialization
-	if (!mem.n_env)
-	{
-		initialize_mem(value_function, policy, hyperparameters, mem_pntr);
-		mem = *mem_pntr;
-	}
-	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
-	if (!mem.is_initialized) // states should be initialized and n_env, everything else should not
-	{
-
-	}
-
+	PPO_initialization(
+		X, value_function, policy,
+		hyperparameters, &mem,
+		env_i
+	);
+	*mem_pntr = mem;
 
 	// Execution
 	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
