@@ -4,10 +4,10 @@
 #include "data_type.h"
 #include "NN_enums.h"
 
-#include "RL_parameters.h"
-
 #include "GAE.cuh"
 #include "NN.h"
+
+#include "RL_parameters.h"
 
 struct PPO_internal_memory
 {
