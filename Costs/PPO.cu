@@ -61,7 +61,7 @@ void PPO_initialization(
 	if (!hyperparameters.vecenvironment_count
 		|| !X || !value_function || !policy
 		|| value_function->get_input_length() != policy->get_input_length()
-		|| mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i]
+		|| mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i] // Irregular add_rewards_call
 		|| !hyperparameters.steps_before_training
 		|| !hyperparameters.max_training_steps
 		|| !hyperparameters.mini_batch_size
