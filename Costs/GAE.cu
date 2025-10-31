@@ -52,7 +52,7 @@ __global__ void parallel_calculate_GAE_advantage(
 		advantages[tid] += GAE_discount * deltas[i];
 }
 
-data_t *calculate_GAE_advantage(
+data_t *calculate_advantage(
 	size_t t_count,
 	NN *value_function_estimator, data_t *value_function_state, GAE_hyperparameters parameters, bool is_state_on_host, bool free_state,
 	data_t *rewards, bool is_reward_on_host, bool free_rewards

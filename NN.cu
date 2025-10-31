@@ -531,7 +531,7 @@ void NN::PPO_train(
 
 	NN* tmp_n = clone();
 
-	data_t* advantages = calculate_GAE_advantage(
+	data_t* advantages = calculate_advantage(
 		t_count,
 		value_function_estimator, *trajectory_inputs,
 		hyperparameters.GAE, false, false,
