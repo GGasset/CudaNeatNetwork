@@ -818,7 +818,7 @@ void NN::remove_neuron(size_t layer_i, size_t layer_neuron_i)
 
 void NN::delete_memory()
 {
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < layer_count && contains_recurrent_layers; i++)
 		layers[i]->delete_memory();
 }
 
