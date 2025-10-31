@@ -37,7 +37,7 @@ struct PPO_internal_memory
 // After a training session you may save PPO_internal_memory and call free_PPO_data (to avoid leak)
 // delete_memory_before should be true after environment end and you should not call delete_memory while training PPO
 data_t *PPO_execute_train(
-	data_t *X, bool is_X_in_host, size_t env_i,
+	data_t *X, size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
 	PPO_internal_memory *save_this_for_me, output_pointer_type output_kind,
 	bool delete_memory_before

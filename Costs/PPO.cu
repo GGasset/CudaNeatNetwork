@@ -79,6 +79,56 @@ void PPO_initialization(
 	*mem_pntr = mem;
 }
 
+data_t *PPO_execution(
+	data_t *X, size_t env_i,
+	NN *value_function, NN *policy,
+	PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
+	bool delete_memory_before
+)
+{
+	PPO_internal_memory mem = *mem_pntr;
+
+	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
+	if (delete_memory_before)
+	{
+		value_function->delete_memory();
+		policy->delete_memory();
+	}
+	else
+	{
+		value_function->set_hidden_state(mem.current_value_internal_states[env_i], true);
+		policy->set_hidden_state(mem.current_internal_states[env_i], true);
+	}
+
+	size_t in_len = policy->get_input_length();
+	size_t out_len = policy->get_output_length();
+	data_t *X_tmp = 0;
+	cudaMalloc(&X_tmp, sizeof(data_t) * in_len);
+	cudaMemcpy(X_tmp, X, sizeof(data_t) * in_len, cudaMemcpyDefault);
+	
+	data_t *Y = policy->inference_execute(X_tmp, cuda_pointer_output);
+
+	// Insert to memory
+	size_t n_executions = mem.n_env_executions[env_i];
+	mem.trajectory_inputs[env_i] =
+		cuda_append_array(mem.trajectory_inputs[env_i], in_len * n_executions,
+						  X_tmp, in_len, true);
+	mem.trajectory_outputs[env_i] =
+		cuda_append_array(mem.trajectory_outputs[env_i], out_len * n_executions,
+						  Y, out_len, true);
+	
+	mem.current_value_internal_states[env_i] = value_function->get_hidden_state();
+	mem.current_internal_states[env_i] = policy->get_hidden_state();
+
+	data_t *out = alloc_output(out_len, output_kind);
+	if (out) cudaMemcpy(out, Y, sizeof(data_t) * out_len, cudaMemcpyDefault);
+
+	cudaFree(X_tmp);
+	cudaFree(Y);
+	*mem_pntr = mem;
+	return out;
+}
+
 void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 {
 	PPO_internal_memory mem = *mem_pntr;
@@ -111,7 +161,7 @@ void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 }
 
 data_t *PPO_execute_train(
-	data_t *X, bool is_X_in_host, size_t env_i,
+	data_t *X,  size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
 	PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
 	bool delete_memory_before
@@ -126,46 +176,10 @@ data_t *PPO_execute_train(
 	*mem_pntr = mem;
 
 	// Execution
-	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
-	if (delete_memory_before)
-	{
-		value_function->delete_memory();
-		policy->delete_memory();
-	}
-	else
-	{
-		value_function->set_hidden_state(mem.current_value_internal_states[env_i], true);
-		policy->set_hidden_state(mem.current_internal_states[env_i], true);
-	}
-
-	size_t in_len = policy->get_input_length();
-	size_t out_len = policy->get_output_length();
-	data_t *X_tmp = X;
-	if (is_X_in_host)
-	{
-		cudaMalloc(&X_tmp, sizeof(data_t) * in_len);
-		cudaMemcpy(X_tmp, X, sizeof(data_t) * in_len, cudaMemcpyDefault);
-	}
-	
-	data_t *Y = policy->inference_execute(X_tmp, cuda_pointer_output);
-
-	// Insert to memory
-	size_t n_executions = mem.n_env_executions[env_i];
-	mem.trajectory_inputs[env_i] =
-		cuda_append_array(mem.trajectory_inputs[env_i], in_len * n_executions,
-						  X_tmp, in_len, true);
-	mem.trajectory_outputs[env_i] =
-		cuda_append_array(mem.trajectory_outputs[env_i], out_len * n_executions,
-						  Y, out_len, true);
-	
-	mem.current_value_internal_states[env_i] = value_function->get_hidden_state();
-	mem.current_internal_states[env_i] = policy->get_hidden_state();
-
-	data_t *out = alloc_output(out_len, output_kind);
-	if (out) cudaMemcpy(out, Y, sizeof(data_t) * out_len, cudaMemcpyDefault);
-
-	cudaFree(X_tmp);
-	cudaFree(Y);
+	data_t *out = PPO_execution(
+		X, env_i, value_function, policy, &mem, output_kind, delete_memory_before
+	);
+	*mem_pntr = mem;
 
 	// Training Checks
 	bool start_training = 1;
