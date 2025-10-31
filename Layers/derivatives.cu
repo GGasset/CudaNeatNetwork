@@ -55,7 +55,11 @@ __global__ void LSTM_derivative_calculation(
 	data_t previous_hidden_derivative_to_tanh = prev_state_derivatives[tid * 3];
 	data_t previous_hidden_derivative_to_sigmoid = prev_state_derivatives[tid * 3 + 1];
 	data_t previous_hidden_derivative_to_weight = prev_state_derivatives[tid * 3 + 2];
-	if (derivatives_start != 0)
+	if (
+		derivatives_start != 0
+		&& (previous_hidden_derivative_to_tanh || previous_hidden_derivative_to_sigmoid || previous_hidden_derivative_to_weight)
+			// Check for memory deletion
+	)
 	{
 		previous_hidden_derivative_to_tanh = derivatives[previous_neuron_derivatives_start + 21];
 		previous_hidden_derivative_to_sigmoid = derivatives[previous_neuron_derivatives_start + 22];
