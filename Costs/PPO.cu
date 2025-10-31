@@ -174,7 +174,7 @@ data_t *PPO_execute_train(
 		if (mem.n_env_executions[i] >= hyperparameters.steps_before_training)
 		{
 			free_PPO_data(mem_pntr);
-			throw "Irregular_env_steps not Implemented";	
+			throw "Irregular env_steps not Implemented";	
 		}
 		start_training = start_training && mem.n_env_executions[i] == hyperparameters.steps_before_training - 1;
 	}
