@@ -13,9 +13,11 @@ struct PPO_internal_memory
 {
 	std::vector<data_t *>	initial_internal_states;
 	std::vector<data_t *>	current_internal_states;
+	size_t					value_internal_state_length;
 	
 	std::vector<data_t *>	initial_value_internal_states;
 	std::vector<data_t *>	current_value_internal_states;
+	size_t					policy_internal_state_length;
 	
 	std::vector<std::vector<bool>>	was_memory_deleted_before;
 	std::vector<data_t *>	trajectory_inputs;

@@ -23,9 +23,12 @@ void initialize_mem(
 
 	size_t value_func_state_value_count = 0;
 	data_t *value_func_state = value_function->get_hidden_state(&value_func_state_value_count);
+	mem_pntr->value_internal_state_length = value_func_state_value_count;
 
 	size_t policy_state_value_count = 0;
 	data_t *policy_state = policy->get_hidden_state(&policy_state_value_count);
+	mem_pntr->policy_internal_state_length = policy_state_value_count;
+
 	for (size_t i = 0; i < n_env; i++)
 	{
 		mem_pntr->initial_internal_states[i]
@@ -140,6 +143,11 @@ void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 
 		cudaFree(mem.initial_internal_states[i]);
 		mem.initial_internal_states[i] = 0;
+
+		mem.initial_value_internal_states[i]
+			= cuda_clone_arr(mem.initial_value_internal_states[i], mem.value_internal_state_length);
+		mem.initial_internal_states[i] 
+			= cuda_clone_arr(mem.current_internal_states[i], mem.policy_internal_state_length);
 
 		mem.was_memory_deleted_before[i] = std::vector<bool>();
 
