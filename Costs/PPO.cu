@@ -57,13 +57,14 @@ data_t *PPO_execute_train(
 	// Checks
 	PPO_internal_memory mem = *mem_pntr;
 	if (!hyperparameters.vecenvironment_count
-	 || !hyperparameters.steps_before_training
-	 || !hyperparameters.max_training_steps
-	 || !hyperparameters.mini_batch_size
-	 || !X || !value_function || !policy
-	 || value_function->get_input_length() != policy->get_input_length()
+		|| !X || !value_function || !policy
+		|| value_function->get_input_length() != policy->get_input_length()
+		|| mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i]
+		|| !hyperparameters.steps_before_training
+		|| !hyperparameters.max_training_steps
+		|| !hyperparameters.mini_batch_size
 	 )
-		throw;
+		(free_PPO_data(mem_pntr), throw);
 	
 	// Initialization
 	if (!mem.n_env)
@@ -71,13 +72,12 @@ data_t *PPO_execute_train(
 		initialize_mem(value_function, policy, hyperparameters, mem_pntr);
 		mem = *mem_pntr;
 	}
-	if (mem.is_initialized) // states should be initialized and n_env, everything else should not
+	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
+	if (!mem.is_initialized) // states should be initialized and n_env, everything else should not
 	{
 
 	}
 
-	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
-	if (mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i]) throw;
 
 	// Execution
 	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
@@ -103,6 +103,7 @@ data_t *PPO_execute_train(
 	
 	data_t *Y = policy->inference_execute(X_tmp, cuda_pointer_output);
 
+	// Insert to memory
 	size_t n_executions = mem.n_env_executions[env_i];
 	mem.trajectory_inputs[env_i] =
 		cuda_append_array(mem.trajectory_inputs[env_i], in_len * n_executions,
@@ -119,10 +120,6 @@ data_t *PPO_execute_train(
 
 	cudaFree(X_tmp);
 	cudaFree(Y);
-
-	// Check if add_reward was called after last PPO_execute_train call
-
-	// Insert to memory
 
 	// Training Checks
 	bool start_training = 1;
