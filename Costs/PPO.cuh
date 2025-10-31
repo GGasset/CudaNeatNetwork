@@ -13,10 +13,11 @@ struct PPO_internal_memory
 {
 	std::vector<data_t *>	initial_internal_states;
 	std::vector<data_t *>	current_internal_states;
-
+	
 	std::vector<data_t *>	initial_value_internal_states;
 	std::vector<data_t *>	current_value_internal_states;
-
+	
+	std::vector<std::vector<bool>>	was_memory_deleted_before;
 	std::vector<data_t *>	trajectory_inputs;
 	std::vector<data_t *>	trajectory_outputs;
 
@@ -34,10 +35,13 @@ struct PPO_internal_memory
 // save_this_for_me is recommended to be on the stack, unless there are multiple policy networks
 // After calling this function and receiving the action by the return value, call add reward with save_this_for_me
 data_t *PPO_execute_train(
-	data_t *X, size_t env_i,
+	data_t *X, bool is_X_in_host, size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *save_this_for_me, output_pointer_type output_kind
+	PPO_internal_memory *save_this_for_me, output_pointer_type output_kind,
+	bool delete_memory_before
 );
+
+void 
 
 void add_reward(
 	data_t reward, size_t env_i, PPO_internal_memory *save_this_for_me

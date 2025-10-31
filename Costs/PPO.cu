@@ -1,10 +1,57 @@
 
 # include "PPO.cuh"
 
-data_t *PPO_execute_train(
-	data_t *X, size_t env_i,
+void initialize_mem(
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *mem_pntr, output_pointer_type output_kind
+	PPO_internal_memory *mem_pntr
+)
+{
+	size_t n_env = hyperparameters.vecenvironment_count;
+	mem_pntr->n_env = n_env;
+
+	mem_pntr->initial_internal_states.resize(n_env, 0);
+	mem_pntr->current_internal_states.resize(n_env, 0);
+
+	mem_pntr->was_memory_deleted_before.resize(n_env, std::vector<bool>());
+	mem_pntr->trajectory_inputs.resize(n_env, 0);
+	mem_pntr->trajectory_outputs.resize(n_env, 0);
+
+	mem_pntr->rewards.resize(n_env, 0);
+	mem_pntr->add_reward_calls_n.resize(n_env, 0);
+
+	mem_pntr->n_env_executions.resize(n_env, 0);
+
+	size_t value_func_state_value_count = 0;
+	data_t *value_func_state = value_function->get_hidden_state(&value_func_state_value_count);
+
+	size_t policy_state_value_count = 0;
+	data_t *policy_state = policy->get_hidden_state(&policy_state_value_count);
+	for (size_t i = 0; i < n_env; i++)
+	{
+		mem_pntr->initial_internal_states[i]
+			= cuda_clone_arr(policy_state, policy_state_value_count);
+		mem_pntr->current_internal_states[i]
+			= cuda_clone_arr(policy_state, policy_state_value_count);
+
+		mem_pntr->initial_value_internal_states[i]
+			= cuda_clone_arr(value_func_state, value_func_state_value_count);
+		mem_pntr->current_value_internal_states[i]
+			= cuda_clone_arr(value_func_state, value_func_state_value_count);
+	}
+	cudaFree(value_func_state);
+	value_func_state = 0;
+	cudaFree(policy_state);
+	policy_state = 0;
+	
+
+	mem_pntr->is_initialized = 1;
+}
+
+data_t *PPO_execute_train(
+	data_t *X, bool is_X_in_host, size_t env_i,
+	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
+	PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
+	bool delete_memory_before
 )
 {
 	// Checks
@@ -12,50 +59,16 @@ data_t *PPO_execute_train(
 	if (!hyperparameters.vecenvironment_count
 	 || !hyperparameters.steps_before_training
 	 || !hyperparameters.max_training_steps
-	 || !hyperparameters.mini_batch_size)
-		return (data_t *)free_PPO_data(mem_pntr);
+	 || !hyperparameters.mini_batch_size
+	 || !X || !value_function || !policy
+	 || value_function->get_input_length() != policy->get_input_length()
+	 )
+		throw;
 	
 	// Initialization
 	if (!mem.n_env)
 	{
-		size_t n_env = hyperparameters.vecenvironment_count;
-		mem_pntr->n_env = n_env;
-
-		mem_pntr->initial_internal_states.resize(n_env, 0);
-		mem_pntr->current_internal_states.resize(n_env, 0);
-
-		mem_pntr->trajectory_inputs.resize(n_env, 0);
-		mem_pntr->trajectory_outputs.resize(n_env, 0);
-
-		mem_pntr->rewards.resize(n_env, 0);
-		mem_pntr->add_reward_calls_n.resize(n_env, 0);
-
-		mem_pntr->n_env_executions.resize(n_env, 0);
-
-		size_t value_func_state_value_count = 0;
-		data_t *value_func_state = value_function->get_hidden_state(&value_func_state_value_count);
-
-		size_t policy_state_value_count = 0;
-		data_t *policy_state = policy->get_hidden_state(&policy_state_value_count);
-		for (size_t i = 0; i < n_env; i++)
-		{
-			mem_pntr->initial_internal_states[i]
-				= cuda_clone_arr(policy_state, policy_state_value_count);
-			mem_pntr->current_internal_states[i]
-				= cuda_clone_arr(policy_state, policy_state_value_count);
-
-			mem_pntr->initial_value_internal_states[i]
-				= cuda_clone_arr(value_func_state, value_func_state_value_count);
-			mem_pntr->current_value_internal_states[i]
-				= cuda_clone_arr(value_func_state, value_func_state_value_count);
-		}
-		cudaFree(value_func_state);
-		value_func_state = 0;
-		cudaFree(policy_state);
-		policy_state = 0;
-		
-
-		mem_pntr->is_initialized = 1;
+		initialize_mem(value_function, policy, hyperparameters, mem_pntr);
 		mem = *mem_pntr;
 	}
 	if (mem.is_initialized) // states should be initialized and n_env, everything else should not
@@ -64,9 +77,48 @@ data_t *PPO_execute_train(
 	}
 
 	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
+	if (mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i]) throw;
 
 	// Execution
-	data_t *out = 0;
+	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
+	if (delete_memory_before)
+	{
+		value_function->delete_memory();
+		policy->delete_memory();
+	}
+	else
+	{
+		value_function->set_hidden_state(mem.current_value_internal_states[env_i], true);
+		policy->set_hidden_state(mem.current_internal_states[env_i], true);
+	}
+
+	size_t in_len = policy->get_input_length();
+	size_t out_len = policy->get_output_length();
+	data_t *X_tmp = X;
+	if (is_X_in_host)
+	{
+		cudaMalloc(&X_tmp, sizeof(data_t) * in_len);
+		cudaMemcpy(X_tmp, X, sizeof(data_t) * in_len, cudaMemcpyDefault);
+	}
+	
+	data_t *Y = policy->inference_execute(X_tmp, cuda_pointer_output);
+
+	size_t n_executions = mem.n_env_executions[env_i];
+	mem.trajectory_inputs[env_i] =
+		cuda_append_array(mem.trajectory_inputs[env_i], in_len * n_executions,
+						  X_tmp, in_len, true);
+	mem.trajectory_outputs[env_i] =
+		cuda_append_array(mem.trajectory_outputs[env_i], out_len * n_executions,
+						  Y, out_len, true);
+	
+	mem.current_value_internal_states[env_i] = value_function->get_hidden_state();
+	mem.current_internal_states[env_i] = policy->get_hidden_state();
+
+	data_t *out = alloc_output(out_len, output_kind);
+	if (out) cudaMemcpy(out, Y, sizeof(data_t) * out_len, cudaMemcpyDefault);
+
+	cudaFree(X_tmp);
+	cudaFree(Y);
 
 	// Check if add_reward was called after last PPO_execute_train call
 
@@ -79,10 +131,11 @@ data_t *PPO_execute_train(
 		if (mem.n_env_executions[i] >= hyperparameters.steps_before_training)
 		{
 			free_PPO_data(mem_pntr);
-			throw "Irregular_env_steps not added";	
+			throw "Irregular_env_steps not Implemented";	
 		}
 		start_training = start_training && mem.n_env_executions[i] == hyperparameters.steps_before_training - 1;
 	}
+	*mem_pntr = mem;
 	if (!start_training) return out;
 
 	// Training loop
