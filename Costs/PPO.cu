@@ -132,6 +132,44 @@ data_t *PPO_execution(
 	return out;
 }
 
+void PPO_train(
+	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
+	PPO_internal_memory *mem_pntr
+)
+{
+	PPO_internal_memory mem = *mem_pntr;
+	bool is_recurrent = value_function->is_recurrent() || policy->is_recurrent();
+
+	std::vector<data_t *> advantages;
+	for (size_t i = 0; i < mem.n_env; i++)
+	{
+		advantages.push_back(calculate_advantage(
+			hyperparameters.steps_before_training,
+			value_function, mem.trajectory_inputs[i], hyperparameters.GAE, false, false,
+			mem.rewards[i], false, false
+		));
+	}
+
+	std::vector<std::tuple<data_t *, data_t *, data_t *>> in_out_adv;
+	if (is_recurrent)
+	{
+	}
+	else
+	{
+		for (size_t i = 0; i < hyperparameters.mini_batch_count; i++)
+		{
+	
+		}	
+	}
+
+	bool stop = false;
+	for (size_t mini_batch_i = 0; mini_batch_i < hyperparameters.mini_batch_count; mini_batch_i++)
+		for (size_t i = 0; i < hyperparameters.max_training_steps && !stop; i++)
+		{
+			
+		}
+}
+
 void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 {
 	PPO_internal_memory mem = *mem_pntr;

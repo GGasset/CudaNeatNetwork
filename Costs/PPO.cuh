@@ -9,6 +9,9 @@
 
 #include "RL_parameters.h"
 
+#include <vector>
+#include <tuple>
+
 struct PPO_internal_memory
 {
 	std::vector<data_t *>	initial_internal_states;
