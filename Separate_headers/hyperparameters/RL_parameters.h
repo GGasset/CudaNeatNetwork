@@ -36,7 +36,7 @@ typedef struct PPO_hyperparameters
 	// Number of minibatches per training
 	// If value or policy network are recurrent
 	// mini_batch size % vec environment count MUST be 0
-	size_t mini_batch_size = 4;
+	size_t mini_batch_count = 4;
 
 	// Environment frames before training is calculated and applied
 	size_t steps_before_training = 30;
