@@ -47,6 +47,37 @@ void initialize_mem(
 	mem_pntr->is_initialized = 1;
 }
 
+void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
+{
+	PPO_internal_memory mem = *mem_pntr;
+
+	for (size_t i = 0; i < mem.n_env; i++)
+	{
+		cudaFree(mem.initial_value_internal_states[i]);
+		mem.initial_value_internal_states[i] = 0;
+
+		cudaFree(mem.initial_internal_states[i]);
+		mem.initial_internal_states[i] = 0;
+
+		mem.was_memory_deleted_before[i] = std::vector<bool>();
+
+		cudaFree(mem.trajectory_inputs[i]);
+		mem.trajectory_inputs[i] = 0;
+
+		cudaFree(mem.trajectory_outputs[i]);
+		mem.trajectory_outputs[i] = 0;
+
+		cudaFree(mem.rewards[i]);
+		mem.rewards[i] = 0;
+
+		mem.add_reward_calls_n[i] = 0;
+
+		mem.n_env_executions[i] = 0;
+		mem.is_initialized = 0;
+	}
+	*mem_pntr = mem;
+}
+
 data_t *PPO_execute_train(
 	data_t *X, bool is_X_in_host, size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
@@ -137,6 +168,8 @@ data_t *PPO_execute_train(
 
 	// Training loop
 
-	// Mem cleanup (sets initial states to current states, does not free current states)
+	// Mem cleanup (sets initial states to current states, does not free current states)	
+	*mem_pntr = mem;
+	PPO_data_cleanup(mem_pntr);
 	return out;
 }
