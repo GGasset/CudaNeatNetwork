@@ -64,7 +64,7 @@ void PPO_initialization(
 		|| mem.n_env_executions[env_i] != mem.add_reward_calls_n[env_i] // Irregular add_rewards_call
 		|| !hyperparameters.steps_before_training
 		|| !hyperparameters.max_training_steps
-		|| !hyperparameters.mini_batch_size
+		|| !hyperparameters.mini_batch_count
 	 )
 		(free_PPO_data(mem_pntr), throw);
 	
@@ -150,16 +150,58 @@ void PPO_train(
 		));
 	}
 
-	std::vector<std::tuple<data_t *, data_t *, data_t *>> in_out_adv;
+	// Those pointers come from the same cudaMalloc
+	std::vector<std::tuple<data_t *, data_t *, data_t *, size_t>> in_out_adv_len;
+	in_out_adv_len.resize(hyperparameters.mini_batch_count);
 	if (is_recurrent)
 	{
 	}
 	else
 	{
+		// Prepare arrays
+
+		size_t steps_per_env = hyperparameters.steps_before_training;
+		size_t total_execution_count = hyperparameters.vecenvironment_count * steps_per_env;
+		data_t *appended_X = 0;
+		data_t *appended_Y = 0;
+		data_t *appended_advantages = 0;
+		for (size_t i = 0; i < hyperparameters.vecenvironment_count; i++)
+		{
+			appended_X = cuda_append_array(
+				appended_X, policy->get_input_length() * steps_per_env * i,
+				mem.trajectory_inputs[i], policy->get_input_length() * steps_per_env,
+				true
+			);
+			appended_Y = cuda_append_array(
+				appended_Y, policy->get_output_length() * steps_per_env * i,
+				mem.trajectory_outputs[i], policy->get_output_length() * steps_per_env,
+				true
+			);
+			appended_advantages = cuda_append_array(
+				appended_advantages, steps_per_env * i,
+				mem.trajectory_inputs[i], policy->get_input_length() * steps_per_env,
+				true
+			);
+
+		}
+		// TODO: add shuffling
+
+		// Create training data
+
+		size_t items_per_minib = steps_per_env / hyperparameters.mini_batch_count;
+		size_t last_item_count = steps_per_env % hyperparameters.mini_batch_count;
 		for (size_t i = 0; i < hyperparameters.mini_batch_count; i++)
 		{
-	
-		}	
+			data_t *X_pntr = appended_X + i * items_per_minib * policy->get_input_length();
+			data_t *Y_pntr = appended_Y + i * items_per_minib * policy->get_output_length();
+			data_t *advantage_pntr = appended_advantages + i * items_per_minib;
+			size_t value_count = 
+				i < hyperparameters.mini_batch_count - 1 ? items_per_minib : last_item_count;
+
+			std::tuple<data_t *, data_t *, data_t *, size_t> to_add 
+				= std::make_tuple(X_pntr, Y_pntr, advantage_pntr, value_count);
+			in_out_adv_len.push_back(to_add);
+		}
 	}
 
 	bool stop = false;
