@@ -23,6 +23,11 @@ size_t NN::get_output_activations_start()
 	return *output_activations_start;
 }
 
+size_t NN::get_gradient_count_per_t()
+{
+	return gradient_count;
+}
+
 bool NN::is_recurrent()
 {
 	return contains_recurrent_layers;

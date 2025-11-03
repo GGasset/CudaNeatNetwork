@@ -48,6 +48,7 @@ public:
 	size_t get_neuron_count();
 	size_t get_output_length();
 	size_t get_output_activations_start();
+	size_t get_gradient_count_per_t();
 	bool   is_recurrent();
 
 	~NN();
