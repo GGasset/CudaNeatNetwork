@@ -28,84 +28,84 @@ list(APPEND NETWORK_INCLUDE_DIRECTORIES Separate_headers/ Separate_headers/hyper
 
 # Basic Files
 SET(FUNCTIONALITY_FILES
-		cuda_functionality.cu
-		functionality.cpp
-	)
+  cuda_functionality.cu
+  functionality.cpp
+ )
 SET(FUNCTIONALITY_FOLDER Functionality)
 ADD_PREFIX_INPLACE(${FUNCTIONALITY_FOLDER}/ FUNCTIONALITY_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${FUNCTIONALITY_FOLDER})
 
 SET(CONNECTION_FILES
-		linear_functions.cu
-		connection_gradients.cu 
+  linear_functions.cu
+  connection_gradients.cu
 
-		IConnections.cu
-		DenseConnections.cu
-		NeatConnections.cu
-	)
+  IConnections.cu
+  DenseConnections.cu
+  NeatConnections.cu
+ )
 SET(CONNECTIONS_FOLDER Connections)
 ADD_PREFIX_INPLACE(${CONNECTIONS_FOLDER}/ CONNECTION_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${CONNECTIONS_FOLDER})
 
 SET(OPTIMIZER_FILES
-		#Optimizer_init.cu
-		#IOptimizer.cu
-		#Adam.cu
+   #Optimizer_init.cu
+   #IOptimizer.cu
+   #Adam.cu
 
-		Optimizers.cu
-	)
+  Optimizers.cu
+ )
 SET(OPTIMIZER_FOLDER Optimizers)
 ADD_PREFIX_INPLACE(${OPTIMIZER_FOLDER}/ OPTIMIZER_FILES)
 
 SET(LAYER_FILES
-		derivatives.cu
-		gradients.cu
-		ILayer.cu
-		LSTMLayer.cu
-		NeuronLayer.cu
-		neuron_operations.cu
+  derivatives.cu
+  gradients.cu
+  ILayer.cu
+  LSTMLayer.cu
+  NeuronLayer.cu
+  neuron_operations.cu
 
-		${OPTIMIZER_FILES}
-	)
+  ${OPTIMIZER_FILES}
+ )
 SET(LAYER_FOLDER Layers)
 ADD_PREFIX_INPLACE(${LAYER_FOLDER}/ LAYER_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${LAYER_FOLDER})
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${LAYER_FOLDER}/${OPTIMIZER_FOLDER})
 
 SET(COST_FUNCTIONS_FILES
-		costs.cu
-		GAE.cu
-		PPO.cu
-		regularization.cu
-	)
+  costs.cu
+  GAE.cu
+  PPO.cu
+  regularization.cu
+ )
 SET(COST_FUNCTIONS_FOLDER Costs)
 ADD_PREFIX_INPLACE(${COST_FUNCTIONS_FOLDER}/ COST_FUNCTIONS_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${COST_FUNCTIONS_FOLDER})
 
 SET(NON_FOLDER_FILES
-		NN.cu
-		NN_constructor.cu
-	)
+  NN.cu
+  NN_constructor.cu
+ )
 
 SET(NECESSARY_COMPILATION_FILES
-		${FUNCTIONALITY_FILES}
-		${CONNECTION_FILES}
-		${LAYER_FILES}
-		${COST_FUNCTIONS_FILES}
-		${NON_FOLDER_FILES}
-	)
+  ${FUNCTIONALITY_FILES}
+  ${CONNECTION_FILES}
+  ${LAYER_FILES}
+  ${COST_FUNCTIONS_FILES}
+  ${NON_FOLDER_FILES}
+ )
 
 # Optional files
 
 SET(SOCKET_FILES
-	
-		NN_socket_interpreter.cu
 
-		unix_sock_interop.cu
+  NN_socket_interpreter.cu
 
-		SinglyLinkedListNode.h
-		HashTable.h
-	)
+  unix_sock_interop.cu
+
+  SinglyLinkedListNode.h
+  HashTable.h
+ )
 SET(SOCKET_FOLDER socket)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${SOCKET_FOLDER})
 
@@ -149,14 +149,14 @@ if(DETERMINISTIC)
 endif()
 add_compile_definitions(INCLUDE_BACKEND)
 if(target STREQUAL "static")
-	   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -fPIC")
-	   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-	   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fPIC")
-	   message("-- Static Lib added")
-	   add_library(${PROJECT_NAME} STATIC ${NECESSARY_COMPILATION_FILES})
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -fPIC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fPIC")
+	message("-- Static Lib added")
+	add_library(${PROJECT_NAME} STATIC ${NECESSARY_COMPILATION_FILES})
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
-		   "Built Static Lib")
+				   COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
+	 "Built Static Lib")
 elseif(target STREQUAL "socket")
 	message("-- Socket config added")
 	if (DEBUG)
@@ -169,8 +169,8 @@ elseif(target STREQUAL "socket")
 	endif()
 
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-	   COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
-	   "Built socket config")
+	COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
+	"Built socket config")
 else()
 	message("-- Exe for testing added")
 	add_executable(${PROJECT_NAME} kernel.cu ${NECESSARY_COMPILATION_FILES})
@@ -181,9 +181,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC curand)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES "native")
 target_include_directories(${PROJECT_NAME} PRIVATE
-	${NETWORK_INCLUDE_DIRECTORIES} ./)
+ ${NETWORK_INCLUDE_DIRECTORIES} ./)
 if (DEBUG)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
-                   "Built debug")
+				   COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan
+				   "Built debug")
 endif()
