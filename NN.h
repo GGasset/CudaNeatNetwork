@@ -47,6 +47,7 @@ public:
 	size_t get_input_length();
 	size_t get_neuron_count();
 	size_t get_output_length();
+	size_t get_output_activations_start();
 	bool   is_recurrent();
 
 	~NN();

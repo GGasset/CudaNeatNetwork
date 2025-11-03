@@ -18,6 +18,11 @@ size_t NN::get_output_length()
 	return output_length;
 }
 
+size_t NN::get_output_activations_start()
+{
+	return *output_activations_start;
+}
+
 bool NN::is_recurrent()
 {
 	return contains_recurrent_layers;
