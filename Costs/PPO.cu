@@ -132,6 +132,67 @@ data_t *PPO_execution(
 	return out;
 }
 
+void non_recurrent_PPO_miniBatch(
+	NN *policy, PPO_hyperparameters hyperparameters,
+	data_t *X, data_t *trajectory_Y, data_t *advantages, size_t data_point_count
+)
+{
+	size_t neuron_count = policy->get_neuron_count();
+	size_t output_len = policy->get_output_length();
+	size_t output_activations_start = policy->get_output_activations_start();
+	size_t gradient_count = policy->get_gradient_count_per_t();
+	NN     *policy_clone = policy->clone();
+
+	data_t *collected_gradients = 0;
+	data_t total_kl_divergence = 0;
+	bool stop = false;
+	for (size_t i = 0; i < hyperparameters.max_kl_divergence_threshold && !stop; i++)
+	{
+		data_t* execution_values = 0;
+		data_t* activations = 0;
+		data_t* Y = 0;
+		policy_clone->training_execute(data_point_count, X, &Y, cuda_pointer_output, &execution_values, &activations);
+		if (!Y) throw;
+
+		size_t costs_len = neuron_count * data_point_count;
+		data_t *costs = 0;
+		cudaMalloc(&costs, sizeof(data_t) * costs_len);
+		cudaMemset(costs, 0, sizeof(data_t) * costs_len);
+
+		data_t kl_divergence = PPO_derivative(
+			data_point_count, output_len, neuron_count,
+			trajectory_Y, Y, advantages, costs, output_activations_start,
+			hyperparameters.clip_ratio, hyperparameters.max_kl_divergence_threshold
+		);
+		total_kl_divergence += kl_divergence;
+#ifdef DEBUG
+		if (kl_divergence > .02) printf("KL divergence too high! %.3f\n", kl_divergence);
+#endif
+		stop = fabs(total_kl_divergence / (i + 1)) > hyperparameters.max_kl_divergence_threshold;
+		cudaFree(Y);
+
+		data_t* gradients = 0;
+		policy_clone->backpropagate(
+			data_point_count,
+			costs, activations, execution_values, &gradients, hyperparameters.policy
+		);
+		cudaFree(costs);
+		cudaFree(activations);
+		cudaFree(execution_values);
+
+		for (size_t t = 0; t < data_point_count; t++)
+			policy_clone->subtract_gradients(gradients, gradient_count * t, hyperparameters.policy);
+		collected_gradients = cuda_append_array(collected_gradients, gradient_count * data_point_count * i,
+			gradients, gradient_count * data_point_count, true);
+		cudaFree(gradients);
+	}
+	delete policy_clone;
+	for (size_t i = 0; i < data_point_count; i++)
+		policy->subtract_gradients(collected_gradients, gradient_count * i, hyperparameters.policy);
+	cudaFree(collected_gradients);
+
+}
+
 void PPO_train(
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
 	PPO_internal_memory *mem_pntr
