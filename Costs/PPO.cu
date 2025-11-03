@@ -211,9 +211,9 @@ void PPO_train(
 		));
 	}
 
-	// Those pointers come from the same cudaMalloc
-	std::vector<std::tuple<data_t *, data_t *, data_t *, size_t>> in_out_adv_len;
-	in_out_adv_len.resize(hyperparameters.mini_batch_count);
+	size_t steps_per_env = hyperparameters.steps_before_training;
+	size_t env_n = hyperparameters.vecenvironment_count;
+	size_t total_execution_count = env_n * steps_per_env;
 	if (is_recurrent)
 	{
 	}
@@ -221,8 +221,6 @@ void PPO_train(
 	{
 		// Prepare arrays
 
-		size_t steps_per_env = hyperparameters.steps_before_training;
-		size_t total_execution_count = hyperparameters.vecenvironment_count * steps_per_env;
 		data_t *appended_X = 0;
 		data_t *appended_Y = 0;
 		data_t *appended_advantages = 0;
@@ -259,18 +257,14 @@ void PPO_train(
 			size_t value_count = 
 				i < hyperparameters.mini_batch_count - 1 ? items_per_minib : last_item_count;
 
-			std::tuple<data_t *, data_t *, data_t *, size_t> to_add 
-				= std::make_tuple(X_pntr, Y_pntr, advantage_pntr, value_count);
-			in_out_adv_len.push_back(to_add);
+			non_recurrent_PPO_miniBatch(
+				policy, hyperparameters, X_pntr, Y_pntr, advantage_pntr, value_count
+			);
 		}
+		cudaFree(appended_X);
+		cudaFree(appended_Y);
+		cudaFree(appended_advantages);
 	}
-
-	bool stop = false;
-	for (size_t mini_batch_i = 0; mini_batch_i < hyperparameters.mini_batch_count; mini_batch_i++)
-		for (size_t i = 0; i < hyperparameters.max_training_steps && !stop; i++)
-		{
-			
-		}
 }
 
 void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
