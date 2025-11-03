@@ -45,6 +45,7 @@ public:
 	bool stateful = false;
 
 	size_t get_input_length();
+	size_t get_neuron_count();
 	size_t get_output_length();
 	bool   is_recurrent();
 

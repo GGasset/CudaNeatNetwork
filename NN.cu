@@ -8,6 +8,11 @@ size_t NN::get_input_length()
 	return input_length; 
 }
 
+size_t NN::get_neuron_count()
+{
+	return neuron_count;
+}
+
 size_t NN::get_output_length()
 {
 	return output_length;
