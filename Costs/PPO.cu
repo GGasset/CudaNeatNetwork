@@ -146,7 +146,7 @@ void non_recurrent_PPO_miniBatch(
 	data_t *collected_gradients = 0;
 	data_t total_kl_divergence = 0;
 	bool stop = false;
-	for (size_t i = 0; i < hyperparameters.max_kl_divergence_threshold && !stop; i++)
+	for (size_t i = 0; i < hyperparameters.max_training_steps && !stop; i++)
 	{
 		data_t* execution_values = 0;
 		data_t* activations = 0;
