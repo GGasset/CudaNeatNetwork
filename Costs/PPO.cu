@@ -204,6 +204,7 @@ void PPO_train(
 	std::vector<data_t *> advantages;
 	for (size_t i = 0; i < mem.n_env; i++)
 	{
+		value_function->set_hidden_state(mem_pntr->initial_value_internal_states[i], false);
 		advantages.push_back(calculate_advantage(
 			hyperparameters.steps_before_training,
 			value_function, mem.trajectory_inputs[i], hyperparameters.GAE, false, false,
