@@ -132,6 +132,46 @@ data_t *PPO_execution(
 	return out;
 }
 
+void recurrent_PPO_miniBatch(
+	NN *policy, PPO_hyperparameters hyperparameters,
+	std::vector<data_t*> env_X, std::vector<data_t*> env_Y, std::vector<data_t*> advantages,
+	std::vector<data_t*> policy_initial_states, std::vector<std::vector<bool>> was_mem_deleted
+)
+{
+	size_t neuron_count = policy->get_neuron_count();
+	size_t output_len = policy->get_output_length();
+	size_t output_activations_start = policy->get_output_activations_start();
+	size_t gradient_count = policy->get_gradient_count_per_t();
+	NN     *policy_clone = policy->clone();
+
+	size_t steps_per_env = hyperparameters.steps_before_training;
+	size_t n_envs = hyperparameters.vecenvironment_count;
+	if (env_X.size() != n_envs || env_Y.size() != n_envs || advantages.size() != n_envs
+		|| policy_initial_states.size() != n_envs || was_mem_deleted.size() != n_envs)
+		throw;
+
+	data_t *collected_gradients = 0;
+	data_t total_kl_divergence = 0;
+	for (size_t train_i = 0; train_i < hyperparameters.max_training_steps; train_i++)
+	{
+		
+		for (size_t env_i = 0; env_i < n_envs; env_i++)
+		{
+			data_t* execution_values = 0;
+			data_t* activations = 0;
+			data_t *Y = 0;
+			policy->training_execute(steps_per_env,
+				env_X[env_i], &Y, cuda_pointer_output,
+				&execution_values, &activations, 0, &was_mem_deleted[env_i]
+			);
+			if (!Y) throw;
+		}
+		
+	}
+	delete policy_clone;
+	cudaFree(collected_gradients);
+}
+
 void non_recurrent_PPO_miniBatch(
 	NN *policy, PPO_hyperparameters hyperparameters,
 	data_t *X, data_t *trajectory_Y, data_t *advantages, size_t data_point_count
