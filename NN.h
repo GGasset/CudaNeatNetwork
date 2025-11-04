@@ -89,7 +89,8 @@ public:
 		output_pointer_type output_type,
 		data_t** execution_values,
 		data_t** activations,
-		size_t arrays_t_length = 0
+		size_t arrays_t_length = 0,
+		std::vector<bool> *delete_mem = 0
 	);
 
 	data_t train(

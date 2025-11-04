@@ -215,7 +215,8 @@ void NN::training_execute(
 	output_pointer_type output_type,
 	data_t** execution_values,
 	data_t** activations,
-	size_t arrays_t_length
+	size_t arrays_t_length,
+	std::vector<bool> *delete_mem
 )
 {
 	data_t* prev_execution_values = 0;
@@ -243,7 +244,10 @@ void NN::training_execute(
 		*Y = out_Y;
 	}
 	for (size_t t = 0; t < t_count; t++)
+	{
+		if (delete_mem && delete_mem->size() > t && delete_mem[0][t]) delete_memory();
 		execute(X, (*execution_values) + execution_value_count * arrays_t_length, (*activations) + neuron_count * arrays_t_length, t, out_Y, output_type);
+	}
 }
 
 
