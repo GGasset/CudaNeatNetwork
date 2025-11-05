@@ -579,7 +579,7 @@ void NN::PPO_train(
 			t_count, output_length, neuron_count,
 			*trajectory_outputs, Y, advantages,
 			costs, *output_activations_start,
-			hyperparameters.clip_ratio, hyperparameters.max_kl_divergence_threshold
+			hyperparameters.clip_ratio
 		);
 		stop = fabs(total_kl_divergence / (i + 1)) > hyperparameters.max_kl_divergence_threshold;
 		cudaFree(Y);
