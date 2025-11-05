@@ -133,7 +133,7 @@ data_t *PPO_execution(
 }
 
 void recurrent_PPO_miniBatch(
-	NN *policy, PPO_hyperparameters hyperparameters,
+	NN *policy, PPO_hyperparameters hyperparameters, size_t minibatch_vec_start,
 	std::vector<data_t*> env_X, std::vector<data_t*> env_Y, std::vector<data_t*> advantages,
 	std::vector<data_t*> policy_initial_states, std::vector<std::vector<bool>> was_mem_deleted
 )
@@ -146,29 +146,75 @@ void recurrent_PPO_miniBatch(
 
 	size_t steps_per_env = hyperparameters.steps_before_training;
 	size_t n_envs = hyperparameters.vecenvironment_count;
+	size_t mbatch_nenvs = n_envs / hyperparameters.mini_batch_count;
+
 	if (env_X.size() != n_envs || env_Y.size() != n_envs || advantages.size() != n_envs
-		|| policy_initial_states.size() != n_envs || was_mem_deleted.size() != n_envs)
+	|| policy_initial_states.size() != n_envs || was_mem_deleted.size() != n_envs)
 		throw;
 
+	int stop = false;
 	data_t *collected_gradients = 0;
-	data_t total_kl_divergence = 0;
-	for (size_t train_i = 0; train_i < hyperparameters.max_training_steps; train_i++)
+	size_t train_i;
+	for (train_i = 0; train_i < hyperparameters.max_training_steps && !stop; train_i++)
 	{
-		
-		for (size_t env_i = 0; env_i < n_envs; env_i++)
+		data_t *minibatch_grads = 0;
+		data_t total_kl_divergence = 0;
+		for (size_t env_i = minibatch_vec_start; env_i - minibatch_vec_start < mbatch_nenvs; env_i++)
 		{
+			policy_clone->set_hidden_state(policy_initial_states[env_i], false);
 			data_t* execution_values = 0;
 			data_t* activations = 0;
 			data_t *Y = 0;
-			policy->training_execute(steps_per_env,
+			policy_clone->training_execute(steps_per_env,
 				env_X[env_i], &Y, cuda_pointer_output,
 				&execution_values, &activations, 0, &was_mem_deleted[env_i]
 			);
 			if (!Y) throw;
+
+			data_t *costs = 0;
+			cudaMalloc(&costs, sizeof(data_t) * neuron_count * steps_per_env);
+			cudaMemset(costs, 0, sizeof(data_t) * neuron_count * steps_per_env);
+			total_kl_divergence += PPO_derivative(
+				steps_per_env, output_len, neuron_count,
+				env_Y[env_i], Y, advantages[env_i], costs,
+				output_activations_start, 
+				hyperparameters.clip_ratio
+			);
+			cudaFree(Y);
+
+			data_t *current_grads = 0;
+			policy_clone->backpropagate(
+				steps_per_env, 
+				costs, activations, execution_values,
+				&current_grads, hyperparameters.policy
+			);
+			cudaFree(costs);
+			cudaFree(activations);
+			cudaFree(execution_values);
+
+			collected_gradients = cuda_append_array(
+				collected_gradients, gradient_count * (train_i * mbatch_nenvs * steps_per_env + env_i * steps_per_env),
+				current_grads, gradient_count * steps_per_env, 
+				true
+			);
+			minibatch_grads = cuda_append_array(
+				minibatch_grads, gradient_count * env_i * steps_per_env,
+				current_grads, gradient_count * steps_per_env,
+				true
+			);
+			cudaFree(current_grads);
 		}
+		stop = fabs(total_kl_divergence / (steps_per_env * mbatch_nenvs)) > hyperparameters.max_kl_divergence_threshold;
+		for (size_t i = 0; i < mbatch_nenvs * steps_per_env; i++)
+			policy_clone->subtract_gradients(minibatch_grads, i * gradient_count, hyperparameters.policy);
 		
+		cudaFree(minibatch_grads);
 	}
 	delete policy_clone;
+
+	for (size_t i = 0; i < train_i * mbatch_nenvs * steps_per_env; i++)
+		policy->subtract_gradients(collected_gradients, i * gradient_count, hyperparameters.policy);
+	
 	cudaFree(collected_gradients);
 }
 
@@ -184,9 +230,8 @@ void non_recurrent_PPO_miniBatch(
 	NN     *policy_clone = policy->clone();
 
 	data_t *collected_gradients = 0;
-	data_t total_kl_divergence = 0;
 	bool stop = false;
-	size_t train_i = 0;
+	size_t train_i;
 	for (train_i = 0; train_i < hyperparameters.max_training_steps && !stop; train_i++)
 	{
 		data_t* execution_values = 0;
@@ -203,13 +248,12 @@ void non_recurrent_PPO_miniBatch(
 		data_t kl_divergence = PPO_derivative(
 			data_point_count, output_len, neuron_count,
 			trajectory_Y, Y, advantages, costs, output_activations_start,
-			hyperparameters.clip_ratio, hyperparameters.max_kl_divergence_threshold
+			hyperparameters.clip_ratio
 		);
-		total_kl_divergence += kl_divergence;
 #ifdef DEBUG
 		if (kl_divergence > .02) printf("KL divergence too high! %.3f\n", kl_divergence);
 #endif
-		stop = fabs(total_kl_divergence / (train_i + 1)) > hyperparameters.max_kl_divergence_threshold;
+		stop = fabs(kl_divergence / (data_point_count)) > hyperparameters.max_kl_divergence_threshold;
 		cudaFree(Y);
 
 		data_t* gradients = 0;
