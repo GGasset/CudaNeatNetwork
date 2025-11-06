@@ -133,7 +133,7 @@ data_t *PPO_execution(
 }
 
 void recurrent_PPO_miniBatch(
-	NN *policy, PPO_hyperparameters hyperparameters, size_t minibatch_vec_start,
+	NN *policy, PPO_hyperparameters hyperparameters, size_t minibatch_vec_start, size_t mbatch_nenvs,
 	std::vector<data_t*> env_X, std::vector<data_t*> env_Y, std::vector<data_t*> advantages,
 	std::vector<data_t*> policy_initial_states, std::vector<std::vector<bool>> was_mem_deleted
 )
@@ -146,7 +146,6 @@ void recurrent_PPO_miniBatch(
 
 	size_t steps_per_env = hyperparameters.steps_before_training;
 	size_t n_envs = hyperparameters.vecenvironment_count;
-	size_t mbatch_nenvs = n_envs / hyperparameters.mini_batch_count;
 
 	if (env_X.size() != n_envs || env_Y.size() != n_envs || advantages.size() != n_envs
 	|| policy_initial_states.size() != n_envs || was_mem_deleted.size() != n_envs)
@@ -300,8 +299,30 @@ void PPO_train(
 	size_t steps_per_env = hyperparameters.steps_before_training;
 	size_t env_n = hyperparameters.vecenvironment_count;
 	size_t total_execution_count = env_n * steps_per_env;
+	size_t minibatch_count = hyperparameters.mini_batch_count;
 	if (is_recurrent)
 	{
+		size_t envs_per_minib = env_n / minibatch_count;
+		size_t last_envs_per_minib = env_n % minibatch_count;
+		std::vector<std::tuple<size_t, size_t>> minib_start_n_size;
+		for (size_t i = 0; i < minibatch_count; i++)
+			minib_start_n_size.push_back(
+				{
+					i * envs_per_minib,
+					envs_per_minib * (i < minibatch_count - 1) + last_envs_per_minib * (i == minibatch_count - 1)
+				}
+			);
+		
+		// Todo: shuffle vector
+
+		for (size_t i = 0; i < minibatch_count; i++)
+			recurrent_PPO_miniBatch(
+				policy, hyperparameters,
+				std::get<0>(minib_start_n_size[i]), std::get<1>(minib_start_n_size[i]),
+				mem.trajectory_inputs, mem.trajectory_outputs, advantages,
+				mem.initial_internal_states, mem.was_memory_deleted_before
+			);
+		
 	}
 	else
 	{
@@ -351,6 +372,8 @@ void PPO_train(
 		cudaFree(appended_Y);
 		cudaFree(appended_advantages);
 	}
+	for (size_t i = 0; i < advantages.size(); i++)
+		cudaFree(advantages[i]);
 }
 
 void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
@@ -417,6 +440,7 @@ data_t *PPO_execute_train(
 		if (mem.n_env_executions[i] >= hyperparameters.steps_before_training)
 		{
 			free_PPO_data(mem_pntr);
+			// all vecenvironment execute should be called homogeneously
 			throw "Irregular env_steps not Implemented";	
 		}
 		start_training = start_training && mem.n_env_executions[i] == hyperparameters.steps_before_training - 1;
