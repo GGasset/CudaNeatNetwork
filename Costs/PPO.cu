@@ -46,8 +46,6 @@ void initialize_mem(
 	cudaFree(policy_state);
 	policy_state = 0;
 	
-
-	mem_pntr->is_initialized = 1;
 }
 
 void PPO_initialization(
@@ -75,10 +73,6 @@ void PPO_initialization(
 		mem = *mem_pntr;
 	}
 	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
-	if (!mem.is_initialized) // states should be initialized and n_env, everything else should not
-	{
-
-	}
 	*mem_pntr = mem;
 }
 
@@ -99,8 +93,13 @@ data_t *PPO_execution(
 	}
 	else
 	{
+		if (!mem.current_internal_states[env_i]) throw;
 		value_function->set_hidden_state(mem.current_value_internal_states[env_i], true);
+		mem.current_internal_states[env_i] = 0;
+		
+		if (!mem.current_value_internal_states[env_i]) throw;
 		policy->set_hidden_state(mem.current_internal_states[env_i], true);
+		mem.current_value_internal_states[env_i] = 0;
 	}
 
 	size_t in_len = policy->get_input_length();
@@ -109,16 +108,18 @@ data_t *PPO_execution(
 	cudaMalloc(&X_tmp, sizeof(data_t) * in_len);
 	cudaMemcpy(X_tmp, X, sizeof(data_t) * in_len, cudaMemcpyDefault);
 	
+	size_t prev_n_executions = mem.n_env_executions[env_i];
 	data_t *Y = policy->inference_execute(X_tmp, cuda_pointer_output);
+	mem.n_env_executions[env_i]++;
 
 	// Insert to memory
-	size_t n_executions = mem.n_env_executions[env_i];
 	mem.trajectory_inputs[env_i] =
-		cuda_append_array(mem.trajectory_inputs[env_i], in_len * n_executions,
+		cuda_append_array(mem.trajectory_inputs[env_i], in_len * prev_n_executions,
 						  X_tmp, in_len, true);
 	mem.trajectory_outputs[env_i] =
-		cuda_append_array(mem.trajectory_outputs[env_i], out_len * n_executions,
+		cuda_append_array(mem.trajectory_outputs[env_i], out_len * prev_n_executions,
 						  Y, out_len, true);
+	
 	
 	mem.current_value_internal_states[env_i] = value_function->get_hidden_state();
 	mem.current_internal_states[env_i] = policy->get_hidden_state();
@@ -313,7 +314,8 @@ void PPO_train(
 				}
 			);
 		
-		// Todo: shuffle vector
+		// shuffle vector
+		vec_shuffle_inplace<std::tuple<size_t, size_t>>(minib_start_n_size);
 
 		for (size_t i = 0; i < minibatch_count; i++)
 			recurrent_PPO_miniBatch(
@@ -351,6 +353,7 @@ void PPO_train(
 
 		}
 		// TODO: add shuffling
+		//cuda_shuffle_inplace();
 
 		// Create training data
 
@@ -373,7 +376,8 @@ void PPO_train(
 		cudaFree(appended_advantages);
 	}
 	for (size_t i = 0; i < advantages.size(); i++)
-		cudaFree(advantages[i]);
+		cudaFree(advantages[i]);\
+	*mem_pntr = mem;
 }
 
 void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
@@ -389,7 +393,7 @@ void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 		mem.initial_internal_states[i] = 0;
 
 		mem.initial_value_internal_states[i]
-			= cuda_clone_arr(mem.initial_value_internal_states[i], mem.value_internal_state_length);
+			= cuda_clone_arr(mem.current_value_internal_states[i], mem.value_internal_state_length);
 		mem.initial_internal_states[i] 
 			= cuda_clone_arr(mem.current_internal_states[i], mem.policy_internal_state_length);
 
@@ -407,7 +411,6 @@ void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 		mem.add_reward_calls_n[i] = 0;
 
 		mem.n_env_executions[i] = 0;
-		mem.is_initialized = 0;
 	}
 	*mem_pntr = mem;
 }

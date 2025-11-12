@@ -32,7 +32,6 @@ struct PPO_internal_memory
 	std::vector<size_t>		n_env_executions;
 	size_t					n_env = 0;
 
-	size_t					is_initialized = 0;
 };
 
 
