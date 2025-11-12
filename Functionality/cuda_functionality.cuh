@@ -560,7 +560,41 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 }
 
 template<typename T>
-void cuda_shuffle_inplace(T *arr, size_t arr_len)
+__global__ void global_shuffle(T *arr, size_t arr_len, size_t i)
 {
+	size_t tid = get_tid();
+	if (tid >= arr_len >> 1) return;
 
+	size_t delta_pos = 1 << i;
+	size_t pos = delta_pos * (tid / delta_pos) + tid;
+
+	if (rand() & 1) return;
+
+	T tmp = arr[pos];
+	arr[pos] = arr[pos + delta_pos];
+	arr[pos + delta_pos] = tmp;
+}
+
+template<typename T>
+__host__ void cuda_shuffle_inplace(T *arr, size_t arr_len)
+{
+	size_t needs_shuffling = arr_len;
+	for (size_t i = 0; needs_shuffling > 1; i++, needs_shuffling /= 2)
+	{
+		global_shuffle n_threads(arr_len / 2) (
+			arr, arr_len, i
+		);
+		cudaDeviceSynchronize();
+	}
+	if (arr_len & 1)
+	{
+		size_t last_item_pos = arr_len - 1;
+		size_t new_last_item_pos = rand() % (last_item_pos);
+		T *tmp = 0;
+		cudaMalloc(&tmp, sizeof(T));
+		cudaMemcpy(tmp, arr + new_last_item_pos, sizeof(T), cudaMemcpyDefault);
+		cudaMemcpy(arr + new_last_item_pos, arr + last_item_pos, sizeof(T), cudaMemcpyDefault);
+		cudaMemcpy(arr + last_item_pos, tmp, sizeof(T), cudaMemcpyDefault);
+		cudaFree(tmp);
+	}
 }
