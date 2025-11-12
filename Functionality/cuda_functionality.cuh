@@ -103,6 +103,52 @@ __global__ void add_arrays(T *write_arr, T *a, t *b, size_t a_len, size_t b_len,
 	write_arr[tid] += a[tid] * (1 - (2 * invert_a)) + b[tid] * (1 - (2 * invert_b));
 }
 
+// Shared memory needs to be the same as blockDim.x
+// Uses get_tid()
+template<typename T>
+__global__ void nglobal_PRAM_reduce_add(T *g_data, size_t in_len)
+{
+	extern __shared__ T sdata[];
+
+	size_t tid = threadIdx.x;
+	size_t gid = get_tid();//blockIdx.x * blockDim.x * 2 + threadIdx.x;
+
+	size_t expected_threads = blockDim.x >> 1;
+
+	sdata[tid] = 0;
+	if (gid < in_len)
+		sdata[tid] = g_data[gid];
+	while (expected_threads)
+	{
+		if (tid >= expected_threads) return;
+
+		__syncthreads();
+		sdata[tid * 2] += sdata[tid * 2 + 1];
+		expected_threads >>= 1;
+	}
+	if (!tid) g_data[blockIdx.x] = sdata[0];
+}
+
+template<typename T>
+T nPRAM_reduce_add(T *in, size_t in_len, T *out_write = 0)
+{
+	T *tmp = 0;
+	cudaMalloc(&tmp, sizeof(T) * in_len);
+	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
+
+	size_t block_size = 32;
+	while (in_len)
+	{
+		nglobal_PRAM_reduce_add 
+			kernel_shared(in_len / block_size + (in_len % block_size > 0), block_size, sizeof(T) * block_size) (
+				tmp, in_len
+			);
+		cudaDeviceSynchronize();
+		in_len /= block_size;
+	}
+}
+
+
 // write_arr requires an avalible length of n_inputs / 2 + n_inputs % 2
 template<typename T>
 __global__ void global_PRAM_reduce_add(T* input, T* write_arr, size_t n_inputs)
@@ -511,4 +557,10 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	curandDestroyGenerator(generator);
 	cudaDeviceSynchronize();
 	cudaFree(arr);
+}
+
+template<typename T>
+void cuda_shuffle_inplace(T *arr, size_t arr_len)
+{
+
 }
