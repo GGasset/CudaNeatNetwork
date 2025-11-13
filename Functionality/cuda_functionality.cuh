@@ -146,6 +146,11 @@ T nPRAM_reduce_add(T *in, size_t in_len, T *out_write = 0)
 		cudaDeviceSynchronize();
 		in_len /= block_size;
 	}
+
+	T result;
+	cudaMemcpy(&result, tmp, sizeof(T), cudaMemcpyDefault);
+	cudaFree(tmp);
+	return result;
 }
 
 
