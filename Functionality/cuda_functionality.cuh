@@ -608,4 +608,5 @@ __global__ void write_indices(T *arr, size_t arr_len, size_t start_index = 0)
 	arr[tid] = start_index + tid;
 }
 
+// Returns a pointer and its length
 __host__ std::tuple<size_t *, size_t> cud_get_shuffled_indices(size_t stop, size_t start = 0);
