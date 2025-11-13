@@ -35,6 +35,31 @@ __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 
 	dst[tid] = src[tid];
 }
+
+template<typename T>
+__global__ void global_sort_by_key(T *out, T *to_sort, size_t *keys, size_t arr_len)
+{
+	size_t tid = get_tid();
+	if (tid >= arr_len) return;
+
+	out[keys[tid]] = to_sort[tid];
+}
+
+template<typename T>
+__host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t arr_len)
+{
+	if (!to_sort || !*to_sort || !keys) throw;
+	T *sorted = 0;
+	cudaMalloc(&sorted, sizeof(T) * arr_len);
+	global_sort_by_key n_threads(arr_len) (
+		sorted, *to_sort, keys, arr_len
+	);
+	cudaDeviceSynchronize();
+
+	cudaFree(*to_sort);
+	*to_sort = sorted;
+}
+
 __global__ void extract_execution_values(
 	data_t *execution_values_layer_start, data_t *write_arr, size_t layer_length,
 	size_t execution_values_per_neuron, size_t neuron_read_i
