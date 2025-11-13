@@ -119,3 +119,22 @@ __global__ void mutate_field_array(
 	array[tid] += triple_length_normalized_random_arr[tid] * max_mutation * (triple_length_normalized_random_arr[tid + length] < mutation_chance);
 	array[tid] *= 1 - 2 * (triple_length_normalized_random_arr[tid + length * 2] < .5);
 }
+
+__host__ std::tuple<size_t *, size_t> cud_get_shuffled_indices(size_t stop, size_t start)
+{
+	size_t min_param = min(stop, start);
+	size_t max_param = max(stop, start);
+	start = min_param;
+	stop = max_param;
+	if (start == stop) return {0,0};
+
+	size_t out_len = stop - start;
+	size_t *out = 0;
+	cudaMalloc(&out, sizeof(size_t) * out_len);
+	write_indices n_threads(out_len) (
+		out, out_len, start
+	);
+	cudaDeviceSynchronize();
+	cuda_shuffle_inplace(out, out_len);
+	return {out, out_len};
+}

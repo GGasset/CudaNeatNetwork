@@ -598,3 +598,14 @@ __host__ void cuda_shuffle_inplace(T *arr, size_t arr_len)
 		cudaFree(tmp);
 	}
 }
+
+template<typename T>
+__global__ void write_indices(T *arr, size_t arr_len, size_t start_index = 0)
+{
+	size_t tid = get_tid();
+	if (tid >= arr_len) return;
+
+	arr[tid] = start_index + tid;
+}
+
+__host__ std::tuple<size_t *, size_t> cud_get_shuffled_indices(size_t stop, size_t start = 0);
