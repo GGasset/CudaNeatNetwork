@@ -471,6 +471,12 @@ data_t *PPO_execute_train(
 	return out;
 }
 
+void add_reward(data_t reward, size_t env_i, PPO_internal_memory *mem)
+{
+	mem->rewards[env_i] = cuda_push_back(mem->rewards[env_i], mem->add_reward_calls_n[env_i], reward, true);
+	mem->add_reward_calls_n[env_i]++;
+}
+
 bool free_PPO_data(PPO_internal_memory *mem)
 {
 	PPO_data_cleanup(mem);
