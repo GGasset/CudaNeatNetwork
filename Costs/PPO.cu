@@ -45,7 +45,7 @@ void initialize_mem(
 	value_func_state = 0;
 	cudaFree(policy_state);
 	policy_state = 0;
-	
+	mem_pntr->is_initialized = true;
 }
 
 void PPO_initialization(
@@ -73,6 +73,11 @@ void PPO_initialization(
 		mem = *mem_pntr;
 	}
 	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
+	if (mem.n_env && !mem.is_initialized)
+	{ // First call after training
+
+		mem.is_initialized = true;
+	}
 	*mem_pntr = mem;
 }
 
@@ -352,8 +357,12 @@ void PPO_train(
 			);
 
 		}
-		// TODO: add shuffling
-		//cuda_shuffle_inplace();
+
+		// add shuffling
+		size_t *shuffling_keys = std::get<0>(cud_get_shuffled_indices(total_execution_count));
+		cuda_sort_by_key(&appended_X, shuffling_keys, total_execution_count);
+		cuda_sort_by_key(&appended_Y, shuffling_keys, total_execution_count);
+		cuda_sort_by_key(&appended_advantages, shuffling_keys, total_execution_count);
 
 		// Create training data
 
@@ -411,6 +420,8 @@ void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 		mem.add_reward_calls_n[i] = 0;
 
 		mem.n_env_executions[i] = 0;
+
+		mem.is_initialized = 0;
 	}
 	*mem_pntr = mem;
 }
@@ -452,9 +463,27 @@ data_t *PPO_execute_train(
 	if (!start_training) return out;
 
 	// Training loop
+	PPO_train(value_function, policy, hyperparameters, &mem);
 
 	// Mem cleanup (sets initial states to current states, does not free current states)	
 	*mem_pntr = mem;
 	PPO_data_cleanup(mem_pntr);
 	return out;
+}
+
+bool free_PPO_data(PPO_internal_memory *mem)
+{
+	PPO_data_cleanup(mem);
+
+	for (size_t i = 0; i < mem->n_env; i++)
+	{
+		cudaFree(mem->initial_internal_states[i]);
+		mem->initial_internal_states[i] = 0;
+
+		cudaFree(mem->initial_value_internal_states[i]);
+		mem->initial_value_internal_states[i] = 0;
+	}
+	
+
+	mem->n_env = 0;
 }
