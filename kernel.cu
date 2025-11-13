@@ -206,8 +206,8 @@ static void NEAT_evolution_test()
 	}
 }
 
+/*
 // TODO:
-// Softmax
 // vision of distance borders of map
 static void test_PPO()
 {
@@ -327,7 +327,7 @@ static void test_PPO()
 			/*if (agent_position_i == 10)
 			{
 				printf("Now ");
-			}*/
+			}* /
 			if (
 				agent_position_i / board_side_len != (agent_position_i + x_action) / board_side_len
 				|| 
@@ -365,7 +365,7 @@ static void test_PPO()
 	}
 	delete value_function;
 	delete agent;
-}
+}*/
 
 int main()
 {

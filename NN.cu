@@ -516,7 +516,7 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 	cudaDeviceSynchronize();
 }
 
-data_t* NN::PPO_execute(data_t* X, data_t** initial_states, data_t** trajectory_inputs, data_t** trayectory_outputs, size_t n_executions)
+/*data_t* NN::PPO_execute(data_t* X, data_t** initial_states, data_t** trajectory_inputs, data_t** trayectory_outputs, size_t n_executions)
 {
 	if (!initial_states || !trajectory_inputs || !trayectory_outputs || !X) return 0;
 
@@ -616,8 +616,7 @@ void NN::PPO_train(
 	*trajectory_outputs = 0;
 
 	delete tmp_n;
-}
-
+}*/
 
 data_t* NN::get_hidden_state(size_t *arr_value_count)
 {

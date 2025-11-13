@@ -18,7 +18,7 @@
 
 #include "regularization.cuh"
 #include "Optimizers.h"
-#include "GAE.cuh"
+//#include "GAE.cuh"
 
 class NN
 {
@@ -148,6 +148,7 @@ public:
 		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	);
 
+	/*
 	/// <summary>
 	/// Inference function to be used before calling PPO_train
 	/// PPO_train deletes the arrays generated during the calls to this function
@@ -165,7 +166,7 @@ public:
 		data_t **initial_states, data_t **trajectory_inputs, data_t **trajectory_outputs,
 		data_t* rewards, bool are_rewards_at_host, NN *value_function_estimator,
 		PPO_hyperparameters hyperparameters
-	);
+	);*/
 
 	data_t* get_hidden_state(size_t *arr_value_count = 0);
 	void set_hidden_state(data_t *state, int free_input_state);
