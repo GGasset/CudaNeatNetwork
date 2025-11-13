@@ -1,8 +1,10 @@
 #include "functionality.h"
+#include <time.h>
 
 unsigned long long get_arbitrary_number()
 {
-	return (unsigned long long)clock();
+	return ((int)time(NULL)) +
+     (unsigned long long)clock();
 }
 
 float get_random_float()
