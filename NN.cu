@@ -619,7 +619,7 @@ void NN::PPO_train(
 }
 
 
-data_t* NN::get_hidden_state(size_t *arr_value_count = 0)
+data_t* NN::get_hidden_state(size_t *arr_value_count)
 {
 	size_t current_array_len = 0;
 	data_t* out = 0;
