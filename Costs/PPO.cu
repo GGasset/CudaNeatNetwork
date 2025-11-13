@@ -3,7 +3,7 @@
 
 void initialize_mem(
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *mem_pntr
+	PPO::PPO_internal_memory *mem_pntr
 )
 {
 	size_t n_env = hyperparameters.vecenvironment_count;
@@ -51,11 +51,11 @@ void initialize_mem(
 void PPO_initialization(
 	data_t *X,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *mem_pntr, size_t env_i
+	PPO::PPO_internal_memory *mem_pntr, size_t env_i
 )
 {
 	// Checks
-	PPO_internal_memory mem = *mem_pntr;
+	PPO::PPO_internal_memory mem = *mem_pntr;
 	if (!hyperparameters.vecenvironment_count
 		|| !X || !value_function || !policy
 		|| value_function->get_input_length() != policy->get_input_length()
@@ -84,11 +84,11 @@ void PPO_initialization(
 data_t *PPO_execution(
 	data_t *X, size_t env_i,
 	NN *value_function, NN *policy,
-	PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
+	PPO::PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
 	bool delete_memory_before
 )
 {
-	PPO_internal_memory mem = *mem_pntr;
+	PPO::PPO_internal_memory mem = *mem_pntr;
 
 	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
 	if (delete_memory_before)
@@ -285,10 +285,10 @@ void non_recurrent_PPO_miniBatch(
 
 void PPO_train(
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *mem_pntr
+	PPO::PPO_internal_memory *mem_pntr
 )
 {
-	PPO_internal_memory mem = *mem_pntr;
+	PPO::PPO_internal_memory mem = *mem_pntr;
 	bool is_recurrent = value_function->is_recurrent() || policy->is_recurrent();
 
 	std::vector<data_t *> advantages;
@@ -389,7 +389,7 @@ void PPO_train(
 	*mem_pntr = mem;
 }
 
-void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
+void PPO_data_cleanup(PPO::PPO_internal_memory *mem_pntr)
 {
 	PPO_internal_memory mem = *mem_pntr;
 
@@ -426,14 +426,14 @@ void PPO_data_cleanup(PPO_internal_memory *mem_pntr)
 	*mem_pntr = mem;
 }
 
-data_t *PPO_execute_train(
+data_t *PPO::PPO_execute_train(
 	data_t *X,  size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
+	PPO::PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
 	bool delete_memory_before
 )
 {
-	PPO_internal_memory mem = *mem_pntr;
+	PPO::PPO_internal_memory mem = *mem_pntr;
 	PPO_initialization(
 		X, value_function, policy,
 		hyperparameters, &mem,
@@ -471,13 +471,13 @@ data_t *PPO_execute_train(
 	return out;
 }
 
-void add_reward(data_t reward, size_t env_i, PPO_internal_memory *mem)
+void PPO::add_reward(data_t reward, size_t env_i, PPO_internal_memory *mem)
 {
 	mem->rewards[env_i] = cuda_push_back(mem->rewards[env_i], mem->add_reward_calls_n[env_i], reward, true);
 	mem->add_reward_calls_n[env_i]++;
 }
 
-bool free_PPO_data(PPO_internal_memory *mem)
+bool PPO::free_PPO_data(PPO::PPO_internal_memory *mem)
 {
 	PPO_data_cleanup(mem);
 

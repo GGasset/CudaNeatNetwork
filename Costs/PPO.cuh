@@ -12,6 +12,8 @@
 #include <vector>
 #include <tuple>
 
+namespace PPO {
+
 struct PPO_internal_memory
 {
 	std::vector<data_t *>	initial_internal_states;
@@ -31,7 +33,7 @@ struct PPO_internal_memory
 
 	std::vector<size_t>		n_env_executions;
 	size_t					n_env = 0;
-
+	
 	int						is_initialized = 0;
 };
 
@@ -54,3 +56,5 @@ void add_reward(
 
 // returns 0
 bool free_PPO_data(PPO_internal_memory *mem);
+
+}
