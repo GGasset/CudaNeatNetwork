@@ -3,6 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include <stdio.h>
+#include <vector>
 
 template<typename t>
 t h_max(t a, t b)
