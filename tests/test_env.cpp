@@ -2,19 +2,23 @@
 #include "test_env.h"
 #include <cstdlib>
 
-void test_env::initialize_env(size_t env)
+void test_env::initialize_env(size_t env, bool init_agent_pos)
 {
 	size_t board_len = board_size * board_size;
-	size_t agent_pos = rand() % board_len;
+	size_t agent_pos = std::get<1>(target_agent_pos[env]);
+	if (init_agent_pos)
+		agent_pos = rand() % board_len;
 	size_t target_pos = rand() % (board_len - 1);
 	target_pos += target_pos >= agent_pos;
-	target_agent_pos[i] = {target_pos, agent_pos};
+	target_agent_pos[env] = {target_pos, agent_pos};
+	execution_n[env] = 0;
 }
 
 test_env::test_env(size_t _nenvs)
 {
 	_nenvs = nenvs;
 	target_agent_pos.resize(nenvs, {0,0});
+	execution_n.resize(_nenvs, 0);
 	for (size_t i = 0; i < nenvs; i++)
 		initialize_env(i);
 }
@@ -63,7 +67,7 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 	{
 		data_t r = get_random_float();
 		data_t cumulative_probs = 0;
-		for (size_t i = 0; i < 4; i++)
+		for (size_t i = 0; i < 4 && !selected_action; i++)
 		{
 			cumulative_probs += actions_probs[i];
 			if (r <= cumulative_probs)
@@ -108,6 +112,36 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 		break;
 
 	default:
-		return {0, 0};
+		throw;
 	}
+	size_t target_pos = std::get<0>(target_agent_pos[env_i]);
+	data_t reward = 0;
+
+	if (agent_pos == target_pos)
+	{
+		reward = 1;
+		initialize_env(env_i, false);
+		execution_n[env_i] = 0;
+	}
+	else
+	{
+		if (execution_n[env_i] > timeout)
+		{
+			initialize_env(env_i);
+
+			int x = agent_pos % board_size;
+			int y = agent_pos / board_size;
+
+			int target_pos_x = target_pos % board_size;
+			int target_pos_y = target_pos / board_size;
+
+			size_t distance = abs(target_pos_x - x) * 2 + abs(target_pos_y - y) * 2;
+			reward = -1 + (1 - distance / (data_t)(board_size * board_size));
+			return {reward, true};
+		}
+		execution_n[env_i]++;
+	}
+
+	target_agent_pos[env_i] = { agent_pos, std::get<0>(target_agent_pos[env_i]) };
+	return {reward, 0};
 }

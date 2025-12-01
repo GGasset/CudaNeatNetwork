@@ -11,12 +11,14 @@
 class test_env
 {
 private:
-	static const size_t board_size = 3;
+	const size_t board_size = 3;
+	const size_t timeout = board_size * board_size * 4;
 
 	std::vector<std::tuple<size_t, size_t>> target_agent_pos;
+	std::vector<size_t> execution_n;
 	size_t nenvs;
 
-	void initialize_env(size_t env);
+	void initialize_env(size_t env, bool init_agent_pos = true);
 public:
 	test_env(size_t _n_envs);
 
