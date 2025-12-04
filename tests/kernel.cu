@@ -1,6 +1,5 @@
 ﻿
 #include "math.h"
-#include "GAE.cuh"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -12,6 +11,8 @@
 
 #include "NN_constructor.h"
 
+#include "PPO.cuh"
+#include "test_env.h"
 
 template<typename t>
 t abs(t a)
@@ -206,13 +207,14 @@ static void NEAT_evolution_test()
 	}
 }
 
-/*
-// TODO:
-// vision of distance borders of map
+
 static void test_PPO()
 {
-	const size_t input_len = 4;
-	const size_t output_len = 4;
+	const size_t n_envs = 32;
+	test_env env = test_env(n_envs);
+
+	size_t input_len = env.get_observation_count();
+	size_t output_len = env.get_action_count();
 
 	optimizer_hyperparameters value_function_optimizer;
 	value_function_optimizer.adam.epsilon = 1e-5;
@@ -225,16 +227,16 @@ static void test_PPO()
 		.append_layer(Dense, Neuron, 1, _tanh)
 		.construct(input_len, value_function_optimizer);
 
-	optimizer_hyperparameters agent_optimizer;
-	agent_optimizer.adam.epsilon = 1e-5;
-	NN* agent = NN_constructor()
+	optimizer_hyperparameters policy_optimizer;
+	policy_optimizer.adam.epsilon = 1e-5;
+	NN* policy = NN_constructor()
 		.append_layer(Dense, Neuron, 128)
 		.append_layer(Dense, Neuron, 80)
 		.append_layer(Dense, Neuron, 50)
 		.append_layer(Dense, Neuron, 50)
 		.append_layer(Dense, Neuron, 20, _tanh)
-		.append_layer(Dense, Neuron, output_len)
-		.construct(input_len, agent_optimizer);
+		.append_layer(Dense, Neuron, output_len, softmax)
+		.construct(input_len, policy_optimizer);
 
 	const double learning_rate_anhealing_coeff = 1 - 1e-4;
 	PPO_hyperparameters parameters;
@@ -254,118 +256,45 @@ static void test_PPO()
 	parameters.policy.regularization.entropy_bonus.active = true;
 	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-3;
 
-	const size_t board_side_len = 3;
-	const size_t board_square_count = board_side_len * board_side_len;
-	const size_t max_t_count = board_side_len + 5;
+	parameters.vecenvironment_count = n_envs;
+	parameters.steps_before_training = 40;
+	parameters.mini_batch_count = 10;
 
-	size_t total_frames = 0;
-	for (size_t epoch = 0; true; epoch++)
+	std::vector<bool> shall_delete_memory;
+	shall_delete_memory.resize(n_envs, false);
+	PPO::PPO_internal_memory mem{};
+	size_t exec_n = 0;
+	for (size_t i = 0; true; i++)
 	{
-		data_t *initial_states = 0;
-		data_t *trajectory_inputs = 0;
-		data_t *trajectory_outputs = 0;
-
-		int agent_position_i = rand() % board_square_count;
-		int goal_i = rand() % (board_square_count - 1);
-		goal_i += goal_i >= agent_position_i;
-		
-		bool achieved_objective = false;
-
-		data_t rewards[max_t_count]{};
-		bool finished = false;
-		size_t i;
-		for   (i = 0; i < max_t_count && !finished; i++, total_frames++)
+		data_t mean_reward = 0;
+		for (size_t env_i = 0; env_i < n_envs; env_i++, exec_n++)
 		{
-			int delta_y = goal_i / board_side_len - agent_position_i / board_side_len;
-			int delta_x = goal_i % board_side_len - agent_position_i % board_side_len;
+			std::vector<data_t> obs = env.get_observations(env_i);
+			data_t *actions = PPO::PPO_execute_train(
+				obs.data(), env_i,
+				value_function, policy, parameters,
+				&mem, host_cpp_pointer_output,
+				shall_delete_memory[env_i]
+			);
+			auto [reward, end_of_episode] = env.step(actions, env_i);
+			delete[] actions;
+			shall_delete_memory[env_i] = end_of_episode;
 
-			int norm_delta_y = delta_y > 0;
-			norm_delta_y -= !norm_delta_y;
-			int norm_delta_x = delta_x > 0;
-			norm_delta_x -= !norm_delta_x;
-
-			data_t X[input_len] {};
-			X[0] = norm_delta_x;
-			X[1] = -norm_delta_x;
-			X[2] = norm_delta_y;
-			X[3] = -norm_delta_y;
-
-			data_t *Y = 0;
-			Y = agent->PPO_execute(
-				X,
-				&initial_states, &trajectory_inputs, &trajectory_outputs,
-				i
+			PPO::add_reward(
+				reward, env_i, &mem,
+				value_function, policy,
+				parameters
 			);
 
-			data_t x_probs_magnitude = Y[0] + Y[1];
-			data_t left_probability = Y[0];
-			data_t right_probability = Y[1];
-			if (x_probs_magnitude > 1)
-			{
-				left_probability /= x_probs_magnitude;
-				right_probability /= x_probs_magnitude;
-			}
-			data_t r = get_random_float();
-			int x_action = 0;
-			x_action -= r < left_probability;
-			x_action += r < left_probability + right_probability && !x_action;
-
-			data_t y_probs_magnitude = Y[2] + Y[3];
-			data_t down_probability = Y[2];
-			data_t up_probability = Y[3];
-			if (y_probs_magnitude > 1)
-			{
-				down_probability /= y_probs_magnitude;
-				up_probability /= y_probs_magnitude;
-			}
-			r = get_random_float();
-			int y_action = 0;
-			y_action -= r < down_probability;
-			y_action += r < down_probability + up_probability && !y_action;
-
-			int agent_updated_position = agent_position_i + x_action + board_side_len * y_action;
-			/*if (agent_position_i == 10)
-			{
-				printf("Now ");
-			}* /
-			if (
-				agent_position_i / board_side_len != (agent_position_i + x_action) / board_side_len
-				|| 
-				agent_updated_position < 0 || agent_updated_position / board_side_len >= board_side_len
-			)
-			{ // Agent out of bounds
-				rewards[i] = -.7;
-				finished = true;
-				//printf("%i %i Out of bounds ", agent_position_i / board_side_len != (agent_position_i + x_action) / board_side_len, agent_position_i);
-			}
-
-			if (agent_updated_position == goal_i)
-			{
-				rewards[i] = .7;
-				finished = true;
-				achieved_objective = true;
-			}
-			else if (i == max_t_count - 1)
-			{
-				rewards[i] = -.3;
-			}
-
-			agent_position_i = agent_updated_position;
-			delete[] Y;
+			mean_reward += reward;
 		}
+		mean_reward /= n_envs;
 
-		agent->PPO_train(
-			i, &initial_states, &trajectory_inputs, &trajectory_outputs,
-			rewards, true, value_function, parameters
-		);
-
-		printf("%i, %i, %zi, %zi, %.8f\n", (int)achieved_objective, i, epoch, total_frames, parameters.policy.learning_rate);
-		parameters.policy.learning_rate *= learning_rate_anhealing_coeff;
-		parameters.GAE.value_function.learning_rate *= learning_rate_anhealing_coeff;
+		std::stringstream ss;
+		ss << mean_reward << ", " << i << ", " << exec_n << std::endl;
+		std::cout << ss.str();
 	}
-	delete value_function;
-	delete agent;
-}*/
+}
 
 int main()
 {
@@ -377,9 +306,9 @@ int main()
 
 
 	//cudaSetDevice(0);
-	bug_hunting();
+	//bug_hunting();
 	//test_LSTM();
-	//test_PPO();
+	test_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }

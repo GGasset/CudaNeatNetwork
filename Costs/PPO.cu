@@ -12,6 +12,8 @@ void initialize_mem(
 	mem_pntr->initial_internal_states.resize(n_env, 0);
 	mem_pntr->current_internal_states.resize(n_env, 0);
 
+	mem_pntr->initial_value_internal_states.resize(n_env, 0);
+
 	mem_pntr->was_memory_deleted_before.resize(n_env, std::vector<bool>());
 	mem_pntr->trajectory_inputs.resize(n_env, 0);
 	mem_pntr->trajectory_outputs.resize(n_env, 0);
@@ -38,8 +40,6 @@ void initialize_mem(
 
 		mem_pntr->initial_value_internal_states[i]
 			= cuda_clone_arr(value_func_state, value_func_state_value_count);
-		mem_pntr->current_value_internal_states[i]
-			= cuda_clone_arr(value_func_state, value_func_state_value_count);
 	}
 	cudaFree(value_func_state);
 	value_func_state = 0;
@@ -54,8 +54,15 @@ void PPO_initialization(
 	PPO::PPO_internal_memory *mem_pntr, size_t env_i
 )
 {
-	// Checks
 	PPO::PPO_internal_memory mem = *mem_pntr;
+
+	// Initialization
+	if (!mem.n_env)
+	{
+		initialize_mem(value_function, policy, hyperparameters, mem_pntr);
+		mem = *mem_pntr;
+	}
+	// Checks
 	if (!hyperparameters.vecenvironment_count
 		|| !X || !value_function || !policy
 		|| value_function->get_input_length() != policy->get_input_length()
@@ -66,12 +73,6 @@ void PPO_initialization(
 	 )
 		(free_PPO_data(mem_pntr), throw);
 	
-	// Initialization
-	if (!mem.n_env)
-	{
-		initialize_mem(value_function, policy, hyperparameters, mem_pntr);
-		mem = *mem_pntr;
-	}
 	if (mem.n_env != hyperparameters.vecenvironment_count) throw;
 	if (mem.n_env && !mem.is_initialized)
 	{ // First call after training
@@ -83,7 +84,7 @@ void PPO_initialization(
 
 data_t *PPO_execution(
 	data_t *X, size_t env_i,
-	NN *value_function, NN *policy,
+	NN *policy,
 	PPO::PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
 	bool delete_memory_before
 )
@@ -93,18 +94,12 @@ data_t *PPO_execution(
 	mem.was_memory_deleted_before[env_i].push_back(delete_memory_before);
 	if (delete_memory_before)
 	{
-		value_function->delete_memory();
 		policy->delete_memory();
 	}
 	else
 	{
-		if (!mem.current_internal_states[env_i]) throw;
-		value_function->set_hidden_state(mem.current_value_internal_states[env_i], true);
-		mem.current_internal_states[env_i] = 0;
-		
-		if (!mem.current_value_internal_states[env_i]) throw;
 		policy->set_hidden_state(mem.current_internal_states[env_i], true);
-		mem.current_value_internal_states[env_i] = 0;
+		mem.current_internal_states[env_i] = 0;
 	}
 
 	size_t in_len = policy->get_input_length();
@@ -126,7 +121,6 @@ data_t *PPO_execution(
 						  Y, out_len, true);
 	
 	
-	mem.current_value_internal_states[env_i] = value_function->get_hidden_state();
 	mem.current_internal_states[env_i] = policy->get_hidden_state();
 
 	data_t *out = alloc_output(out_len, output_kind);
@@ -300,6 +294,7 @@ void PPO_train(
 			value_function, mem.trajectory_inputs[i], hyperparameters.GAE, false, false,
 			mem.rewards[i], false, false
 		));
+		mem.initial_value_internal_states[i] = value_function->get_hidden_state();
 	}
 
 	size_t steps_per_env = hyperparameters.steps_before_training;
@@ -385,13 +380,13 @@ void PPO_train(
 		cudaFree(appended_advantages);
 	}
 	for (size_t i = 0; i < advantages.size(); i++)
-		cudaFree(advantages[i]);\
+		cudaFree(advantages[i]);
 	*mem_pntr = mem;
 }
 
 void PPO_data_cleanup(PPO::PPO_internal_memory *mem_pntr)
 {
-	PPO_internal_memory mem = *mem_pntr;
+	PPO::PPO_internal_memory mem = *mem_pntr;
 
 	for (size_t i = 0; i < mem.n_env; i++)
 	{
@@ -401,8 +396,6 @@ void PPO_data_cleanup(PPO::PPO_internal_memory *mem_pntr)
 		cudaFree(mem.initial_internal_states[i]);
 		mem.initial_internal_states[i] = 0;
 
-		mem.initial_value_internal_states[i]
-			= cuda_clone_arr(mem.current_value_internal_states[i], mem.value_internal_state_length);
 		mem.initial_internal_states[i] 
 			= cuda_clone_arr(mem.current_internal_states[i], mem.policy_internal_state_length);
 
@@ -443,13 +436,25 @@ data_t *PPO::PPO_execute_train(
 
 	// Execution
 	data_t *out = PPO_execution(
-		X, env_i, value_function, policy, &mem, output_kind, delete_memory_before
+		X, env_i, policy, &mem, output_kind, delete_memory_before
 	);
 	*mem_pntr = mem;
+	
+	return out;
+}
+
+void PPO::add_reward(
+	data_t reward, size_t env_i, PPO_internal_memory *mem_pntr,
+	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters
+)
+{
+	mem_pntr->rewards[env_i] = cuda_push_back(mem_pntr->rewards[env_i], mem_pntr->add_reward_calls_n[env_i], reward, true);
+	mem_pntr->add_reward_calls_n[env_i]++;
 
 	// Training Checks
+	PPO::PPO_internal_memory mem = *mem_pntr;
 	bool start_training = 1;
-	for (size_t i = 0; i < mem.n_env; i++)
+	for (size_t i = 0; i < mem.n_env && start_training; i++)
 	{
 		if (mem.n_env_executions[i] >= hyperparameters.steps_before_training)
 		{
@@ -460,21 +465,14 @@ data_t *PPO::PPO_execute_train(
 		start_training = start_training && mem.n_env_executions[i] == hyperparameters.steps_before_training - 1;
 	}
 	*mem_pntr = mem;
-	if (!start_training) return out;
-
+	if (!start_training) return;
+	
 	// Training loop
 	PPO_train(value_function, policy, hyperparameters, &mem);
-
+	
 	// Mem cleanup (sets initial states to current states, does not free current states)	
 	*mem_pntr = mem;
 	PPO_data_cleanup(mem_pntr);
-	return out;
-}
-
-void PPO::add_reward(data_t reward, size_t env_i, PPO_internal_memory *mem)
-{
-	mem->rewards[env_i] = cuda_push_back(mem->rewards[env_i], mem->add_reward_calls_n[env_i], reward, true);
-	mem->add_reward_calls_n[env_i]++;
 }
 
 bool PPO::free_PPO_data(PPO::PPO_internal_memory *mem)
@@ -486,10 +484,14 @@ bool PPO::free_PPO_data(PPO::PPO_internal_memory *mem)
 		cudaFree(mem->initial_internal_states[i]);
 		mem->initial_internal_states[i] = 0;
 
+		cudaFree(mem->current_internal_states[i]);
+		mem->current_internal_states[i] = 0;
+
 		cudaFree(mem->initial_value_internal_states[i]);
 		mem->initial_value_internal_states[i] = 0;
 	}
 	
-
 	mem->n_env = 0;
+
+	return 0;
 }

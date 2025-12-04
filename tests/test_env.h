@@ -28,5 +28,6 @@ public:
 	// Actions_probs must be a host arr
 	std::tuple<data_t, bool> step(data_t *actions_probs, size_t env_i);
 
-
+	inline size_t get_observation_count() {return 4; }
+	inline size_t get_action_count() { return 4; }
 };

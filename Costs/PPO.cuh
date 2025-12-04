@@ -21,7 +21,6 @@ struct PPO_internal_memory
 	size_t					value_internal_state_length;
 	
 	std::vector<data_t *>	initial_value_internal_states;
-	std::vector<data_t *>	current_value_internal_states;
 	size_t					policy_internal_state_length;
 	
 	std::vector<std::vector<bool>>	was_memory_deleted_before;
@@ -39,10 +38,11 @@ struct PPO_internal_memory
 
 
 // PPO execution, will train automatically after steps_before_training_steps
-// save_this_for_me is recommended to be on the stack, unless there are multiple policy networks
+// save_this_for_me is recommended to be on the stack
 // After calling this function and receiving the action by the return value, call add reward with save_this_for_me
 // After a training session you may save PPO_internal_memory and call free_PPO_data (to avoid leak)
 // delete_memory_before should be true after environment end and you should not call delete_memory while training PPO
+// X is not free'd and may be a host or a device pointer
 data_t *PPO_execute_train(
 	data_t *X, size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
@@ -51,7 +51,8 @@ data_t *PPO_execute_train(
 );
 
 void add_reward(
-	data_t reward, size_t env_i, PPO_internal_memory *save_this_for_me
+	data_t reward, size_t env_i, PPO_internal_memory *save_this_for_me,
+	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters
 );
 
 // returns 0

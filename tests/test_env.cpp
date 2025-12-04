@@ -16,7 +16,7 @@ void test_env::initialize_env(size_t env, bool init_agent_pos)
 
 test_env::test_env(size_t _nenvs)
 {
-	_nenvs = nenvs;
+	nenvs = _nenvs;
 	target_agent_pos.resize(nenvs, {0,0});
 	execution_n.resize(_nenvs, 0);
 	for (size_t i = 0; i < nenvs; i++)
