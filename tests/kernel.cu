@@ -251,21 +251,24 @@ static void test_PPO()
 
 	parameters.max_training_steps = 20;
 	parameters.clip_ratio = .2;
-	parameters.max_kl_divergence_threshold = .01;
+	parameters.max_kl_divergence_threshold = .05;
 
 	parameters.policy.regularization.entropy_bonus.active = true;
 	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-3;
 
 	parameters.vecenvironment_count = n_envs;
 	parameters.steps_before_training = 40;
-	parameters.mini_batch_count = 10;
+	parameters.mini_batch_count = 4;
 
 	std::vector<bool> shall_delete_memory;
 	shall_delete_memory.resize(n_envs, false);
 	PPO::PPO_internal_memory mem{};
 	size_t exec_n = 0;
+	size_t total_hit_count = 0;
 	for (size_t i = 0; true; i++)
 	{
+		size_t hit_count = 0;
+		data_t mean_output = 0;
 		data_t mean_reward = 0;
 		for (size_t env_i = 0; env_i < n_envs; env_i++, exec_n++)
 		{
@@ -277,6 +280,8 @@ static void test_PPO()
 				shall_delete_memory[env_i]
 			);
 			auto [reward, end_of_episode] = env.step(actions, env_i);
+			hit_count += reward == 1;
+			for (size_t i = 0; i < policy->get_output_length(); i++) mean_output += actions[i];
 			delete[] actions;
 			shall_delete_memory[env_i] = end_of_episode;
 
@@ -289,9 +294,11 @@ static void test_PPO()
 			mean_reward += reward;
 		}
 		mean_reward /= n_envs;
+		mean_output /= policy->get_output_length() * n_envs;
+		total_hit_count += hit_count;
 
 		std::stringstream ss;
-		ss << mean_reward << ", " << i << ", " << exec_n << std::endl;
+		ss << hit_count << ", " << mean_reward << ", " << i << ", " << exec_n << ", " << total_hit_count << ", " << mean_output << std::endl;
 		std::cout << ss.str();
 	}
 }
