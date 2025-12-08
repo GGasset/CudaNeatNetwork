@@ -348,7 +348,7 @@ void PPO_train(
 			);
 			appended_advantages = cuda_append_array(
 				appended_advantages, steps_per_env * i,
-				mem.trajectory_inputs[i], policy->get_input_length() * steps_per_env,
+				advantages[i], steps_per_env,
 				true
 			);
 
@@ -463,7 +463,9 @@ void PPO::add_reward(
 			// all vecenvironment execute should be called homogeneously
 			throw "Irregular env_steps not Implemented";	
 		}
-		start_training = start_training && mem.add_reward_calls_n[i] == hyperparameters.steps_before_training;
+		start_training = start_training 
+			&& mem.add_reward_calls_n[i] == hyperparameters.steps_before_training
+			&& mem.n_env_executions[i] == hyperparameters.steps_before_training;
 	}
 	*mem_pntr = mem;
 	if (!start_training) return;
