@@ -203,7 +203,7 @@ void recurrent_PPO_miniBatch(
 			);
 			cudaFree(current_grads);
 		}
-		stop = fabs(total_kl_divergence / (steps_per_env * mbatch_nenvs)) > hyperparameters.max_kl_divergence_threshold;
+		stop = hyperparameters.max_kl_divergence_threshold != 0 && fabs(total_kl_divergence / (steps_per_env * mbatch_nenvs)) > hyperparameters.max_kl_divergence_threshold;
 		for (size_t i = 0; i < mbatch_nenvs * steps_per_env; i++)
 			policy_clone->subtract_gradients(minibatch_grads, i * gradient_count, hyperparameters.policy);
 		
@@ -252,7 +252,7 @@ void non_recurrent_PPO_miniBatch(
 #ifdef DEBUG
 		if (kl_divergence > .02) printf("KL divergence too high! %.3f\n", kl_divergence);
 #endif
-		stop = fabs(kl_divergence / (data_point_count)) > hyperparameters.max_kl_divergence_threshold;
+		stop = hyperparameters.max_kl_divergence_threshold != 0 && fabs(kl_divergence) > hyperparameters.max_kl_divergence_threshold;
 		cudaFree(Y);
 
 		data_t* gradients = 0;
