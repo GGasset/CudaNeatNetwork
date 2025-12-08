@@ -96,7 +96,7 @@ __global__ void device_PPO_derivative(
 	
 	costs[cost_write_i] = cost_derivative;
 
-	atomicAdd(summed_kl_divergence, output * log(output / initial_output));
+	atomicAdd(summed_kl_divergence, output * log(output / (initial_output + 1e-5)));
 }
 
 __host__ data_t PPO_derivative(
