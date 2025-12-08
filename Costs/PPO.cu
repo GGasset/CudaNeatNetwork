@@ -250,7 +250,7 @@ void non_recurrent_PPO_miniBatch(
 			hyperparameters.clip_ratio
 		);
 #ifdef DEBUG
-		if (kl_divergence > .02) printf("KL divergence too high! %.3f\n", kl_divergence);
+		if (kl_divergence > .1) printf("KL divergence too high! %.3f\n", kl_divergence);
 #endif
 		stop = hyperparameters.max_kl_divergence_threshold != 0 && fabs(kl_divergence) > hyperparameters.max_kl_divergence_threshold;
 		cudaFree(Y);
