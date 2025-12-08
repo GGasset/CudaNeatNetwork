@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <iostream>
 #include "curand.h"
 #include "curand_kernel.h"
 #include <functional>
@@ -597,7 +598,7 @@ __global__ void global_shuffle(T *arr, size_t arr_len, size_t i, size_t time)
 	if (tid >= arr_len >> 1) return;
 
 	size_t delta_pos = 1 << i;
-	size_t pos = delta_pos * (tid / delta_pos) + tid;
+	size_t pos = (i + 1) * (tid / delta_pos) + tid;
 
 	curandStateXORWOW_t rand_state;
 	curand_init(time, i, tid, &rand_state);
@@ -612,7 +613,7 @@ template<typename T>
 __host__ void cuda_shuffle_inplace(T *arr, size_t arr_len)
 {
 	size_t needs_shuffling = arr_len;
-	for (size_t i = 0; needs_shuffling > 1; i++, needs_shuffling /= 2)
+	for (size_t i = 0; needs_shuffling > 1; i++, needs_shuffling = needs_shuffling >> 1)
 	{
 		global_shuffle n_threads(arr_len / 2) (
 			arr, arr_len, i, get_arbitrary_number()
