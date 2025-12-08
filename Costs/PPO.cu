@@ -237,7 +237,7 @@ void non_recurrent_PPO_miniBatch(
 		data_t* activations = 0;
 		data_t* Y = 0;
 		policy_clone->training_execute(data_point_count, X, &Y, cuda_pointer_output, &execution_values, &activations);
-		if (!Y) throw;
+		if (!Y || !execution_values || !activations) throw;
 
 		size_t costs_len = neuron_count * data_point_count;
 		data_t *costs = 0;
@@ -289,6 +289,7 @@ void PPO_train(
 	for (size_t i = 0; i < mem.n_env; i++)
 	{
 		value_function->set_hidden_state(mem_pntr->initial_value_internal_states[i], false);
+		assert(hyperparameters.steps_before_training == mem.add_reward_calls_n[i]);
 		advantages.push_back(calculate_advantage(
 			hyperparameters.steps_before_training,
 			value_function, mem.trajectory_inputs[i], hyperparameters.GAE, false, false,
@@ -362,7 +363,7 @@ void PPO_train(
 		// Create training data
 
 		size_t items_per_minib = steps_per_env / hyperparameters.mini_batch_count;
-		size_t last_item_count = steps_per_env % hyperparameters.mini_batch_count;
+		size_t last_item_count = items_per_minib + steps_per_env % hyperparameters.mini_batch_count;
 		for (size_t i = 0; i < hyperparameters.mini_batch_count; i++)
 		{
 			data_t *X_pntr = appended_X + i * items_per_minib * policy->get_input_length();
@@ -456,17 +457,21 @@ void PPO::add_reward(
 	bool start_training = 1;
 	for (size_t i = 0; i < mem.n_env && start_training; i++)
 	{
-		if (mem.n_env_executions[i] >= hyperparameters.steps_before_training)
+		if (mem.n_env_executions[i] > hyperparameters.steps_before_training)
 		{
 			free_PPO_data(mem_pntr);
 			// all vecenvironment execute should be called homogeneously
 			throw "Irregular env_steps not Implemented";	
 		}
-		start_training = start_training && mem.n_env_executions[i] == hyperparameters.steps_before_training - 1;
+		start_training = start_training && mem.add_reward_calls_n[i] == hyperparameters.steps_before_training;
 	}
 	*mem_pntr = mem;
 	if (!start_training) return;
 	
+#ifdef DEBUG
+	std::cout << "Starting training" << std::endl;
+#endif
+
 	// Training loop
 	PPO_train(value_function, policy, hyperparameters, &mem);
 	

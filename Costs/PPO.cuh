@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cassert"
+
 #include "kernel_macros.h"
 #include "data_type.h"
 #include "NN_enums.h"
@@ -9,6 +11,7 @@
 
 #include "RL_parameters.h"
 
+#include "iostream"
 #include <vector>
 #include <tuple>
 
