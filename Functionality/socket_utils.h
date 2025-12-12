@@ -24,6 +24,7 @@ private:
 	std::vector<void *> gathered_pointers;
 
 public:
+	socket_parser(void *buff, size_t buff_len);
 	~socket_parser()
 
 	template<typename T>
