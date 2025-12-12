@@ -27,7 +27,7 @@ public:
 	~socket_parser()
 
 	template<typename T>
-	T read_var(buff_params params)
+	T read_var()
 	{
 		CHECK_ERRS();
 	
@@ -37,7 +37,7 @@ public:
 		return out;
 	}
 	
-	void* expected_read_arr(buff_params params, long expected_len);
-	std::tuple<void *, size_t> read_arr(buff_params params);
+	void* expected_read_arr(long expected_len);
+	std::tuple<void *, size_t> read_arr();
 };
 
