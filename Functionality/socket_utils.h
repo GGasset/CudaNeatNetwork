@@ -7,6 +7,7 @@
 #include <vector>
 
 #define HANDLE_ERR() {*params.err = true; return;}
+#define CHECK_ERRS() if (!params.err) throw; if (*params.err) return; if (!params.buff || !params.buff_pos) HANDLE_ERR();
 
 struct buff_params
 {
@@ -28,9 +29,7 @@ public:
 	template<typename T>
 	T read_var(buff_params params)
 	{
-		if (!params.err) throw;
-		if (*params.err) return;
-		if (!params.buff || !params.buff_pos) HANDLE_ERR();
+		CHECK_ERRS();
 	
 		if (*params.buff_pos + sizeof(T) > params.buff_len) HANDLE_ERR();
 		T out = *(T*)((char *)params.buff + *params.buff_pos);
