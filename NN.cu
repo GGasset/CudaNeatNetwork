@@ -869,7 +869,10 @@ void NN::save(const char *pathname)
 {
 	FILE *file = fopen(pathname, "wb");
 	if (!file)
+	{
+		std::cerr << "Could not open file for saving network" << std::endl;
 		return;
+	}
 	save(file);
 	fclose(file);
 }
