@@ -476,7 +476,7 @@ __host__ T* load_array(size_t elem_count, FILE *file, int output_to_device)
 #ifdef WIN32
 	if (fread_s(host_arr, sizeof(T) * elem_count, sizeof(T), elem_count, file) != sizeof(T) * elem_count) throw;
 #else
-	if (fread(host_arr, sizeof(T), elem_count, file)) throw;
+	if (fread(host_arr, sizeof(T), elem_count, file) != elem_count) throw;
 #endif
 	if (!output_to_device) return host_arr;
 	
@@ -496,7 +496,7 @@ __host__ T load_value(FILE *file)
 #ifdef WIN32
 	if (fread_s(&out, sizeof(T), sizeof(T), 1, file) != sizeof(T)) throw;
 #else
-	if (fread(&out, sizeof(T), 1, file)) throw;
+	if (fread(&out, sizeof(T), 1, file) != 1) throw;
 #endif
 	return out;
 }
