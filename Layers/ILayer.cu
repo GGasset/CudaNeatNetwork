@@ -109,10 +109,10 @@ void ILayer::ILayer_load(FILE* file)
 	bool contains_connection_associated_gradient_counts = 0;
 	fread(&contains_connection_associated_gradient_counts, sizeof(bool), 1, file);
 
-	load_array<size_t>(neuron_count, file, true);
+	neuron_gradients_starts = load_array<size_t>(neuron_count, file, true);
 
 	if (contains_connection_associated_gradient_counts)
-		load_array<size_t>(neuron_count, file, true);
+		connection_associated_gradient_counts = load_array<size_t>(neuron_count, file, true);
 
 	optimizer = Optimizers::load(file);
 }
