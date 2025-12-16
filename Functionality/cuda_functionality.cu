@@ -98,6 +98,7 @@ __global__ void exp_arr(data_t *arr, size_t arr_value_count)
 
 __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length)
 {
+#ifndef DEBUG
 	size_t tid = get_tid();
 	if (tid >= length)
 		return;
@@ -105,6 +106,7 @@ __global__ void reset_NaNs(field_t *array, field_t reset_value, size_t length)
 	field_t value = array[tid];
 	if (value != value)
 		array[tid] = reset_value;
+#endif
 }
 
 __global__ void mutate_field_array(
