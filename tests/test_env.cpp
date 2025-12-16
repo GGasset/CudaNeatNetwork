@@ -2,6 +2,20 @@
 #include "test_env.h"
 #include <cstdlib>
 
+void test_env::add_to_last_episode_lens(size_t episode_len)
+{
+	if (last_episode_lens.size() >= n_last_episode_lens)
+		last_episode_lens.erase(last_episode_lens.begin());
+	last_episode_lens.push_back(episode_len);
+}
+
+std::tuple<data_t, bool> test_env::end_of_episode(data_t reward, size_t env_i)
+{
+	add_to_last_episode_lens(execution_n[env_i]);
+	initialize_env(env_i);
+	return {reward, 1};
+}
+
 void test_env::initialize_env(size_t env, bool init_agent_pos)
 {
 	size_t board_len = board_size * board_size;
@@ -80,34 +94,22 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 	{
 	case 1:
 		if (x == 0) 
-		{
-			initialize_env(env_i);
-			return {-1, 1};
-		}
+			return end_of_episode(-1, env_i);
 		agent_pos--;
 		break;
 	case 2:
 		if (x == board_size - 1) 
-		{
-			initialize_env(env_i);
-			return {-1, 1};
-		}
+			return end_of_episode(-1, env_i);
 		agent_pos++;
 		break;
 	case 3:
 		if (y == 0) 
-		{
-			initialize_env(env_i);
-			return {-1, 1};
-		}
+			return end_of_episode(-1, env_i);
 		agent_pos -= board_size;
 		break;
 	case 4:
 		if (y == board_size - 1) 
-		{
-			initialize_env(env_i);
-			return {-1, 1};
-		}
+			return end_of_episode(-1, env_i);
 		agent_pos += board_size;
 		break;
 
@@ -115,20 +117,15 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 		throw;
 	}
 	size_t target_pos = std::get<0>(target_agent_pos[env_i]);
-	data_t reward = 0;
 
 	if (agent_pos == target_pos)
 	{
-		reward = 1;
-		initialize_env(env_i, false);
-		execution_n[env_i] = 0;
+		return end_of_episode(1, env_i);
 	}
 	else
 	{
 		if (execution_n[env_i] > timeout)
 		{
-			initialize_env(env_i);
-
 			int x = agent_pos % board_size;
 			int y = agent_pos / board_size;
 
@@ -136,12 +133,24 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 			int target_pos_y = target_pos / board_size;
 
 			size_t distance = abs(target_pos_x - x) * 2 + abs(target_pos_y - y) * 2;
-			reward = -1 + (1 - distance / (data_t)(board_size * board_size));
-			return {reward, true};
+			data_t reward = -1 + (1 - distance / (data_t)(board_size * board_size));
+			return end_of_episode(reward, env_i);
 		}
 		execution_n[env_i]++;
 	}
 
 	target_agent_pos[env_i] = { agent_pos, std::get<0>(target_agent_pos[env_i]) };
-	return {reward, 0};
+	return {0, 0};
+}
+
+data_t test_env::get_mean_episode_len()
+{
+	if (!last_episode_lens.size())
+		return 0;
+	data_t sum = 0;
+	for (size_t i = 0; i < last_episode_lens.size(); i++)
+	{
+		sum += last_episode_lens[i];
+	}
+	return sum /= last_episode_lens.size();
 }

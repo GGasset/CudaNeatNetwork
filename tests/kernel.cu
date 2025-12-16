@@ -29,6 +29,7 @@ static void bug_hunting()
 
 	optimizer_hyperparameters optimizers;
 	NN *n = NN_constructor()
+		.append_layer(Dense, Neuron, output_len)
 		.append_layer(Dense, Neuron, output_len, softmax)
 		.construct(input_len, optimizers, stateful);
 
@@ -208,7 +209,7 @@ static void NEAT_evolution_test()
 }
 
 
-static void test_PPO()
+static void test_PPO(int argc)
 {
 	const size_t n_envs = 32;
 	test_env env = test_env(n_envs);
@@ -218,7 +219,9 @@ static void test_PPO()
 
 	optimizer_hyperparameters value_function_optimizer;
 	value_function_optimizer.adam.epsilon = 1e-5;
-	NN* value_function = NN_constructor()
+	NN* value_function; 
+	if (argc == 1)
+		value_function = NN_constructor()
 		.append_layer(Dense, Neuron, 128)
 		.append_layer(Dense, Neuron, 80)
 		.append_layer(Dense, Neuron, 50)
@@ -226,10 +229,22 @@ static void test_PPO()
 		.append_layer(Dense, Neuron, 20, _tanh)
 		.append_layer(Dense, Neuron, 1, _tanh)
 		.construct(input_len, value_function_optimizer);
+	else
+	{
+		value_function = NN::load("./network_value_function_test.n");
+		if (!value_function)
+		{
+			std::cerr << "could not load value function network" << std::endl;
+			throw;
+		}
+	}
 
 	optimizer_hyperparameters policy_optimizer;
 	policy_optimizer.adam.epsilon = 1e-5;
-	NN* policy = NN_constructor()
+	NN* policy;
+	
+	if (argc == 1)
+		policy = NN_constructor()
 		.append_layer(Dense, Neuron, 128)
 		.append_layer(Dense, Neuron, 80)
 		.append_layer(Dense, Neuron, 50)
@@ -237,37 +252,57 @@ static void test_PPO()
 		.append_layer(Dense, Neuron, 20, _tanh)
 		.append_layer(Dense, Neuron, output_len, softmax)
 		.construct(input_len, policy_optimizer);
+	else
+	{
+		policy = NN::load("./network_policy_test.n");
+		if (!policy)
+		{
+			std::cerr << "could not load policy network" << std::endl;
+			throw;
+		}
+	}
+
+
 
 	const double learning_rate_anhealing_coeff = 1 - 1e-4;
 	PPO_hyperparameters parameters;
 
-	parameters.GAE.training_steps = 5;
+	parameters.GAE.use_GAE = true;
+	parameters.GAE.training_steps = 3;
 	parameters.GAE.gamma = .9;
-	parameters.GAE.value_function.learning_rate = 1e-2;
+	parameters.GAE.value_function.learning_rate = 1e-4;
 	parameters.GAE.value_function.gradient_clip = .5;
+	parameters.GAE.value_function.global_gradient_clip = .5;
 
 	parameters.policy.gradient_clip = .5;
-	parameters.policy.learning_rate = 1e-3;
+	parameters.policy.learning_rate = 1e-4;
+	parameters.policy.global_gradient_clip = .0;
 
-	parameters.max_training_steps = 20;
-	parameters.clip_ratio = .2;
-	parameters.max_kl_divergence_threshold = .05;
+	parameters.max_training_steps = 15;
+	parameters.clip_ratio = .1;
+	parameters.max_kl_divergence_threshold = .0;
 
 	parameters.policy.regularization.entropy_bonus.active = true;
 	parameters.policy.regularization.entropy_bonus.entropy_coefficient = 1E-3;
 
 	parameters.vecenvironment_count = n_envs;
-	parameters.steps_before_training = 40;
-	parameters.mini_batch_count = 4;
+	parameters.steps_before_training = 10;
+	parameters.mini_batch_count = 2;
 
 	std::vector<bool> shall_delete_memory;
 	shall_delete_memory.resize(n_envs, false);
 	PPO::PPO_internal_memory mem{};
 	size_t exec_n = 0;
-	size_t total_hit_count = 0;
+	int total_hit_count = 0;
 	for (size_t i = 0; true; i++)
 	{
-		size_t hit_count = 0;
+		if ((i + 1) % 100 == 0)
+		{
+			value_function->save("./network_value_function_test.n");
+			policy->save("./network_policy_test.n");
+		}
+
+		int hit_count = 0;
 		data_t mean_output = 0;
 		data_t mean_reward = 0;
 		for (size_t env_i = 0; env_i < n_envs; env_i++, exec_n++)
@@ -281,7 +316,8 @@ static void test_PPO()
 			);
 			auto [reward, end_of_episode] = env.step(actions, env_i);
 			hit_count += reward == 1;
-			for (size_t i = 0; i < policy->get_output_length(); i++) mean_output += actions[i];
+			hit_count -= reward == -1;
+			//for (size_t i = 0; i < policy->get_output_length(); i++) mean_output += actions[i];
 			delete[] actions;
 			shall_delete_memory[env_i] = end_of_episode;
 
@@ -294,16 +330,16 @@ static void test_PPO()
 			mean_reward += reward;
 		}
 		mean_reward /= n_envs;
-		mean_output /= policy->get_output_length() * n_envs;
+		//mean_output /= policy->get_output_length() * n_envs;
 		total_hit_count += hit_count;
 
 		std::stringstream ss;
-		ss << hit_count << ", " << mean_reward << ", " << i << ", " << exec_n << ", " << total_hit_count << ", " << mean_output << std::endl;
+		ss << hit_count << ", " << env.get_mean_episode_len() << ", " << env.get_last_episode_lens_len() << ", " << mean_reward << ", " << i << ", " << exec_n << std::endl;
 		std::cout << ss.str();
 	}
 }
 
-int main()
+int main(int argc)
 {
 #ifdef DETERMINISTIC
 	srand(13);
@@ -315,7 +351,7 @@ int main()
 	//cudaSetDevice(0);
 	//bug_hunting();
 	//test_LSTM();
-	test_PPO();
+	test_PPO(argc);
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
