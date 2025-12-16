@@ -42,6 +42,9 @@ typedef struct optimizer_hyperparameters
 typedef struct gradient_hyperparameters
 {
 	data_t learning_rate = .001;
+	// Rescales the L2 norm of the timestep gradients to the value
+	// Set to 0 to disable
+	data_t global_gradient_clip = .5;
 	data_t gradient_clip = 1;
 	float  dropout_rate = .2;
 

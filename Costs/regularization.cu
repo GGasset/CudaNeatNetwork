@@ -39,3 +39,24 @@ void entropy_regularization(
 	);
 	cudaDeviceSynchronize();
 }
+
+__host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gradient_hyperparameters hyperparameters)
+{
+	if (!hyperparameters.global_gradient_clip) return;
+
+	data_t *gradients_copy = cuda_clone_arr(gradients, gradient_count);
+	element_wise_multiply n_threads(gradient_count) (gradients_copy, gradients_copy, gradient_count);
+	cudaDeviceSynchronize();
+	
+	data_t l2 = cuda_sum<data_t, data_t>(gradients_copy, gradient_count);
+	cudaFree(gradients_copy);
+	if (l2 <= hyperparameters.global_gradient_clip) return;
+
+	data_t to_multiply_by = sqrt(l2 * (1 / abs(hyperparameters.global_gradient_clip) + 1e-5));
+	to_multiply_by = 1 / (to_multiply_by + 1e-5);
+
+	std::cout << to_multiply_by << std::endl;
+	
+	multiply_array n_threads(gradient_count) (gradients, gradient_count, to_multiply_by);
+	cudaDeviceSynchronize();
+}

@@ -14,3 +14,4 @@ __host__ void entropy_regularization(
 	entropy_bonus_hyperparameters hyperparameters
 );
 
+__host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gradient_hyperparameters hyperparameters);

@@ -506,6 +506,8 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 	);
 	cudaDeviceSynchronize();
 	
+	global_gradient_clip(gradients + gradients_start, gradient_count, hyperparamters);
+	
 	for (size_t i = 0; i < layer_count; i++)
 	{
 		ILayer* current_layer = layers[i];
