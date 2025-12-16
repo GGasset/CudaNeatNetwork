@@ -14,6 +14,7 @@ __device__ data_t device_tanh_derivative(
 	data_t input
 )
 {
+	input = device_clip(input, -10, 10);
 	data_t exp_2_x = exp(input * 2);
 	return (4 * exp_2_x) / ((exp_2_x + 1) * (exp_2_x + 1));
 }

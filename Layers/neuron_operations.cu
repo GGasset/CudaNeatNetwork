@@ -55,6 +55,7 @@ __device__ data_t device_tanh_activation(
 	size_t neuron_execution_values_start = execution_values_start + execution_values_layer_start + execution_values_per_neuron * tid;
 
 	data_t x = execution_values[neuron_execution_values_start + neuron_execution_values_read];
+	x = device_clip(x, -10, 10);
 	data_t exp_x = exp(x);
 	data_t exp_minus_x = exp(-x);
 	data_t activation = (exp_x - exp_minus_x) / (exp_x + exp_minus_x);
