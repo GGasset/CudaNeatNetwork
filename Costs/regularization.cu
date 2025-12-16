@@ -54,8 +54,6 @@ __host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gra
 
 	data_t to_multiply_by = sqrt(l2 * (1 / abs(hyperparameters.global_gradient_clip) + 1e-5));
 	to_multiply_by = 1 / (to_multiply_by + 1e-5);
-
-	std::cout << to_multiply_by << std::endl;
 	
 	multiply_array n_threads(gradient_count) (gradients, gradient_count, to_multiply_by);
 	cudaDeviceSynchronize();
