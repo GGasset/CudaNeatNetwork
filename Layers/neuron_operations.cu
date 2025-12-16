@@ -194,7 +194,7 @@ __host__ void activation_function(
 		);
 		exp_arr n_threads(layer_length) (linear_funcs, layer_length);
 		cudaDeviceSynchronize();
-		data_t exponent_sum = cuda_sum<data_t, data_t>(linear_funcs, layer_length);
+		data_t exponent_sum = 1e-5 + cuda_sum<data_t, data_t>(linear_funcs, layer_length);
 		cudaFree(linear_funcs);
 		softmax_activation n_threads(layer_length) (
 			activations, activations_start, layer_activation_start, write_activation,
