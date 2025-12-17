@@ -13,12 +13,16 @@
 #include "kernel_macros.h"
 
 #include "functionality.h"
+#include "initialization.h"
 #include "NN_enums.h"
 
 __device__ data_t device_min(data_t a, data_t b);
 __device__ data_t device_max(data_t a, data_t b);
 __device__ data_t device_closest_to_zero(data_t a, data_t b);
 __device__ data_t device_clip(data_t to_clip, data_t a, data_t b);
+
+// 4 significant digits
+__device__ data_t device_random_uniform(curandStateXORWOW_t *state);
 
 __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type output_type);
 
@@ -590,6 +594,9 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	cudaDeviceSynchronize();
 	cudaFree(arr);
 }
+
+__global__ void global_initialize_parameters(field_t *params, size_t param_count, initialization_parameters init);
+__host__ void initialize_parameters(field_t **param_pntr, size_t param_count, initialization_parameters init);
 
 template<typename T>
 __global__ void global_shuffle(T *arr, size_t arr_len, size_t i, size_t time)

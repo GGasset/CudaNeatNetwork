@@ -30,6 +30,11 @@ __device__ data_t device_clip(data_t to_clip, data_t a, data_t b)
 	return device_max(device_min(to_clip, upper_clip), lower_clip);
 }
 
+__device__ data_t device_random_uniform(curandStateXORWOW_t *state)
+{
+	return (curand(state) % (int)1e4) / 1e4;
+}
+
 __host__ data_t* alloc_output(size_t output_value_count, output_pointer_type output_type)
 {
 	data_t* output = 0;
@@ -120,6 +125,43 @@ __global__ void mutate_field_array(
 
 	array[tid] += triple_length_normalized_random_arr[tid] * max_mutation * (triple_length_normalized_random_arr[tid + length] < mutation_chance);
 	array[tid] *= 1 - 2 * (triple_length_normalized_random_arr[tid + length * 2] < .5);
+}
+
+__global__ void global_initialize_parameters(field_t *params, size_t param_count, initialization_parameters init)
+{
+	size_t tid = get_tid();
+	if (tid >= param_count) return;
+
+	params[tid] = 0;
+
+	curandStateXORWOW_t curand;
+	curand_init(init.time, param_count, tid, &curand);
+	switch (init.initalization)
+	{
+	case initialization_type::constant:
+		params[tid] = init.constant.value_constant;
+		break;
+	case initialization_type::Xavier:
+		data_t factor = sqrtf(6.0 / (init.layer_n_inputs + init.layer_n_outputs));
+		params[tid] = (device_random_uniform(&curand) - .5) * 2 * factor;
+		break;
+	case initialization_type::central_limit:
+		params[tid] = 
+			sqrtf(-2 * logf(device_random_uniform(&curand))) * cosf(6.2831853 * device_random_uniform(&curand))
+			* init.central_limit.std
+			+ init.central_limit.mean;
+		break;
+	default:
+		printf("Invalid initialization\n");
+	}
+}
+
+__host__ void initialize_parameters(field_t **param_pntr, size_t param_count, initialization_parameters init)
+{
+	if (!param_pntr) throw;
+
+	cudaMalloc(param_pntr, sizeof(field_t) * param_count);
+	
 }
 
 __host__ std::tuple<size_t *, size_t> cud_get_shuffled_indices(size_t stop, size_t start)
