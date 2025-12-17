@@ -14,6 +14,12 @@ private:
 public:
 	NN_constructor();
 
-	NN_constructor append_layer(ConnectionTypes connections_type, NeuronTypes neurons_type, size_t neuron_count, ActivationFunctions activation = ActivationFunctions::sigmoid);
+	NN_constructor append_layer(
+		ConnectionTypes connections_type, NeuronTypes neurons_type, size_t neuron_count,
+		ActivationFunctions activation = ActivationFunctions::sigmoid,
+		initialization_parameters connection_weight_init = {.initialization=Xavier},
+		initialization_parameters bias_init = {.initialization=constant},
+		initialization_parameters layer_weights_init = {.initialization=Xavier}
+	);
 	NN* construct(size_t input_length, optimizer_hyperparameters optimizer_options, bool stateful = false);
 };
