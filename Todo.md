@@ -52,6 +52,7 @@
 - ~~Supervised learning~~
 - ~~reinforcement learning cost functions~~
     - ~~GAE (Generalized Advantage Estimator)~~
+        - Check if value function may be mean, std
     - ~~PPO (Proximal Policy Optimization)~~
         - kl penalty
         - Vectorized environment
