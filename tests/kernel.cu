@@ -29,8 +29,8 @@ static void bug_hunting()
 
 	optimizer_hyperparameters optimizers;
 	NN *n = NN_constructor()
-		.append_layer(Dense, Neuron, output_len)
-		.append_layer(Dense, Neuron, output_len, softmax)
+		.append_layer(Dense, Neuron, output_len, _tanh)
+		.append_layer(Dense, Neuron, output_len, _tanh)
 		.construct(input_len, optimizers, stateful);
 
 	const size_t t_count = 2;
@@ -208,7 +208,9 @@ static void NEAT_evolution_test()
 	}
 }
 
-
+// Bugs: saving loading, global gradient clip, check kl divergence
+// TODO: move value function training loop outside of advantage calculation for greater efficiency
+// TODO: set biases to 0, then orthogonal in initialization, create modular initializer
 static void test_PPO(int argc)
 {
 	const size_t n_envs = 32;
@@ -272,7 +274,7 @@ static void test_PPO(int argc)
 	parameters.GAE.gamma = .9;
 	parameters.GAE.value_function.learning_rate = 1e-4;
 	parameters.GAE.value_function.gradient_clip = .5;
-	parameters.GAE.value_function.global_gradient_clip = .5;
+	parameters.GAE.value_function.global_gradient_clip = .0;
 
 	parameters.policy.gradient_clip = .5;
 	parameters.policy.learning_rate = 1e-4;
