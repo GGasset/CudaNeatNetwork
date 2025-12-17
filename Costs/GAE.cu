@@ -71,11 +71,9 @@ data_t *calculate_advantage(
 
 	data_t *discounted_rewards = 0;
 	cudaMalloc(&discounted_rewards, sizeof(data_t) * t_count);
-	cudaDeviceSynchronize();
 	if (!discounted_rewards) throw;
 
 	cudaMemset(discounted_rewards, 0, sizeof(data_t) * t_count);
-	cudaDeviceSynchronize();
 
 	calculate_discounted_rewards kernel(t_count / 32 + (t_count % 32 > 0), 32) (
 		t_count, parameters.gamma, rewards, discounted_rewards

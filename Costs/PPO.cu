@@ -286,16 +286,37 @@ void PPO_train(
 	bool is_recurrent = value_function->is_recurrent() || policy->is_recurrent();
 
 	std::vector<data_t *> advantages;
-	for (size_t i = 0; i < mem.n_env; i++)
+	for (size_t env_i = 0; env_i < mem.n_env; env_i++)
 	{
-		value_function->set_hidden_state(mem_pntr->initial_value_internal_states[i], false);
-		assert(hyperparameters.steps_before_training == mem.add_reward_calls_n[i]);
-		advantages.push_back(calculate_advantage(
-			hyperparameters.steps_before_training,
-			value_function, mem.trajectory_inputs[i], hyperparameters.GAE, false, false,
-			mem.rewards[i], false, false
-		));
-		mem.initial_value_internal_states[i] = value_function->get_hidden_state();
+		value_function->set_hidden_state(mem_pntr->initial_value_internal_states[env_i], false);
+		assert(hyperparameters.steps_before_training == mem.add_reward_calls_n[env_i]);
+
+		size_t advantage_buffer_len = 0;
+		data_t *advantage_buffer = 0;
+
+		size_t start_i = 0;
+		for (size_t i = 1; i < hyperparameters.steps_before_training; i++)
+			if (mem.was_memory_deleted_before[env_i][i] || i + 1 == hyperparameters.steps_before_training)
+			{
+				size_t steps_to_calculate = i - start_i;
+				data_t *current_advantages = calculate_advantage(
+					steps_to_calculate,
+					value_function, mem.trajectory_inputs[env_i] + (start_i * value_function->get_input_length()),
+					hyperparameters.GAE, false, false,
+					mem.rewards[env_i] + start_i, false, false
+				);
+				advantage_buffer = cuda_append_array(
+					advantage_buffer, advantage_buffer_len,
+					current_advantages, steps_to_calculate,
+					true
+				);
+				advantage_buffer_len += steps_to_calculate;
+
+				start_i = i;
+			}
+
+		advantages.push_back(advantage_buffer);
+		mem.initial_value_internal_states[env_i] = value_function->get_hidden_state();
 	}
 
 	size_t steps_per_env = hyperparameters.steps_before_training;
