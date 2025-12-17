@@ -4,7 +4,10 @@
 #include "DenseConnections.h"
 #include "stdio.h"
 
-DenseConnections::DenseConnections(size_t previous_layer_activations_start, size_t previous_layer_length, size_t neuron_count)
+DenseConnections::DenseConnections(
+	size_t previous_layer_activations_start, size_t previous_layer_length, size_t neuron_count,
+	initialization_parameters weights_init, initialization_parameters bias_init
+)
 {
 	connection_type = ConnectionTypes::Dense;
 
@@ -12,19 +15,9 @@ DenseConnections::DenseConnections(size_t previous_layer_activations_start, size
 	this->connection_count = previous_layer_length * neuron_count;
 	this->previous_layer_activations_start = previous_layer_activations_start;
 	this->previous_layer_length = previous_layer_length;
-	cudaMalloc(&weights, sizeof(field_t) * previous_layer_length * neuron_count);
-	cudaMalloc(&biases, sizeof(field_t) * neuron_count);
-	cudaDeviceSynchronize();
 
-	generate_random_values(weights, connection_count, 0, 1.0 / Xavier_uniform_initialization_scale_factor(previous_layer_length, neuron_count), true);
-	//generate_random_values(&biases, neuron_count, 0, neuron_count);
-	//cudaMemset(weights, 0, sizeof(field_t) * connection_count);
-	cudaMemset(biases, 0, sizeof(field_t) * neuron_count);
-	cudaDeviceSynchronize();
-
-	//add_to_array kernel (connection_count / 32 + (connection_count % 32 > 0), 32) (weights, connection_count, 1);
-	//add_to_array kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (biases, neuron_count, 1);
-	cudaDeviceSynchronize();
+	initialize_parameters(&weights, connection_count, weights_init);
+	initialize_parameters(&biases, neuron_count, bias_init);
 }
 
 DenseConnections::DenseConnections()
