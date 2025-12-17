@@ -1,6 +1,6 @@
 #include "LSTMLayer.h"
 
-LSTMLayer::LSTMLayer(IConnections* connections, size_t neuron_count)
+LSTMLayer::LSTMLayer(IConnections* connections, size_t neuron_count, initialization_parameters init_params)
 {
 	layer_type = NeuronTypes::LSTM;
 
@@ -19,6 +19,7 @@ LSTMLayer::LSTMLayer(IConnections* connections, size_t neuron_count)
 	layer_gradient_count = gradients_per_neuron * neuron_count + neuron_count + connections->connection_count;
 
 	initialize_fields(connections->connection_count, neuron_count, true);
+	initialize_parameters(&neuron_weights, neuron_count * 4, init_params);
 }
 
 LSTMLayer::LSTMLayer()
@@ -31,14 +32,12 @@ LSTMLayer::LSTMLayer()
 void LSTMLayer::layer_specific_initialize_fields(size_t connection_count, size_t neuron_count)
 {
 	size_t neuron_weights_count = sizeof(data_t) * neuron_count * 4;
-	cudaMalloc(&state, sizeof(data_t) * neuron_count * 2);
-	cudaMalloc(&neuron_weights, sizeof(field_t) * neuron_weights_count);
-	cudaMalloc(&prev_state_derivatives, sizeof(data_t) * neuron_count * 3);
 
+	cudaMalloc(&state, sizeof(data_t) * neuron_count * 2);
 	cudaMemset(state, 0, sizeof(data_t) * neuron_count * 2);
+
+	cudaMalloc(&prev_state_derivatives, sizeof(data_t) * neuron_count * 3);
 	cudaMemset(prev_state_derivatives, 0, sizeof(data_t) * neuron_count * 3);
-	cudaMemset(neuron_weights, 0, sizeof(field_t) * neuron_weights_count);
-	generate_random_values(neuron_weights, neuron_weights_count, 0, Xavier_uniform_initialization_scale_factor(neuron_count, neuron_count), true);
 }
 
 ILayer* LSTMLayer::layer_specific_clone()
