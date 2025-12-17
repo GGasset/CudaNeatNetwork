@@ -8,7 +8,7 @@ public:
 	data_t* state = 0;
 	data_t* prev_state_derivatives = 0;
 
-	LSTMLayer(IConnections* connections, size_t neuron_count);
+	LSTMLayer(IConnections* connections, size_t neuron_count, initialization_parameters init_params);
 	LSTMLayer();
 
 	inline size_t get_weight_count() { return connections->connection_count + get_neuron_count() + 4 * get_neuron_count(); }
