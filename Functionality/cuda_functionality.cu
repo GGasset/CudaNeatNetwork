@@ -161,7 +161,8 @@ __host__ void initialize_parameters(field_t **param_pntr, size_t param_count, in
 	if (!param_pntr) throw;
 
 	cudaMalloc(param_pntr, sizeof(field_t) * param_count);
-	
+	global_initialize_parameters(param_pntr, param_count, init);
+	cudaDeviceSynchronize();
 }
 
 __host__ std::tuple<size_t *, size_t> cud_get_shuffled_indices(size_t stop, size_t start)
