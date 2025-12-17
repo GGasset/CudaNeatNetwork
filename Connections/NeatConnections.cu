@@ -2,28 +2,21 @@
 #include "cuda_functionality.cuh"
 #include <cstddef>
 
-NeatConnections::NeatConnections(size_t previous_layer_start, size_t previous_layer_length, size_t neuron_count)
+NeatConnections::NeatConnections(
+	size_t previous_layer_start, size_t previous_layer_length, size_t neuron_count,
+	initialization_parameters weights_init, initialization_parameters bias_init
+)
 {
 	connection_type = ConnectionTypes::NEAT;
 
 	contains_irregular_connections = true;
 	this->neuron_count = neuron_count;
 	this->connection_count = neuron_count * previous_layer_length;
-	cudaMalloc(&weights, sizeof(field_t) * connection_count);
-	cudaMalloc(&biases, sizeof(field_t) * neuron_count);
 	cudaMalloc(&connection_points, sizeof(size_t) * connection_count);
 	cudaMalloc(&connection_neuron_i, sizeof(size_t) * connection_count);
 
-	generate_random_values(weights, connection_count, 0, 1 / Xavier_uniform_initialization_scale_factor(previous_layer_length, neuron_count), true);
-	//cudaMemset(biases, 0, sizeof(field_t) * neuron_count);
-	//generate_random_values(&biases, neuron_count, 0, neuron_count);
-
-	//cudaMemset(weights, 0, sizeof(field_t) * connection_count);
-	cudaMemset(biases, 0, sizeof(field_t) * neuron_count);
-
-	//add_to_array kernel (connection_count / 32 + (connection_count % 32 > 0), 32) (weights, connection_count, 1);
-	//add_to_array kernel (neuron_count / 32 + (neuron_count % 32 > 0), 32) (biases, neuron_count, 1);
-	//cudaDeviceSynchronize();
+	initialize_parameters(&biases, connection_count, weights_init);
+	initialize_parameters(&weights, connection_count, bias_init);
 	
 	size_t* host_connection_points = new size_t[connection_count];
 	size_t* host_connection_neuron_i = new size_t[connection_count];
