@@ -10,7 +10,10 @@ public:
 	size_t previous_layer_activations_start = 0;
 	size_t previous_layer_length = 0;
 
-	DenseConnections(size_t previous_layer_activations_start, size_t previous_layer_length, size_t neuron_count);
+	DenseConnections(
+		size_t previous_layer_activations_start, size_t previous_layer_length, size_t neuron_count,
+		initialization_parameters weights_init, initialization_parameters bias_init
+	);
 	DenseConnections();
 
 	void linear_function(size_t activations_start, data_t* activations,
