@@ -21,7 +21,10 @@ public:
     /// </summary>
     size_t* connection_neuron_i = 0;
 
-    NeatConnections(size_t previous_layer_start, size_t previous_layer_length, size_t neuron_count);
+    NeatConnections(
+		size_t previous_layer_start, size_t previous_layer_length, size_t neuron_count,
+		initialization_parameters weights_init, initialization_parameters bias_init
+	);
     NeatConnections();
 
     void linear_function(size_t activations_start, data_t* activations,
