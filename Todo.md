@@ -16,12 +16,17 @@
 - Create execution and training methods for non-recurrent networks and high t_count
     - Use them for recurrent networks in a loop
     - Mid-high priority
+    - Use this to optimize PPO evironments by gathering all observations and executing on all t's
+        - Create a recurrent layer function for execution in which the state is passed as a multiple t array
 - Paralelize layer derivative calculation calls
 
 - Optimize PRAM reduce
 - ~~Add execution with output to GPU~~
 - Optimize NEAT-Dense Connections with PRAM reduce
 - Create Tensor NEAT-Dense Connections
+    - for NEAT: Gather activations function
+
+- Further modularize cuda functions
 
 ## Fundamentals
 
