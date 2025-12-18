@@ -136,7 +136,7 @@ __global__ void global_initialize_parameters(field_t *params, size_t param_count
 
 	curandStateXORWOW_t curand;
 	curand_init(init.time, param_count, tid, &curand);
-	switch (init.initalization)
+	switch (init.initialization)
 	{
 	case initialization_type::constant:
 		params[tid] = init.constant.value_constant;

@@ -23,7 +23,7 @@ struct constant_initialization_parameters
 
 struct initialization_parameters
 {
-	initialization_type initalization = Xavier;
+	initialization_type initialization = Xavier;
 
 	central_limit_initialization_parameters central_limit;
 	constant_initialization_parameters constant;
