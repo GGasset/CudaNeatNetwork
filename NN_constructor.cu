@@ -19,7 +19,12 @@ NN_constructor NN_constructor::append_layer(
 	return *this;
 }
 
-NN* NN_constructor::construct(size_t input_length, optimizer_hyperparameters optimizer_options, bool stateful)
+NN* NN_constructor::construct(
+	size_t input_length, optimizer_hyperparameters optimizer_options, bool stateful,
+	initialization_parameters weight,
+	initialization_parameters bias,
+	initialization_parameters layer_weight
+)
 {
 	ILayer** layers = new ILayer*[layer_count];
 	size_t previous_layer_activations_start = 0;
@@ -61,7 +66,7 @@ NN* NN_constructor::construct(size_t input_length, optimizer_hyperparameters opt
 		layers[i] = layer;
 		previous_layer_activations_start += i ? layer_length : input_length;
 	}
-	NN* n = new NN(layers, input_length, layer_count);
+	NN* n = new NN(layers, input_length, layer_count, weight, bias, layer_weight);
 	n->stateful = stateful;
 	n->optimizer_initialization = optimizer_options;
 	return n;

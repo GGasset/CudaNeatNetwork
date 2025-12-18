@@ -22,5 +22,11 @@ public:
 		initialization_parameters bias_init = {.initialization=constant},
 		initialization_parameters layer_weights_init = {.initialization=Xavier}
 	);
-	NN* construct(size_t input_length, optimizer_hyperparameters optimizer_options, bool stateful = false);
+	
+	NN* construct(
+		size_t input_length, optimizer_hyperparameters optimizer_options, bool stateful = false,
+		initialization_parameters weights_init = {.initialization=Xavier},
+		initialization_parameters bias_init = {.initialization=constant},
+		initialization_parameters layer_weights_init = {.initialization=Xavier}
+	);
 };
