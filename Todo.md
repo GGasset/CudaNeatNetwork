@@ -13,6 +13,9 @@
         - ~~If that structure decides which optimizers to use at the last moment would be great. i.e. by passing it during subtract gradients and using the active hyperparameters, use a list that searches for a hyperparameter id (enum) and if it doesn't exists, it allocates more memory for it~~
 
 ## Code optimization
+- Create execution and training methods for non-recurrent networks and high t_count
+    - Use them for recurrent networks in a loop
+    - Mid-high priority
 - Paralelize layer derivative calculation calls
 
 - Optimize PRAM reduce
