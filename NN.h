@@ -34,6 +34,10 @@ private:
 	short contains_recurrent_layers = 0;
 	size_t gradient_count = 0;
 
+	initialization_parameters weight_init;
+	initialization_parameters bias_init;
+	initialization_parameters layer_weights_init;
+
 protected:
 	void set_fields();
 
@@ -52,7 +56,12 @@ public:
 	bool   is_recurrent();
 
 	~NN();
-	NN(ILayer** layers, size_t input_length, size_t layer_count);
+	NN(
+		ILayer** layers, size_t input_length, size_t layer_count,
+		initialization_parameters weight_init = {.initialization=Xavier},
+		initialization_parameters bias_init = {.initialization=constant},
+		initialization_parameters layer_weight_init = {.initialization=Xavier}
+	);
 
 	void execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type);
 	void set_up_execution_arrays(data_t** execution_values, data_t** activations, size_t t_count);

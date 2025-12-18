@@ -33,8 +33,17 @@ bool NN::is_recurrent()
 	return contains_recurrent_layers;
 }
 
-NN::NN(ILayer** layers, size_t input_length, size_t layer_count)
+NN::NN(
+	ILayer** layers, size_t input_length, size_t layer_count,
+	initialization_parameters weight,
+	initialization_parameters bias,
+	initialization_parameters layer_weight
+)
 {
+	weight_init = weight;
+	bias_init = bias;
+	layer_weights_init = layer_weight;
+	
 	this->layers = layers;
 	this->input_length = input_length;
 	this->layer_count = layer_count;
@@ -726,7 +735,10 @@ void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 		previous_layer_activations_start = previous_layer->layer_activations_start;
 	}
 
-	IConnections* new_connections = new NeatConnections(previous_layer_activations_start, previous_layer_length, 1);
+	IConnections* new_connections = new NeatConnections(
+		previous_layer_activations_start, previous_layer_length, 1,
+		weight_init, bias_init
+	);
 	ILayer* new_layer = 0;
 
 	switch (layer_type)
@@ -735,7 +747,7 @@ void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 		new_layer = new NeuronLayer(new_connections, 1, (ActivationFunctions)(rand() % ActivationFunctions::activations_last_entry));
 		break;
 	case NeuronTypes::LSTM:
-		new_layer = new LSTMLayer(new_connections, 1);
+		new_layer = new LSTMLayer(new_connections, 1, layer_weights_init);
 		break;
 	default:
 		throw "Neuron_type not added to evolve method";
