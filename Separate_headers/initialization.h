@@ -28,10 +28,10 @@ struct initialization_parameters
 	central_limit_initialization_parameters central_limit;
 	constant_initialization_parameters constant;
 
-	// Automatically set in nn_constructor
+	// Automatically set in nn_constructor.construct and NN.add_layer
 	size_t layer_n_inputs = 0;
-	// Automatically set in nn_constructor
+	// Automatically set in nn_constructor.construct and NN.add_layer
 	size_t layer_n_outputs = 0;
-	// Automatically set in nn_constructor
+	// Automatically set in nn_constructor.construct and NN.add_layer
 	size_t time = 0;
 };
