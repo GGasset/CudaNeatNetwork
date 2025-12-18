@@ -26,6 +26,10 @@ NN* NN_constructor::construct(
 	initialization_parameters layer_weight
 )
 {
+	weight.time = get_arbitrary_number();
+	bias.time = get_arbitrary_number();
+	layer_weight.time = get_arbitrary_number();
+
 	ILayer** layers = new ILayer*[layer_count];
 	size_t previous_layer_activations_start = 0;
 	for (int i = 0; i < layer_count; i++)
@@ -34,6 +38,15 @@ NN* NN_constructor::construct(
 		size_t layer_length = layer_lengths[i];
 		ActivationFunctions activation = activations[i];
 		auto [weight_init, bias_init, layer_weight_init] = initialization[i];
+
+		weight_init.layer_n_inputs = previous_layer_length;
+		weight_init.layer_n_outputs = layer_length;
+
+		bias_init.layer_n_inputs = previous_layer_length;
+		bias_init.layer_n_outputs = layer_length;
+		
+		layer_weight_init.layer_n_inputs = previous_layer_length;
+		layer_weight_init.layer_n_outputs = layer_length;
 
 		IConnections* connections = 0;
 		ILayer* layer = 0;

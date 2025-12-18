@@ -43,7 +43,7 @@ NN::NN(
 	weight_init = weight;
 	bias_init = bias;
 	layer_weights_init = layer_weight;
-	
+
 	this->layers = layers;
 	this->input_length = input_length;
 	this->layer_count = layer_count;
@@ -726,6 +726,10 @@ void NN::add_layer(size_t insert_i)
 
 void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 {
+	weight_init.time = get_arbitrary_number();
+	bias_init.time = get_arbitrary_number();
+	layer_weights_init.time = get_arbitrary_number();
+
 	size_t previous_layer_length = input_length;
 	size_t previous_layer_activations_start = 0;
 	if (insert_i)
@@ -734,6 +738,16 @@ void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 		previous_layer_length = previous_layer->get_neuron_count();
 		previous_layer_activations_start = previous_layer->layer_activations_start;
 	}
+
+	weight_init.layer_n_inputs = previous_layer_length;
+	weight_init.layer_n_outputs = 1;
+
+	bias_init.layer_n_inputs = previous_layer_length;
+	bias_init.layer_n_outputs = 1;
+	
+	layer_weights_init.layer_n_inputs = previous_layer_length;
+	layer_weights_init.layer_n_outputs = 1;
+
 
 	IConnections* new_connections = new NeatConnections(
 		previous_layer_activations_start, previous_layer_length, 1,
