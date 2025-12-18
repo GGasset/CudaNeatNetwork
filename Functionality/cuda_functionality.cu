@@ -142,9 +142,11 @@ __global__ void global_initialize_parameters(field_t *params, size_t param_count
 		params[tid] = init.constant.value_constant;
 		break;
 	case initialization_type::Xavier:
+	{
 		data_t factor = sqrtf(6.0 / (init.layer_n_inputs + init.layer_n_outputs));
 		params[tid] = (device_random_uniform(&curand) - .5) * 2 * factor;
 		break;
+	}
 	case initialization_type::central_limit:
 		params[tid] = 
 			sqrtf(-2 * logf(device_random_uniform(&curand))) * cosf(6.2831853 * device_random_uniform(&curand))
@@ -161,7 +163,7 @@ __host__ void initialize_parameters(field_t **param_pntr, size_t param_count, in
 	if (!param_pntr) throw;
 
 	cudaMalloc(param_pntr, sizeof(field_t) * param_count);
-	global_initialize_parameters(param_pntr, param_count, init);
+	global_initialize_parameters n_threads(param_count) (*param_pntr, param_count, init);
 	cudaDeviceSynchronize();
 }
 
