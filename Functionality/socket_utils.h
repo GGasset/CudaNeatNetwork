@@ -107,13 +107,23 @@ public:
 	~parse_apply();
 
 	// throws on error, then recommended to discard the buffer
-	template<typename function> // May also return based on a template type (note for future development)
+	// this function does not support member functions
+	template<typename non_member_function> // May also return based on a template type (note for future development)
 	auto operator()()
 	{
 		(parse_parameter<func_param_types>(), ...);
-		return std::apply(function, parameters);
+		return std::apply(non_member_function, parameters);
 	}
-	
+
+	// throws on error, then recommended to discard the buffer
+	// this function does not support member functions
+	// Uses lambda function to call the template function withing a object
+	template<typename object_type, typename member_function>
+	auto operator()(object_type &obj)
+	{
+		(parse_parameter<func_param_types>(), ...);
+		return std::apply([&](auto&&... args) { (obj.*member_function)(std::forward<decltype(args)>(args)...); }, parameters);
+	}
 };
 
 
