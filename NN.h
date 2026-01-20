@@ -6,6 +6,7 @@
 #include "functionality.h"
 
 #include "NN_enums.h"
+#include "nn_lens.h"
 #include "neuron_operations.cuh"
 #include "costs.cuh"
 #include "gradient_parameters.h"
@@ -25,14 +26,13 @@ class NN
 private:
 	ILayer **layers = 0;
 	size_t layer_count = 0;
-	size_t neuron_count = 0;
 	size_t input_length = 0;
 	size_t output_length = 0;
 	size_t* output_activations_start = 0;
-	size_t execution_value_count = 0;
-	size_t derivative_count = 0;
 	short contains_recurrent_layers = 0;
-	size_t gradient_count = 0;
+	
+	nn_lens lengths;
+
 
 	initialization_parameters weight_init;
 	initialization_parameters bias_init;

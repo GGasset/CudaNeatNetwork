@@ -10,7 +10,7 @@ size_t NN::get_input_length()
 
 size_t NN::get_neuron_count()
 {
-	return neuron_count;
+	return lengths.neuron_count;
 }
 
 size_t NN::get_output_length()
@@ -25,7 +25,7 @@ size_t NN::get_output_activations_start()
 
 size_t NN::get_gradient_count_per_t()
 {
-	return gradient_count;
+	return lengths.gradient_count;
 }
 
 bool NN::is_recurrent()
@@ -83,41 +83,43 @@ void NN::set_fields()
 		layer->layer_derivatives_start = derivative_count;
 		derivative_count += layer->layer_derivative_count;
 
-			layer->layer_gradients_start = gradient_count;
-			gradient_count += layer->layer_gradient_count;
-		}
-		this->neuron_count = neuron_count;
+		layer->layer_gradients_start = gradient_count;
+		gradient_count += layer->layer_gradient_count;
+	}
+
+	lengths.neuron_count = neuron_count;
+	lengths.execution_value_count = execution_value_count;
+	lengths.derivative_count = derivative_count;
+	lengths.gradient_count = gradient_count;
+
 	output_activations_start = &(layers[layer_count - 1]->layer_activations_start);
-	this->execution_value_count = execution_value_count;
-	this->derivative_count = derivative_count;
-	this->gradient_count = gradient_count;
 }
 
 void NN::execute(data_t* input, data_t* execution_values, data_t* activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type)
 {
-	cudaMemcpy(activations + t * neuron_count, input + input_length * t, sizeof(data_t) * input_length, cudaMemcpyHostToDevice);
+	cudaMemcpy(activations + t * lengths.neuron_count, input + input_length * t, sizeof(data_t) * input_length, cudaMemcpyHostToDevice);
 	cudaDeviceSynchronize();
 	for (size_t i = 0; i < layer_count; i++)
 	{
-		layers[i]->execute(activations, neuron_count * t, execution_values, execution_value_count * t);
+		layers[i]->execute(activations, lengths.neuron_count * t, execution_values, lengths.execution_value_count * t);
 		cudaDeviceSynchronize();
 	}
 	if (output_type != no_output && output_start_pointer)
 	{
 		cudaMemcpyKind memcpy_kind = cudaMemcpyDeviceToHost;
 		if (output_type == cuda_pointer_output) memcpy_kind = cudaMemcpyDeviceToDevice;
-		cudaMemcpy(output_start_pointer + output_length * t, activations + neuron_count * t + *output_activations_start, sizeof(data_t) * output_length, memcpy_kind);
+		cudaMemcpy(output_start_pointer + output_length * t, activations + lengths.neuron_count * t + *output_activations_start, sizeof(data_t) * output_length, memcpy_kind);
 		cudaDeviceSynchronize();
 	}
 }
 
 void NN::set_up_execution_arrays(data_t** execution_values, data_t** activations, size_t t_count)
 {
-	cudaMalloc(execution_values, sizeof(data_t) * execution_value_count * t_count);
-	cudaMalloc(activations, sizeof(data_t) * neuron_count * t_count);
+	cudaMalloc(execution_values, sizeof(data_t) * lengths.execution_value_count * t_count);
+	cudaMalloc(activations, sizeof(data_t) * lengths.neuron_count * t_count);
 	cudaDeviceSynchronize();
-	cudaMemset(*execution_values, 0, sizeof(data_t) * execution_value_count * t_count);
-	cudaMemset(*activations, 0, sizeof(data_t) * neuron_count * t_count);
+	cudaMemset(*execution_values, 0, sizeof(data_t) * lengths.execution_value_count * t_count);
+	cudaMemset(*activations, 0, sizeof(data_t) * lengths.neuron_count * t_count);
 	cudaDeviceSynchronize();
 }
 
@@ -238,8 +240,8 @@ void NN::training_execute(
 	set_up_execution_arrays(execution_values, activations, t_count + arrays_t_length);
 	if (arrays_t_length)
 	{
-		cudaMemcpy(*execution_values, prev_execution_values, sizeof(data_t) * execution_value_count * arrays_t_length, cudaMemcpyDeviceToDevice);
-		cudaMemcpy(*activations, prev_activations, sizeof(data_t) * neuron_count * arrays_t_length, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(*execution_values, prev_execution_values, sizeof(data_t) * lengths.execution_value_count * arrays_t_length, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(*activations, prev_activations, sizeof(data_t) * lengths.neuron_count * arrays_t_length, cudaMemcpyDeviceToDevice);
 		cudaDeviceSynchronize();
 		cudaFree(prev_execution_values);
 		cudaFree(prev_activations);
@@ -255,7 +257,7 @@ void NN::training_execute(
 	for (size_t t = 0; t < t_count; t++)
 	{
 		if (delete_mem && delete_mem->size() > t && delete_mem[0][t]) delete_memory();
-		execute(X, (*execution_values) + execution_value_count * arrays_t_length, (*activations) + neuron_count * arrays_t_length, t, out_Y, output_type);
+		execute(X, (*execution_values) + lengths.execution_value_count * arrays_t_length, (*activations) + lengths.neuron_count * arrays_t_length, t, out_Y, output_type);
 	}
 }
 
@@ -272,10 +274,10 @@ data_t NN::train(
 )
 {
 	data_t* costs = 0;
-	cudaMalloc(&costs, sizeof(data_t) * neuron_count * t_count);
+	cudaMalloc(&costs, sizeof(data_t) * lengths.neuron_count * t_count);
 	cudaDeviceSynchronize();
 
-	cudaMemset(costs, 0, sizeof(data_t) * neuron_count * t_count);
+	cudaMemset(costs, 0, sizeof(data_t) * lengths.neuron_count * t_count);
 	cudaDeviceSynchronize();
 	
 	if (is_Y_hat_on_host_memory)
@@ -295,7 +297,7 @@ data_t NN::train(
 
 	for (size_t t = 0; t < t_count; t++)
 	{
-		subtract_gradients(gradients, gradient_count * t, hyperparameters);
+		subtract_gradients(gradients, lengths.gradient_count * t, hyperparameters);
 	}
 
 	if (is_Y_hat_on_host_memory) cudaFree(Y_hat);
@@ -325,12 +327,12 @@ data_t NN::calculate_output_costs(
 	{
 	case CostFunctions::MSE:
 		MSE_derivative kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, neuron_count, activations_start, *output_activations_start,
+			activations, lengths.neuron_count, activations_start, *output_activations_start,
 			costs, costs_start,
 			Y_hat, output_length
 			);
 		MSE_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, neuron_count, activations_start, *output_activations_start,
+			activations, lengths.neuron_count, activations_start, *output_activations_start,
 			Y_hat, output_length,
 			cost
 			);
@@ -338,12 +340,12 @@ data_t NN::calculate_output_costs(
 	case CostFunctions::log_likelyhood:
 		log_likelyhood_derivative kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
 			activations, activations_start,
-			neuron_count, *output_activations_start, output_length,
+			lengths.neuron_count, *output_activations_start, output_length,
 			costs, costs_start,
 			Y_hat
 			);
 		log_likelyhood_cost kernel(dim3(output_length / 32 + (output_length % 32 > 0), t_count), 32) (
-			activations, neuron_count, activations_start, *output_activations_start,
+			activations, lengths.neuron_count, activations_start, *output_activations_start,
 			Y_hat, output_length,
 			cost
 			);
@@ -381,13 +383,13 @@ void NN::backpropagate(
 	data_t* derivatives = 0;
 	if (!*gradients)
 	{
-		cudaMalloc(gradients, sizeof(data_t) * t_count * gradient_count);
-		cudaMemset(*gradients, 0, sizeof(data_t) * t_count * gradient_count);
+		cudaMalloc(gradients, sizeof(data_t) * t_count * lengths.gradient_count);
+		cudaMemset(*gradients, 0, sizeof(data_t) * t_count * lengths.gradient_count);
 	}
-	if (derivative_count)
+	if (lengths.derivative_count)
 	{
-		cudaMalloc(&derivatives, sizeof(data_t) * t_count * derivative_count);
-		cudaMemset(derivatives, 0, sizeof(data_t) * t_count * derivative_count);
+		cudaMalloc(&derivatives, sizeof(data_t) * t_count * lengths.derivative_count);
+		cudaMemset(derivatives, 0, sizeof(data_t) * t_count * lengths.derivative_count);
 	}
 	cudaDeviceSynchronize();
 
@@ -397,37 +399,37 @@ void NN::backpropagate(
 	size_t gradients_start = 0;
 	for (size_t t = 0; t < t_count; t++)
 	{
-		activations_start = neuron_count * t;
-		derivatives_start = derivative_count * t;
-		execution_values_start = execution_value_count * t;
+		activations_start = lengths.neuron_count * t;
+		derivatives_start = lengths.derivative_count * t;
+		execution_values_start = lengths.execution_value_count * t;
 		calculate_derivatives(
 			activations, activations_start, 
-			derivatives, derivatives_start - derivative_count, derivatives_start,
+			derivatives, derivatives_start - lengths.derivative_count, derivatives_start,
 			execution_values, execution_values_start
 		);
 	}
 	for (int t = t_count - 1; t >= 0; t--)
 	{
-		gradients_start = gradient_count * t;
-		size_t next_gradient_start = gradients_start + gradient_count;
+		gradients_start = lengths.gradient_count * t;
+		size_t next_gradient_start = gradients_start + lengths.gradient_count;
 		next_gradient_start -= next_gradient_start * (t == t_count - 1);
 
-		derivatives_start = derivative_count * t;
-		activations_start = neuron_count * t;
+		derivatives_start = lengths.derivative_count * t;
+		activations_start = lengths.neuron_count * t;
 
 		calculate_gradients(
 			activations, activations_start,
 			execution_values, execution_values_start,
 			costs, activations_start,
 			*gradients, gradients_start, next_gradient_start,
-			derivatives, derivatives_start, derivatives_start - derivative_count,
+			derivatives, derivatives_start, derivatives_start - lengths.derivative_count,
 			hyperparameters.dropout_rate
 		);
 	}
 
 	if (!stateful && contains_recurrent_layers)
 		delete_memory();
-	if (derivative_count) cudaFree(derivatives);
+	if (lengths.derivative_count) cudaFree(derivatives);
 }
 
 void NN::apply_regularizations(
@@ -437,7 +439,7 @@ void NN::apply_regularizations(
 )
 {
 	entropy_regularization(
-		t_count, neuron_count, output_length, 
+		t_count, lengths.neuron_count, output_length, 
 		costs, activations, *output_activations_start, 
 		hyperparameters.entropy_bonus
 	);
@@ -510,12 +512,12 @@ void NN::calculate_gradients(
 
 void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparamters)
 {
-	reset_NaNs kernel(gradient_count / 32 + (gradient_count % 32 > 0), 32) (
-		gradients + gradients_start, 0, gradient_count
+	reset_NaNs kernel(lengths.gradient_count / 32 + (lengths.gradient_count % 32 > 0), 32) (
+		gradients + gradients_start, 0, lengths.gradient_count
 	);
 	cudaDeviceSynchronize();
 	
-	global_gradient_clip(gradients + gradients_start, gradient_count, hyperparamters);
+	global_gradient_clip(gradients + gradients_start, lengths.gradient_count, hyperparamters);
 	
 	for (size_t i = 0; i < layer_count; i++)
 	{
@@ -877,7 +879,7 @@ NN* NN::clone()
 {
 	NN* clone = new NN();
 	clone->layer_count = layer_count;
-	clone->neuron_count = neuron_count;
+	clone->lengths.neuron_count = lengths.neuron_count;
 	clone->input_length = input_length;
 	clone->output_length = output_length;
 	
