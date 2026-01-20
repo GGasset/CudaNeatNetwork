@@ -2,6 +2,8 @@
 #define ILAYER_H
 #include <stdlib.h>
 
+#include "nn_lens.h"
+
 #include "neuron_operations.cuh"
 #include "derivatives.cuh"
 #include "gradients.cuh"
@@ -23,22 +25,7 @@ public:
 	IConnections* connections = 0;
 	Optimizers optimizer;
 
-	size_t layer_activations_start = 0;
-
-	size_t hidden_states_per_neuron = 0;
-
-	size_t execution_values_layer_start = 0;
-	size_t execution_values_per_neuron = 0;
-
-	size_t layer_derivative_count = 0;
-	size_t layer_derivatives_start = 0;
-	size_t derivatives_per_neuron = 0;
-	
-	size_t gradients_per_neuron = 0;
-	size_t layer_gradient_count = 0;
-	size_t layer_gradients_start = 0;
-	size_t* neuron_gradients_starts = 0;
-	size_t* connection_associated_gradient_counts = 0;
+	layer_properties properties{};
 
 	size_t get_neuron_count();
 	void set_neuron_count(size_t neuron_count);

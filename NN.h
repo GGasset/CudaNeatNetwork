@@ -31,8 +31,7 @@ private:
 	size_t* output_activations_start = 0;
 	short contains_recurrent_layers = 0;
 	
-	nn_lens lengths;
-
+	nn_lens counts{};
 
 	initialization_parameters weight_init;
 	initialization_parameters bias_init;

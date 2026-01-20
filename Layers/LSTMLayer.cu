@@ -8,15 +8,15 @@ LSTMLayer::LSTMLayer(IConnections* connections, size_t neuron_count, initializat
 	this->connections = connections;
 	set_neuron_count(neuron_count);
 
-	execution_values_per_neuron = 10;
-	hidden_states_per_neuron = 2;
+	properties.execution_values_per_neuron = 10;
+	properties.per_neuron_hidden_state_count = 2;
 	
-	derivatives_per_neuron = 24;
-	layer_derivative_count = derivatives_per_neuron * neuron_count;
+	properties.derivatives_per_neuron = 24;
+	properties.layer_derivative_count = properties.derivatives_per_neuron * neuron_count;
 	
-	gradients_per_neuron = 6;
+	properties.gradients_per_neuron = 6;
 
-	layer_gradient_count = gradients_per_neuron * neuron_count + neuron_count + connections->connection_count;
+	properties.layer_gradient_count = properties.gradients_per_neuron * neuron_count + neuron_count + connections->connection_count;
 
 	initialize_fields(connections->connection_count, neuron_count, true);
 	initialize_parameters(&neuron_weights, neuron_count * 4, init_params);
@@ -26,7 +26,7 @@ LSTMLayer::LSTMLayer()
 {
 	layer_type = NeuronTypes::LSTM;
 	is_recurrent = true;
-	hidden_states_per_neuron = 2/*State*/ + 3 /*prev state derivatives*/;
+	properties.per_neuron_hidden_state_count = 2/*State*/ + 3 /*prev state derivatives*/;
 }
 
 void LSTMLayer::layer_specific_initialize_fields(size_t connection_count, size_t neuron_count)
@@ -76,12 +76,12 @@ void LSTMLayer::execute(data_t* activations, size_t activations_start, data_t* e
 	connections->linear_function(
 		activations_start, activations,
 		execution_values, execution_values_start,
-		execution_values_layer_start, execution_values_per_neuron
+		properties.execution_values_start, properties.execution_values_per_neuron
 	);
 	cudaDeviceSynchronize();
 	LSTM_execution kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
-		activations, activations_start, layer_activations_start,
-		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+		activations, activations_start, properties.activations_start,
+		execution_values, execution_values_start, properties.execution_values_start, properties.execution_values_per_neuron,
 		neuron_weights, state,
 		neuron_count
 	);
@@ -103,15 +103,15 @@ void LSTMLayer::calculate_gradients(
 )
 {
 	LSTM_gradient_calculation kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
-		derivatives, derivatives_start, layer_derivatives_start, derivatives_per_neuron,
-		gradients, gradients_start, next_gradients_start, layer_gradients_start, neuron_gradients_starts, connection_associated_gradient_counts,
-		costs, costs_start, layer_activations_start,
+		derivatives, derivatives_start, properties.derivatives_start, properties.derivatives_per_neuron,
+		gradients, gradients_start, next_gradients_start, properties.gradients_start, properties.per_neuron_gradients_start, properties.per_connection_gradient_count,
+		costs, costs_start, properties.activations_start,
 		neuron_count
 	);
 	cudaDeviceSynchronize();
 	connections->calculate_gradients(
 		activations, activations_start,
-		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
+		gradients, gradients_start, properties.gradients_start, properties.per_neuron_gradients_start,
 		costs, costs_start
 	);
 	cudaDeviceSynchronize();
@@ -120,11 +120,11 @@ void LSTMLayer::calculate_gradients(
 void LSTMLayer::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters)
 {
 	connections->subtract_gradients(
-		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
+		gradients, gradients_start, properties.gradients_start, properties.per_neuron_gradients_start,
 		hyperparameters, optimizer
 	);
 	LSTM_gradient_subtraction kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
-		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts, connection_associated_gradient_counts,
+		gradients, gradients_start, properties.gradients_start, properties.per_neuron_gradients_start, properties.per_connection_gradient_count,
 		neuron_weights, 
 		hyperparameters, optimizer,
 		neuron_count, connections->connection_count + get_neuron_count()
@@ -139,12 +139,12 @@ void LSTMLayer::calculate_derivatives(
 )
 {
 	connections->calculate_derivative(
-		activations_start, activations, derivatives_start, layer_derivatives_start, derivatives_per_neuron, derivatives
+		activations_start, activations, derivatives_start, properties.derivatives_start, properties.derivatives_per_neuron, derivatives
 	);
 	cudaDeviceSynchronize();
 	LSTM_derivative_calculation kernel(neuron_count / 32 + (neuron_count % 32 > 0), 32) (
-		prev_state_derivatives, derivatives, previous_derivatives_start, derivatives_start, layer_derivatives_start, derivatives_per_neuron,
-		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
+		prev_state_derivatives, derivatives, previous_derivatives_start, derivatives_start, properties.derivatives_start, properties.derivatives_per_neuron,
+		execution_values, execution_values_start, properties.execution_values_start, properties.execution_values_per_neuron,
 		neuron_weights,
 		neuron_count
 	);
@@ -153,10 +153,10 @@ void LSTMLayer::calculate_derivatives(
 
 data_t* LSTMLayer::get_state()
 {
-	if (!hidden_states_per_neuron) return 0;
+	if (!properties.per_neuron_hidden_state_count) return 0;
 
 	data_t* out = 0;
-	cudaMalloc(&out, sizeof(data_t) * neuron_count * hidden_states_per_neuron);
+	cudaMalloc(&out, sizeof(data_t) * neuron_count * properties.per_neuron_hidden_state_count);
 	cudaMemcpy(out, state, sizeof(data_t) * neuron_count * 2, cudaMemcpyDeviceToDevice);
 	cudaMemcpy(out + sizeof(data_t) * neuron_count * 2, prev_state_derivatives, sizeof(data_t) * neuron_count * 3, cudaMemcpyDeviceToDevice);
 	return out;

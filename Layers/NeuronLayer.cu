@@ -11,8 +11,8 @@ NeuronLayer::NeuronLayer(IConnections* connections, size_t neuron_count, Activat
 	this->connections = connections;
 	set_neuron_count(neuron_count);
 	this->activation = activation;
-	execution_values_per_neuron = 1;
-	layer_gradient_count = connections->connection_count + neuron_count;
+	properties.execution_values_per_neuron = 1;
+	properties.layer_gradient_count = connections->connection_count + neuron_count;
 
 	initialize_fields(connections->connection_count, neuron_count, false);
 }
@@ -24,9 +24,9 @@ NeuronLayer::NeuronLayer()
 
 void NeuronLayer::layer_specific_deallocate()
 {
-	cudaFree(neuron_gradients_starts);
-	if (connection_associated_gradient_counts)
-		cudaFree(connection_associated_gradient_counts);
+	cudaFree(properties.per_neuron_gradients_start);
+	if (properties.per_connection_gradient_count)
+		cudaFree(properties.per_connection_gradient_count);
 }
 
 ILayer* NeuronLayer::layer_specific_clone()
@@ -57,12 +57,12 @@ void NeuronLayer::execute(
 )
 {
 	connections->linear_function(activations_start, activations,
-		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron
+		execution_values, execution_values_start, properties.execution_values_start, properties.execution_values_per_neuron
 	);
 	activation_function (
 		activation,
-		activations, activations_start, layer_activations_start, true,
-		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron, 0, 0, 0,
+		activations, activations_start, properties.activations_start, true,
+		execution_values, execution_values_start, properties.execution_values_start, properties.execution_values_per_neuron, 0, 0, 0,
 		neuron_count
 	);
 	cudaDeviceSynchronize();
@@ -77,14 +77,14 @@ void NeuronLayer::calculate_gradients(
 )
 {
 	neuron_gradient_calculation(
-		execution_values, execution_values_start, execution_values_layer_start, execution_values_per_neuron,
-		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
-		costs, costs_start, layer_activations_start,
+		execution_values, execution_values_start, properties.execution_values_start, properties.execution_values_per_neuron,
+		gradients, gradients_start, properties.gradients_start, properties.per_neuron_gradients_start,
+		costs, costs_start, properties.activations_start,
 		activation,
 		neuron_count
 	);
 	connections->calculate_gradients(
-		activations, activations_start, gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
+		activations, activations_start, gradients, gradients_start, properties.gradients_start, properties.per_neuron_gradients_start,
 		costs, costs_start
 	);
 	cudaDeviceSynchronize();
@@ -93,7 +93,7 @@ void NeuronLayer::calculate_gradients(
 void NeuronLayer::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters)
 {
 	connections->subtract_gradients(
-		gradients, gradients_start, layer_gradients_start, neuron_gradients_starts,
+		gradients, gradients_start, properties.gradients_start, properties.per_neuron_gradients_start,
 		hyperparameters, optimizer
 	);
 }
