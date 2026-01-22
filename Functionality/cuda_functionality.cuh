@@ -184,6 +184,59 @@ T nPRAM_reduce_add(T *in, size_t in_len, T *out_write = 0)
 	return result;
 }
 
+// Shared memory needs to be the same as blockDim.x * blockDim.y
+// Uses get_tid()
+template<typename T>
+__global__ void nglobal_multi_PRAM_reduce_add(T *g_data, size_t arr_len)
+{
+	extern __shared__ T sdata[];
+
+	size_t tid = threadIdx.x;
+	size_t gid = get_tid();
+
+	size_t t = blockIdx.y;
+
+	size_t expected_threads = blockDim.x >> 1;
+
+	sdata[tid] = 0;
+	if (gid < in_len)
+		sdata[tid] = g_data[gid + arr_len * t];
+	while (expected_threads)
+	{
+		if (tid >= expected_threads) return;
+
+		__syncthreads();
+		sdata[tid * 2] += sdata[tid * 2 + 1];
+		expected_threads >>= 1;
+	}
+	if (!tid) g_data[blockIdx.x + arr_len * T] = sdata[0];
+}
+
+template<typename T>
+T *nmulti_PRAM_reduce_add(T* in, size_t arr_len, size_t t_count, output_pointer_type out_type)
+{
+	size_t in_len = arr_len * t_count;
+	T *tmp = 0;
+	cudaMalloc(&tmp, sizeof(T) * in_len);
+	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
+
+	size_t block_size = 32;
+	while (arr_len)
+	{
+		nglobal_PRAM_reduce_add 
+			kernel_shared(dim3(arr_len / block_size + (arr_len % block_size > 0), t_count), block_size, sizeof(T) * block_size) (
+				tmp, arr_len
+			);
+		cudaDeviceSynchronize();
+		arr_len /= block_size;
+	}
+
+	T *result = 0;
+	cudaMalloc(&result, sizeof(T) * t_count);
+	cudaMemcpy(result, tmp, sizeof(T) * t_count, cudaMemcpyDeviceToDevice);
+	cudaFree(tmp);
+	return result;
+}
 
 // write_arr requires an avalible length of n_inputs / 2 + n_inputs % 2
 template<typename T>
