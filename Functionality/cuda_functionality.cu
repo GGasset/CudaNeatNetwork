@@ -60,6 +60,46 @@ __device__ size_t get_tid()
 	return blockIdx.x * blockDim.x + threadIdx.x;
 }
 
+__global__ void block_extract(
+	size_t n_blocks, size_t block_value_count, size_t groups_per_sub_block, size_t extracted_groups_value_count,
+	size_t block_count_gap_between_usable_blocks, size_t extracted_sub_block_value_start, size_t group_read_index,
+	data_t *in_arr, data_t *out_arr
+)
+{
+	size_t tid = get_tid();
+
+	size_t out_len = n_blocks * groups_per_sub_block;
+	if (tid >= out_len) return;
+
+	size_t block_i = tid / groups_per_sub_block;
+	size_t group_i = tid % groups_per_sub_block;
+
+	size_t block_start = block_value_count * block_i + block_value_count * block_count_gap_between_usable_blocks * block_i;
+	size_t read_i = block_start + extracted_sub_block_value_start + extracted_groups_value_count * group_i + group_read_index;
+
+	out_arr[tid] = in_arr[read_i];
+}
+
+__global__ void block_insert(
+	size_t n_blocks, size_t block_value_count, size_t groups_per_sub_block, size_t extracted_groups_value_count,
+	size_t block_count_gap_between_usable_blocks, size_t extracted_sub_block_value_start, size_t group_read_index,
+	data_t *in_arr, data_t *out_arr
+)
+{
+	size_t tid = get_tid();
+
+	size_t out_len = n_blocks * groups_per_sub_block;
+	if (tid >= out_len) return;
+
+	size_t block_i = tid / groups_per_sub_block;
+	size_t group_i = tid % groups_per_sub_block;
+
+	size_t block_start = block_value_count * block_i + block_value_count * block_count_gap_between_usable_blocks * block_i;
+	size_t write_i = block_start + extracted_sub_block_value_start + extracted_groups_value_count * group_i + group_read_index;
+
+	out_arr[write_i] = in_arr[tid];
+}
+
 __global__ void extract_execution_values(data_t *execution_values, data_t *write_arr, size_t neuron_count, size_t execution_values_per_neuron, size_t neuron_read_i)
 {
 	size_t tid = get_tid();
