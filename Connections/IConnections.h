@@ -50,6 +50,14 @@ public:
 		size_t gaps_between_usable_arrays_t_count = 0
 	) = 0;
 
+	virtual void pget_derivative() = 0;
+	virtual void pbackpropagate(
+		size_t t_count, nn_lens lengths, layer_properties props,
+		data_t *activations, data_t *grads, data_t *costs,
+		size_t gaps_between_usable_arrays_t_count = 0
+	) = 0;
+	virtual void papply_grads() = 0;
+
 	virtual void linear_function(
 		size_t activations_start, data_t* activations,
 		data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
