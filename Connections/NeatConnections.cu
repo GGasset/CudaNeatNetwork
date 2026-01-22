@@ -17,6 +17,8 @@ NeatConnections::NeatConnections(
 
 	initialize_parameters(&biases, connection_count, weights_init);
 	initialize_parameters(&weights, connection_count, bias_init);
+
+	max_connections_at_layer = previous_layer_length;
 	
 	size_t* host_connection_points = new size_t[connection_count];
 	size_t* host_connection_neuron_i = new size_t[connection_count];
@@ -40,6 +42,38 @@ NeatConnections::NeatConnections(
 NeatConnections::NeatConnections()
 {
 	connection_type = ConnectionTypes::NEAT;
+}
+
+void NeatConnections::plinear_function(
+	size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths, 
+	size_t gaps_between_usable_arrays_t_count
+)
+{
+	size_t n_linear_funcs = neuron_count * t_count;
+	size_t extracted_activation_count = max_connections_at_layer * n_linear_funcs;
+
+	data_t *extracted_activations = 0;
+	cudaMalloc(&extracted_activations, sizeof(data_t) * extracted_activation_count);
+	get_pondered_activations_neat n_threads(extracted_activation_count) (
+		t_count, activations, lengths.neurons, neuron_count, connection_count,
+		extracted_activations, connection_points, connection_neuron_i, weights, max_connections_at_layer,
+		gaps_between_usable_arrays_t_count
+	);
+	cudaDeviceSynchronize();
+
+	data_t *linear_funcs = multi_PRAM_add(extracted_activations, max_connections_at_layer, n_linear_funcs);
+	cudaFree(extracted_activations);
+
+	repetitive_sum n_threads(n_linear_funcs) (linear_funcs, n_linear_funcs, biases, neuron_count, linear_funcs);
+	cudaDeviceSynchronize();
+
+	insert_execution_values n_threads(n_linear_funcs) (
+		t_count, lengths.execution_values, neuron_count, 
+		properties.execution_values_start, properties.execution_values_per_neuron,
+		0, gaps_between_usable_arrays_t_count, 
+		linear_funcs, execution_vals
+	);
+	cudaDeviceSynchronize();
 }
 
 void NeatConnections::linear_function(
@@ -114,6 +148,17 @@ size_t NeatConnections::get_connection_count_at(size_t neuron_i)
 	return count_value(neuron_i, connection_neuron_i, connection_count);
 }
 
+void NeatConnections::set_max_connections_at_layer()
+{
+	size_t max = 0;
+	for (size_t i = 0; i < neuron_count; i++)
+	{
+		size_t connection_count_at_i = get_connection_count_at(i);
+		max += (connection_count_at_i - (long)max) * (connection_count_at_i > max);
+	}
+	max_connections_at_layer = max;
+}
+
 void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_layer_activations_start, float previous_layer_connection_probability, size_t min_connections)
 {
 	std::set<size_t> added_connection_point_layer_neuron_i = std::set<size_t>();
@@ -153,9 +198,12 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 		}
 	}
 
-	connection_points = cuda_realloc(connection_points, connection_count, new_connection_count, true);
-	cudaMemcpy(connection_points + connection_count, to_add_connection_points.data(), sizeof(size_t) * added_connection_count, cudaMemcpyHostToDevice);
+	connection_points = cuda_append_array(
+		connection_points, connection_count, to_add_connection_points.data(), added_connection_count,
+		true, true
+	);
 
+	// Insert the same indice multiple times at the end of connection_neuron_i
 	connection_neuron_i = cuda_realloc(connection_neuron_i, connection_count, new_connection_count, true);
 	add_to_array kernel(added_connection_count / 32 + (added_connection_count % 32 > 0), 32) (
 		connection_neuron_i + connection_count, added_connection_count, neuron_count
@@ -166,6 +214,8 @@ void NeatConnections::add_neuron(size_t previous_layer_length, size_t previous_l
 	biases = cuda_push_back(biases, neuron_count, (field_t)0, true);
 
 	connection_count = new_connection_count;
+
+	set_max_connections_at_layer();
 }
 
 void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connection_probability, std::vector<size_t>* added_connections_neuron_i)
@@ -188,16 +238,21 @@ void NeatConnections::adjust_to_added_neuron(size_t added_neuron_i, float connec
 
 	size_t new_connection_count = connection_count + added_connection_count;
 
-	connection_points = cuda_realloc(connection_points, connection_count, new_connection_count, true);
-	cudaMemcpy(connection_points + connection_count, added_neuron_i__added_connection_count_times.data(), sizeof(size_t) * added_connection_count, cudaMemcpyHostToDevice);
+	connection_points = cuda_append_array(
+		connection_points, connection_count,
+		added_neuron_i__added_connection_count_times.data(), added_connection_count, true, true
+	);
 
-	connection_neuron_i = cuda_realloc(connection_neuron_i, connection_count, new_connection_count, true);
-	cudaMemcpy(connection_neuron_i + connection_count, added_connections_neuron_i->data(), sizeof(size_t) * added_connection_count, cudaMemcpyHostToDevice);
+	connection_neuron_i = cuda_append_array(
+		connection_neuron_i, connection_count, added_connections_neuron_i->data(), added_connection_count, true, true
+	);
 
 	weights = cuda_realloc(weights, connection_count, new_connection_count, true);
 	generate_random_values(weights, added_connection_count, connection_count, new_connection_count, true);
 
 	connection_count = new_connection_count;
+
+	set_max_connections_at_layer();
 }
 
 void NeatConnections::remove_neuron(size_t neuron_i, std::vector<size_t> *removed_connections_i)
@@ -220,7 +275,7 @@ void NeatConnections::remove_neuron(size_t neuron_i, std::vector<size_t> *remove
 	biases = cuda_remove_elements(biases, neuron_count, neuron_i, 1, true);
 
 	connection_count -= to_delete_connection_count;
-	cudaDeviceSynchronize();
+	set_max_connections_at_layer();
 }
 
 void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size_t>* removed_connections_neuron_i, std::vector<size_t>* removed_connections_i)
@@ -248,17 +303,15 @@ void NeatConnections::adjust_to_removed_neuron(size_t neuron_i, std::vector<size
 	connection_points = cuda_remove_occurrences(connection_points, neuron_i, connection_points, connection_count, true);
 
 	connection_count -= to_delete_connection_count;
+	set_max_connections_at_layer();
 }
 
 IConnections* NeatConnections::connections_specific_clone()
 {
 	NeatConnections* connections = new NeatConnections();
-	cudaMalloc(&connections->connection_points, sizeof(size_t) * connection_count);
-	cudaMalloc(&connections->connection_neuron_i, sizeof(size_t) * connection_count);
-	cudaDeviceSynchronize();
-	cudaMemcpy(connections->connection_points, connection_points, sizeof(size_t) * connection_count, cudaMemcpyDeviceToDevice);
-	cudaMemcpy(connections->connection_neuron_i, connection_neuron_i, sizeof(size_t) * neuron_count, cudaMemcpyDeviceToDevice);
-	cudaDeviceSynchronize();
+	connections->connection_points = cuda_clone_arr(connection_points, connection_count);
+	connections->connection_neuron_i = cuda_clone_arr(connection_neuron_i, connection_count);
+	connections->max_connections_at_layer = max_connections_at_layer;
 	return connections;
 }
 
@@ -276,6 +329,7 @@ void NeatConnections::load(FILE* file)
 	connection_neuron_i = load_array<size_t>(connection_count, file, true);
 
 	load_IConnections_data(file);
+	set_max_connections_at_layer();
 }
 
 void NeatConnections::specific_deallocate()
