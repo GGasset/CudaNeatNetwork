@@ -42,6 +42,15 @@ __global__ void extract_activations_dense(
 	size_t gaps_between_usable_arrays_t_count
 );
 
+// doesn't just extract activations as the NEAT irregularities would make processing more costly, as my multi PRAM needs normalized size arrays
+// out arr must be of length max_connection_count_at_layer * t_count, use n_thread(max_conns * layer_neuron_count * t_count)
+// if a neuron doesn't contain max_connection_count connections, the empty spaces are set to 0, so PRAM add is not affected by them
+__global__ void get_pondered_activations_neat(
+	size_t t_count, data_t *activations, size_t neuron_count, size_t layer_neuron_count, size_t connection_count,
+	data_t *out_arr, size_t *connection_points, size_t *connection_neuron_i, data_t *weights, size_t max_connection_count_at_layer,
+	size_t gaps_between_usable_arrays_t_count
+);
+
 __global__ void insert_execution_values(
 	size_t t_count, size_t nn_execution_value_count, size_t to_insert_layer_neuron_count,
 	size_t layer_execution_values_start, size_t execution_values_per_neuron, size_t neuron_execution_values_i, 
