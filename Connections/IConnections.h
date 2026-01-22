@@ -8,16 +8,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "vector"
+
 #include "data_type.h"
 #include "kernel_macros.h"
+#include "nn_lens.h"
 #include "NN_enums.h"
+#include "evolution.h"
+
+#include "cuda_functionality.cuh"
+#include "functionality.h"
+#include "connections_functionality.cuh"
+
 #include "linear_functions.cuh"
 #include "connection_gradients.cuh"
 #include "Optimizers.h"
-#include "vector"
-#include "evolution.h"
-#include "cuda_functionality.cuh"
-#include "functionality.h"
 
 class IConnections
 {
@@ -35,6 +40,15 @@ public:
 	size_t neuron_count = 0;
 	size_t connection_count = 0;
 	unsigned char contains_irregular_connections = false;
+
+	// ## Parallel linear function, handles multiple executions
+	// Gaps are used when multiple, independent executions histories are being stored in a single array
+	// In this case, activations and execution_vals
+	// The gap being the number of executions stored between the latest execution of each history 
+	virtual void plinear_function(
+		size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
+		size_t gaps_between_usable_arrays_t_count = 0
+	) = 0;
 
 	virtual void linear_function(
 		size_t activations_start, data_t* activations,

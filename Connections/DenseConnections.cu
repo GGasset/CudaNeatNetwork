@@ -25,6 +25,44 @@ DenseConnections::DenseConnections()
 	connection_type = ConnectionTypes::Dense;
 }
 
+void DenseConnections::plinear_function(
+	size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
+	size_t gaps_between_usable_arrays_t_count
+)
+{
+	size_t total_inputs = t_count * connection_count;
+	data_t *extracted_activations = 0;
+	cudaMalloc(&extracted_activations, sizeof(data_t) * total_inputs);
+	extract_activations_dense n_threads(total_inputs) (
+		t_count, activations, lengths.neurons, neuron_count,
+		extracted_activations,
+		previous_layer_activations_start, previous_layer_length, gaps_between_usable_arrays_t_count
+	);
+	cudaDeviceSynchronize();
+
+	repetitive_element_wise_multiply n_threads(total_inputs) (
+		extracted_activations, total_inputs, weights, connection_count,
+		extracted_activations
+	);
+	cudaDeviceSynchronize();
+
+	size_t n_linear_funcs = t_count * neuron_count;
+	data_t *pondered_sum = multi_PRAM_add(extracted_activations, previous_layer_length, n_linear_funcs);
+	repetitive_sum n_threads(total_inputs) (
+		pondered_sum, n_linear_funcs, biases, neuron_count, pondered_sum
+	);
+	cudaDeviceSynchronize();
+
+	// Insert linear functions
+	insert_execution_values n_threads(n_linear_funcs) (
+		t_count, lengths.execution_values, neuron_count, 
+		properties.execution_values_start, properties.execution_values_per_neuron, 0,
+		gaps_between_usable_arrays_t_count,
+		pondered_sum, execution_vals
+	);
+	cudaDeviceSynchronize();
+}
+
 void DenseConnections::linear_function(size_t activations_start, data_t* activations,
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
 )

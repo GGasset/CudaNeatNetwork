@@ -16,9 +16,14 @@ public:
 	);
 	DenseConnections();
 
+	void plinear_function(
+		size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
+		size_t gaps_between_usable_arrays_t_count = 0
+	) override;
+
 	void linear_function(size_t activations_start, data_t* activations,
 		data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
-	);
+	) override;
 
 	void calculate_derivative(
 		size_t activations_start, data_t* activations,
@@ -35,7 +40,7 @@ public:
 		data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,
 		gradient_hyperparameters hyperparameters, Optimizers optimizer
 	) override;
-	
+
 	IConnections* connections_specific_clone() override;
 
 	void specific_save(FILE* file) override;
@@ -43,4 +48,3 @@ public:
 
 	size_t get_connection_count_at(size_t neuron_i) override;
 };
-
