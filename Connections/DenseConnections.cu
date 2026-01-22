@@ -52,6 +52,7 @@ void DenseConnections::plinear_function(
 		pondered_sum, n_linear_funcs, biases, neuron_count, pondered_sum
 	);
 	cudaDeviceSynchronize();
+	cudaFree(extracted_activations);
 
 	// Insert linear functions
 	insert_execution_values n_threads(n_linear_funcs) (
@@ -61,6 +62,44 @@ void DenseConnections::plinear_function(
 		pondered_sum, execution_vals
 	);
 	cudaDeviceSynchronize();
+	cudaFree(pondered_sum);
+}
+
+void DenseConnections::pbackpropagate(
+	size_t t_count, nn_lens lengths, layer_properties props,
+	data_t *activations, data_t *grads, data_t *costs, 
+	size_t gaps_between_usable_arrays_t_count
+)
+{
+	size_t total_connections = connection_count * t_count;
+	size_t n_linear_funcs = neuron_count * t_count;
+
+	data_t *previous_layer_activations = 0;
+	cudaMalloc(&previous_layer_activations, sizeof(data_t) * total_connections);
+
+	data_t *bias_gradients = 0;
+	cudaMalloc(&bias_gradients, sizeof(data_t) * n_linear_funcs);
+
+	block_extract n_threads(total_connections) (
+		t_count, lengths.neurons, neuron_count, 1, gaps_between_usable_arrays_t_count,
+		props.activations_start, 0,
+		activations, previous_layer_activations
+	);
+
+	block_extract n_threads(n_linear_funcs) (
+		t_count, lengths.gradients, neuron_count, props.gradients_per_neuron,
+		gaps_between_usable_arrays_t_count, props.gradients_start, 0,
+		grads, bias_gradients
+	);
+	cudaDeviceSynchronize();
+
+	// Expand bias gradients (repeat each one its connection_count times)
+
+	// Clone bias grads (one for activation costs, one for weight costs)
+
+	// Multiply bias grads with activations using element wise
+
+	// Multiply bias grads copy with weights using repetitive element wise
 }
 
 void DenseConnections::linear_function(size_t activations_start, data_t* activations,
