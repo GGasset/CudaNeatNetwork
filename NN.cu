@@ -46,7 +46,7 @@ NN::NN(
 
 	this->layers = layers;
 	this->input_length = input_length;
-	this->layer_count = layer_count;
+	this->counts.layer_count = layer_count;
 	set_fields();
 }
 
@@ -61,14 +61,14 @@ NN::~NN()
 
 void NN::set_fields()
 {
-	output_length = layers[layer_count - 1]->get_neuron_count();
+	output_length = layers[counts.layer_count - 1]->get_neuron_count();
 
 	size_t neuron_count = input_length;
 	size_t execution_value_count = 0;
 	size_t derivative_count = 0;
 	size_t gradient_count = 0;
 	contains_recurrent_layers = false;
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		ILayer* layer = layers[i];
 		
@@ -92,14 +92,14 @@ void NN::set_fields()
 	counts.derivative = derivative_count;
 	counts.gradients = gradient_count;
 
-	output_activations_start = &(layers[layer_count - 1]->properties.activations_start);
+	output_activations_start = &(layers[counts.layer_count - 1]->properties.activations_start);
 }
 
 void NN::execute(data_t* input, data_t* execution_values, data_t* activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type)
 {
 	cudaMemcpy(activations + t * counts.neurons, input + input_length * t, sizeof(data_t) * input_length, cudaMemcpyHostToDevice);
 	cudaDeviceSynchronize();
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		layers[i]->execute(activations, counts.neurons * t, execution_values, counts.execution_values * t);
 		cudaDeviceSynchronize();
@@ -452,7 +452,7 @@ void NN::calculate_derivatives(
 )
 {
 	// Todo: make layer gradient calculation async
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		layers[i]->calculate_derivatives(
 			activations, activations_start,
@@ -472,7 +472,7 @@ void NN::calculate_gradients(
 	float dropout_rate
 )
 {
-	for (int i = layer_count - 1; i >= 0; i--)
+	for (int i = counts.layer_count - 1; i >= 0; i--)
 	{
 		size_t layer_len = layers[i]->get_neuron_count();
 
@@ -484,7 +484,7 @@ void NN::calculate_gradients(
 		cudaMalloc(&dropout, sizeof(short) * layer_len);
 		cudaMemset(dropout, 0, sizeof(short) * layer_len);
 
-		if (i == layer_count - 1)
+		if (i == counts.layer_count - 1)
 			add_to_array kernel(layer_len / 32 + (layer_len % 32 > 0), 32) (dropout, layer_len, 1);
 		else
 			cud_set_dropout kernel(layer_len / 32 + (layer_len % 32 > 0), 32) (
@@ -519,7 +519,7 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 	
 	global_gradient_clip(gradients + gradients_start, counts.gradients, hyperparamters);
 	
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		ILayer* current_layer = layers[i];
 		size_t layer_length = current_layer->get_neuron_count();
@@ -635,7 +635,7 @@ data_t* NN::get_hidden_state(size_t *arr_value_count)
 {
 	size_t current_array_len = 0;
 	data_t* out = 0;
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		size_t layer_state_count = layers[i]->get_neuron_count() * layers[i]->properties.per_neuron_hidden_state_count;
 		size_t new_array_len = current_array_len + layer_state_count;
@@ -663,7 +663,7 @@ void NN::set_hidden_state(data_t* state, int free_input_state)
 {
 	if (!state) return;
 	size_t state_i = 0;
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		ILayer* layer = layers[i];
 
@@ -680,7 +680,7 @@ void NN::evolve()
 	srand((unsigned int)get_arbitrary_number());
 #endif
 
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		layers[i]->mutate_fields(evolution_values);
 		layers[i]->connections->mutate_fields(evolution_values);
@@ -690,15 +690,15 @@ void NN::evolve()
 		printf("Adding layer\n");
 		add_layer();
 	}
-	if (evolution_values.neuron_deletion_probability > get_random_float() && layer_count > 1)
+	if (evolution_values.neuron_deletion_probability > get_random_float() && counts.layer_count > 1)
 	{
-		size_t layer_i = rand() % (layer_count - 1);
+		size_t layer_i = rand() % (counts.layer_count - 1);
 		printf("removing neuron at %i\n", (int)layer_i);
 		remove_neuron(layer_i);
 	}
-	if (evolution_values.neuron_addition_probability > get_random_float() && layer_count > 1)
+	if (evolution_values.neuron_addition_probability > get_random_float() && counts.layer_count > 1)
 	{
-		size_t layer_i = rand() % (layer_count - 1);
+		size_t layer_i = rand() % (counts.layer_count - 1);
 		printf("adding_neuron at %i\n", (int)layer_i);
 		add_neuron(layer_i);
 	}
@@ -716,7 +716,7 @@ void NN::evolve()
 
 void NN::add_layer()
 {
-	size_t insert_i = layer_count > 1 ? rand() % (layer_count - 1) : 0;
+	size_t insert_i = counts.layer_count > 1 ? rand() % (counts.layer_count - 1) : 0;
 	add_layer(insert_i);
 }
 
@@ -776,14 +776,14 @@ void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 void NN::add_layer(size_t insert_i, ILayer* layer)
 {
 	ILayer** tmp_layers = layers;
-	layer_count++;
+	counts.layer_count++;
 
 	// insert layer
-	layers = new ILayer * [layer_count];
+	layers = new ILayer * [counts.layer_count];
 	for (size_t i = 0; i < insert_i; i++)
 		layers[i] = tmp_layers[i];
 	layers[insert_i] = layer;
-	for (size_t i = insert_i + 1; i < layer_count; i++)
+	for (size_t i = insert_i + 1; i < counts.layer_count; i++)
 		layers[i] = tmp_layers[i - 1];
 
 	// Update info
@@ -799,12 +799,12 @@ void NN::add_layer(size_t insert_i, ILayer* layer)
 
 void NN::add_output_neuron()
 {
-	add_neuron(layer_count - 1);
+	add_neuron(counts.layer_count - 1);
 }
 
 void NN::add_input_neuron()
 {
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		adjust_to_added_neuron(-1, input_length);
 	}
@@ -835,7 +835,7 @@ void NN::add_neuron(size_t layer_i)
 void NN::adjust_to_added_neuron(int layer_i, size_t neuron_i)
 {
 	size_t layer_distance_from_added_neuron = 1;
-	for (int i = layer_i + 1; i < layer_count; i++, layer_distance_from_added_neuron++)
+	for (int i = layer_i + 1; i < counts.layer_count; i++, layer_distance_from_added_neuron++)
 	{
 		float connection_probability = 1.0 / layer_distance_from_added_neuron;
 		connection_probability += (1 - connection_probability) * evolution_values.layer_distance_from_added_neuron_connection_addition_modifier;
@@ -859,7 +859,7 @@ void NN::remove_neuron(size_t layer_i, size_t layer_neuron_i)
 {
 	size_t removed_neuron_i = layers[layer_i]->properties.activations_start + layer_neuron_i;
 	layers[layer_i]->remove_neuron(layer_neuron_i);
-	for (size_t i = layer_i + 1; i < layer_count; i++)
+	for (size_t i = layer_i + 1; i < counts.layer_count; i++)
 	{
 		size_t old_param_count = layers[i]->get_weight_count();
 		layers[i]->adjust_to_removed_neuron(removed_neuron_i);
@@ -871,20 +871,20 @@ void NN::remove_neuron(size_t layer_i, size_t layer_neuron_i)
 
 void NN::delete_memory()
 {
-	for (size_t i = 0; i < layer_count && contains_recurrent_layers; i++)
+	for (size_t i = 0; i < counts.layer_count && contains_recurrent_layers; i++)
 		layers[i]->delete_memory();
 }
 
 NN* NN::clone()
 {
 	NN* clone = new NN();
-	clone->layer_count = layer_count;
+	clone->counts.layer_count = counts.layer_count;
 	clone->counts.neurons = counts.neurons;
 	clone->input_length = input_length;
 	clone->output_length = output_length;
 	
-	clone->layers = new ILayer*[layer_count];
-	for (size_t i = 0; i < layer_count; i++)
+	clone->layers = new ILayer*[counts.layer_count];
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		clone->layers[i] = layers[i]->layer_specific_clone();
 		layers[i]->ILayerClone(clone->layers[i]);
@@ -909,21 +909,21 @@ void NN::save(const char *pathname)
 
 void NN::save(FILE* file)
 {
-	fwrite(&layer_count, sizeof(size_t), 1, file);
+	fwrite(&counts.layer_count, sizeof(size_t), 1, file);
 	fwrite(&input_length, sizeof(size_t), 1, file);
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		size_t layer_type = (size_t)layers[i]->layer_type;
 		fwrite(&layer_type, sizeof(size_t), 1, file);
 	}
 
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		size_t connection_type = (size_t)layers[i]->connections->connection_type;
 		fwrite(&connection_type, sizeof(size_t), 1, file);
 	}
 
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		layers[i]->connections->save(file);
 		layers[i]->save(file);
@@ -946,10 +946,10 @@ NN* NN::load(FILE* file)
 {
 	NN* output = new NN();
 
-	fread(&(output->layer_count), sizeof(size_t), 1, file);
+	fread(&(output->counts.layer_count), sizeof(size_t), 1, file);
 	fread(&(output->input_length), sizeof(size_t), 1, file);
 
-	size_t layer_count = output->layer_count;
+	size_t layer_count = output->counts.layer_count;
 
 	NeuronTypes *neuron_types = new NeuronTypes[layer_count];
 	ConnectionTypes *connection_types = new ConnectionTypes[layer_count];
@@ -1002,7 +1002,7 @@ NN* NN::load(FILE* file)
 
 void NN::deallocate()
 {
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 	{
 		layers[i]->deallocate();
 		delete layers[i];
@@ -1013,7 +1013,7 @@ void NN::deallocate()
 void NN::print_shape()
 {
 	printf("%i ", (int)input_length);
-	for (size_t i = 0; i < layer_count; i++)
+	for (size_t i = 0; i < counts.layer_count; i++)
 		printf("%i ", (int)layers[i]->get_neuron_count());
 	printf("\n");
 }

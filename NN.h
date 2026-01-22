@@ -25,7 +25,6 @@ class NN
 {
 private:
 	ILayer **layers = 0;
-	size_t layer_count = 0;
 	size_t input_length = 0;
 	size_t output_length = 0;
 	size_t* output_activations_start = 0;

@@ -12,6 +12,8 @@ struct nn_lens
 	size_t gradients;
 	// Per time_step
 	size_t derivative;
+
+	size_t layer_count;
 };
 
 struct layer_properties
