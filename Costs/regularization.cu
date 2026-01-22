@@ -48,7 +48,7 @@ __host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gra
 	element_wise_multiply n_threads(gradient_count) (gradients_copy, gradients_copy, gradient_count);
 	cudaDeviceSynchronize();
 	
-	data_t l2 = cuda_sum<data_t, data_t>(gradients_copy, gradient_count);
+	data_t l2 = PRAM_reduce_add(gradients_copy, gradient_count);
 	cudaFree(gradients_copy);
 	if (l2 <= hyperparameters.global_gradient_clip) return;
 

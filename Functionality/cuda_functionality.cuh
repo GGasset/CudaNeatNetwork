@@ -248,30 +248,6 @@ __global__ void atomic_sum(T *input, size_t in_len, t *out_pntr)
 	atomicAdd(out_pntr, input[tid]);
 }
 
-template<typename T, typename tmp_var_T>
-__host__ T cuda_sum(T *input, size_t in_len)
-{
-	if (in_len > PRAM_THRESHOLD)
-		return PRAM_reduce_add(input, in_len);
-	tmp_var_T *device_write = 0;
-	cudaMalloc(&device_write, sizeof(tmp_var_T));
-	if (!device_write) throw;
-	cudaMemset(device_write, 0, sizeof(tmp_var_T));
-	atomic_sum n_threads(in_len) (input, in_len, device_write);
-	cudaDeviceSynchronize();
-
-	T *casted_var = 0;
-	cudaMalloc(&casted_var, sizeof(T));
-	logical_copy n_threads(1) (casted_var, 1, device_write, 1);
-	cudaDeviceSynchronize();
-	cudaFree(device_write);
-
-	T out = 0;
-	cudaMemcpy(&out, casted_var, sizeof(T), cudaMemcpyDeviceToHost);
-	cudaFree(casted_var);
-	return out;
-}
-
 template<typename T>
 __host__ T *cuda_clone_arr(T *arr, size_t arr_len)
 {
@@ -320,7 +296,7 @@ __host__ size_t count_value(T value, T* array, size_t array_length)
 	cudaDeviceSynchronize();
 	booleanize n_threads(array_length) (tmp, array_length);
 	cudaDeviceSynchronize();
-	size_t out = (size_t)cuda_sum<T, unsigned long long>(tmp, array_length);
+	size_t out = (size_t)PRAM_reduce_add(tmp, array_length);
 	cudaFree(tmp);
 	return out;
 }

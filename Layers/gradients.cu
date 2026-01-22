@@ -198,7 +198,7 @@ __host__ void neuron_gradient_calculation(
 		);
 		exp_arr n_threads(layer_length) (linear_funcs, layer_length);
 		cudaDeviceSynchronize();
-		data_t exponent_sum = cuda_sum<data_t, data_t>(linear_funcs, layer_length);
+		data_t exponent_sum = PRAM_reduce_add(linear_funcs, layer_length);
 		cudaFree(linear_funcs);
 
 		global_neuron_gradient_calculation n_threads(layer_length) (
