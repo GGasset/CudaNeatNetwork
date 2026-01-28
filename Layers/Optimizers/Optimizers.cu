@@ -203,7 +203,7 @@ __device__ data_t Optimizers::apply_adam(data_t gradient, Optimizer_values value
    	size_t values_starting_i = values.value_count_per_parameter * parameter_i;
 
 	data_t *optimizer_values = values.values;
-		data_t m = optimizer_values[values_starting_i + 3] =
+	data_t m = optimizer_values[values_starting_i + 3] =
 		optimizer_values[values_starting_i] * optimizer_values[values_starting_i + 3] +
 		(1 - optimizer_values[values_starting_i]) * gradient;
 
