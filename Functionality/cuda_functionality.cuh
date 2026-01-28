@@ -65,27 +65,16 @@ __host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t arr_len)
 	*to_sort = sorted;
 }
 
-// total_usable_group_count (only one sub_block per usable block) number of values to out_arr will be written, call with n_threads(total_number_of_usable_groups_calc)
-// values will not be gathered from all sub_block as one is selected in sub_block_i
-// in_arr must be at least made of group_value_count * group_count * total_block_count values
-// Block meaning array of sub_blocks contained withing an array of arrays in a single pointer
-// Sub-blocks contain an array of groups, and groups are an array of values
-// so its unfolded equivalent would be data_t**** as there may multiple blocks in the array
-__global__ void block_extract(
-	size_t n_blocks, size_t block_value_count, size_t groups_per_sub_block, size_t extracted_groups_value_count,
-	size_t block_count_gap_between_usable_blocks, size_t extracted_sub_block_value_start, size_t group_read_index,
+// call with n_threads(usable_count * layer_neuron_count * contiguous_read_value_count) (the multiplication should equal out_arr_len)
+__global__ void network_value_extract(
+	size_t usable_t_count, size_t value_count_per_t, size_t neurons_in_extracted_layer, size_t value_count_per_neuron,
+	size_t t_count_gap_between_usable_ts, size_t extracted_layer_value_start, size_t neuron_value_read_start, size_t contiguous_read_value_count,
 	data_t *in_arr, data_t *out_arr
 );
 
-// total_usable_group_count (only one sub_block per usable block) number of values to in_arr will be written, call with n_threads(total_number_of_usable_groups_calc)
-// values will not be gathered from all sub_block as one is selected in sub_block_i
-// out_arr must be at least made of group_value_count * group_count * total_block_count values
-// Block meaning array of sub_blocks contained withing an array of arrays in a single pointer
-// Sub-blocks contain an array of groups, and groups are an array of values
-// so its unfolded equivalent would be data_t**** as there may multiple blocks in the array
-__global__ void block_insert(
-	size_t n_blocks, size_t block_value_count, size_t groups_per_sub_block, size_t extracted_groups_value_count,
-	size_t block_count_gap_between_usable_blocks, size_t extracted_sub_block_value_start, size_t group_read_index,
+__global__ void network_value_insert(
+	size_t usable_t_count, size_t value_count_per_t, size_t neurons_in_inserted_layer, size_t value_count_per_neuron,
+	size_t t_count_gap_between_usable_ts, size_t inserted_layer_value_start, size_t neuron_value_write_start, size_t contiguous_write_value_count,
 	data_t *in_arr, data_t *out_arr
 );
 
@@ -280,6 +269,21 @@ __host__ T *cuda_clone_arr(T *arr, size_t arr_len)
 	cudaMalloc(&out, sizeof(T) * arr_len);
 	cudaMemcpy(out, arr, sizeof(T) * arr_len, cudaMemcpyDefault);
 	return out;
+}
+
+// Puts each value of arr n_repeats_per_value times into out_arr
+template<typename T>
+__global__ void clone_arr_values_n_times(
+	T *arr, size_t arr_value_count, size_t n_repeats_per_value,
+	T *out_arr, size_t out_arr_len
+)
+{
+	size_t tid = get_tid();
+	size_t in_i = tid / n_repeats_per_value;
+
+	if (tid >= out_arr_len || in_i >= arr_value_count || !n_repeats_per_value) return;
+
+	out_arr[tid] = arr[in_i];
 }
 
 // Tries to copy, when src is copied and dst has free space, starts from the beginning

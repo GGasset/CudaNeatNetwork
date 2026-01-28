@@ -60,42 +60,46 @@ __device__ size_t get_tid()
 	return blockIdx.x * blockDim.x + threadIdx.x;
 }
 
-__global__ void block_extract(
-	size_t n_blocks, size_t block_value_count, size_t groups_per_sub_block, size_t extracted_groups_value_count,
-	size_t block_count_gap_between_usable_blocks, size_t extracted_sub_block_value_start, size_t group_read_index,
+__global__ void network_value_extract(
+	size_t usable_t_count, size_t value_count_per_t, size_t neurons_in_extracted_layer, size_t value_count_per_neuron,
+	size_t t_count_gap_between_usable_ts, size_t extracted_layer_value_start, size_t neuron_value_read_start, size_t contiguous_read_value_count,
 	data_t *in_arr, data_t *out_arr
 )
 {
 	size_t tid = get_tid();
 
-	size_t out_len = n_blocks * groups_per_sub_block;
+	size_t read_value_count_in_layer = neurons_in_extracted_layer * contiguous_read_value_count;
+	size_t out_len = usable_t_count * read_value_count_in_layer;
 	if (tid >= out_len) return;
 
-	size_t block_i = tid / groups_per_sub_block;
-	size_t group_i = tid % groups_per_sub_block;
+	size_t t = tid / read_value_count_in_layer;
+	size_t neuron_i = tid % read_value_count_in_layer;
+	size_t neuron_read_i = tid % contiguous_read_value_count;
 
-	size_t block_start = block_value_count * block_i + block_value_count * block_count_gap_between_usable_blocks * block_i;
-	size_t read_i = block_start + extracted_sub_block_value_start + extracted_groups_value_count * group_i + group_read_index;
+	size_t block_start = value_count_per_t * t + value_count_per_t * t_count_gap_between_usable_ts * t;
+	size_t read_i = block_start + extracted_layer_value_start + value_count_per_neuron * neuron_i + neuron_value_read_start + neuron_read_i;
 
 	out_arr[tid] = in_arr[read_i];
 }
 
-__global__ void block_insert(
-	size_t n_blocks, size_t block_value_count, size_t groups_per_sub_block, size_t extracted_groups_value_count,
-	size_t block_count_gap_between_usable_blocks, size_t extracted_sub_block_value_start, size_t group_read_index,
+__global__ void network_value_insert(
+	size_t usable_t_count, size_t value_count_per_t, size_t neurons_in_inserted_layer, size_t value_count_per_neuron,
+	size_t t_count_gap_between_usable_ts, size_t inserted_layer_value_start, size_t neuron_value_write_start, size_t contiguous_write_value_count,
 	data_t *in_arr, data_t *out_arr
 )
 {
 	size_t tid = get_tid();
 
-	size_t out_len = n_blocks * groups_per_sub_block;
+	size_t read_value_count_in_layer = neurons_in_inserted_layer * contiguous_write_value_count;
+	size_t out_len = usable_t_count * read_value_count_in_layer;
 	if (tid >= out_len) return;
 
-	size_t block_i = tid / groups_per_sub_block;
-	size_t group_i = tid % groups_per_sub_block;
+	size_t t = tid / read_value_count_in_layer;
+	size_t neuron_i = tid % read_value_count_in_layer;
+	size_t neuron_read_i = tid % contiguous_write_value_count;
 
-	size_t block_start = block_value_count * block_i + block_value_count * block_count_gap_between_usable_blocks * block_i;
-	size_t write_i = block_start + extracted_sub_block_value_start + extracted_groups_value_count * group_i + group_read_index;
+	size_t block_start = value_count_per_t * t + value_count_per_t * t_count_gap_between_usable_ts * t;
+	size_t write_i = block_start + inserted_layer_value_start + value_count_per_neuron * neuron_i + neuron_value_write_start + neuron_read_i;
 
 	out_arr[write_i] = in_arr[tid];
 }
