@@ -22,6 +22,37 @@ __global__ void cud_dense_gradient_calculation(
 	atomicAdd(costs + costs_start + previous_layer_activations_start + tid, -input_gradient * weight);
 }
 
+__global__ void NEAT_backpropagate(
+	size_t t_count, data_t *activations, data_t *grads, data_t *costs, 
+	field_t *weights, size_t *connection_points, size_t *connection_neuron_i, 
+	size_t connection_count, nn_lens lengths, layer_properties props, 
+	size_t gaps_between_usable_arrs_t_count
+)
+{
+	size_t tid = get_tid();
+	if (tid >= t_count * connection_count) return;
+
+	size_t t = tid / connection_count;
+	size_t nn_values_start_i = t + t * gaps_between_usable_arrs_t_count;
+
+	size_t activations_start = lengths.neurons * nn_values_start_i;
+	size_t grads_start = lengths.gradients * nn_values_start_i;
+
+	size_t connection_i = tid % connection_count;
+	size_t neuron_i = connection_neuron_i[connection_i];
+	size_t connected_neuron_i = connection_points[connection_i];
+
+	data_t weight = weights[connection_i];
+	data_t connected_activation = activations[activations_start + connected_neuron_i];
+
+	size_t neuron_grads_start = grads_start + props.gradients_start + props.per_neuron_gradients_start[neuron_i];
+	data_t bias_grad = grads[grads_start + neuron_grads_start];
+	
+	// Weight gradient
+	grads[neuron_grads_start + neuron_i + 1 + connection_i] = bias_grad * connected_activation;
+	atomicAdd(costs + activations_start + connected_neuron_i, -bias_grad * weight);
+}
+
 __global__ void cud_NEAT_gradient_calculation(
 	data_t* activations, size_t activations_start,
 	data_t* gradients, size_t gradients_start, size_t layer_gradients_start, size_t* neuron_gradients_starts,

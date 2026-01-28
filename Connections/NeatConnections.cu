@@ -76,6 +76,19 @@ void NeatConnections::plinear_function(
 	cudaDeviceSynchronize();
 }
 
+void NeatConnections::pbackpropagate(
+	size_t t_count, nn_lens lengths, layer_properties props,
+	data_t *activations, data_t *grads, data_t *costs,
+	size_t gaps_between_usable_arrays_t_count
+)
+{
+	NEAT_backpropagate n_threads(t_count * connection_count) (
+		t_count, activations, grads, costs, weights, connection_points, connection_neuron_i, connection_count,
+		lengths, props, gaps_between_usable_arrays_t_count
+	);
+	cudaDeviceSynchronize();
+}
+
 void NeatConnections::linear_function(
 	size_t activations_start, data_t* activations, 
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron

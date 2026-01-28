@@ -2,6 +2,8 @@
 #include "device_launch_parameters.h"
 
 #include "data_type.h"
+#include "nn_lens.h"
+
 #include "cuda_functionality.cuh"
 #include "Optimizers.h"
 
@@ -11,6 +13,13 @@ __global__ void cud_dense_gradient_calculation(
 	data_t* costs, size_t costs_start,
 	size_t previous_layer_activations_start, size_t previous_layer_length,
 	field_t* weights
+);
+
+__global__ void NEAT_backpropagate(
+	size_t t_count, data_t *activations, data_t *grads, data_t *costs,
+	field_t *weights, size_t *connection_points, size_t *connection_neuron_i,
+	size_t connection_count, nn_lens lengths, layer_properties props,
+	size_t gaps_between_usable_arrs_t_count
 );
 
 __global__ void cud_NEAT_gradient_calculation(
