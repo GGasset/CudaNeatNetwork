@@ -22,16 +22,24 @@ struct layer_properties
 
 	size_t activations_start;
 	size_t execution_values_start;
+
+	// Applies to connections and neurons
 	size_t execution_values_per_neuron;
 
 	size_t layer_derivative_count;
+
+	// Only applies to layer gradients
 	size_t derivatives_per_neuron;
 	size_t derivatives_start;
 
 	size_t layer_gradient_count;
+
+	// Gradients associated with the layer, doesn't include the connections
 	size_t gradients_per_neuron;
 	size_t gradients_start;
 
 	size_t *per_neuron_gradients_start;
+
+	// Only initialized with irregular connections (NEAT connections)
 	size_t *per_connection_gradient_count;
 };

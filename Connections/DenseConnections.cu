@@ -87,7 +87,7 @@ void DenseConnections::pbackpropagate(
 	);
 
 	network_value_extract n_threads(n_linear_funcs) (
-		t_count, lengths.gradients, neuron_count, props.gradients_per_neuron,
+		t_count, lengths.gradients, neuron_count, previous_layer_length + 1 + props.gradients_per_neuron,
 		gaps_between_usable_arrays_t_count, props.gradients_start, 0, 1,
 		grads, bias_gradients
 	);
@@ -129,7 +129,7 @@ void DenseConnections::pbackpropagate(
 		activations_gradients, costs
 	);
 	network_value_insert n_threads(total_connections) (
-		t_count, lengths.gradients, neuron_count, props.gradients_per_neuron, gaps_between_usable_arrays_t_count,
+		t_count, lengths.gradients, neuron_count, previous_layer_length + 1 + props.gradients_per_neuron, gaps_between_usable_arrays_t_count,
 		props.gradients_start, 1, previous_layer_length, weight_gradients, grads
 	);
 	cudaDeviceSynchronize();
