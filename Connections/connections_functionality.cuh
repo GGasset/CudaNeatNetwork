@@ -7,7 +7,7 @@
 // Will do element wise multiply, when the smaller array ends, it starts from the beginning, stops when the bigger array ends
 // If lengths aren't in order, no operation is done
 // out must be of len big_len
-// out may equal to big
+// out may equal to big, not small
 template<typename Ta, typename Tb, typename Tc>
 __global__ void repetitive_element_wise_multiply (
 	Ta *big, size_t big_len, Tb *small, size_t small_len, Tc *out
