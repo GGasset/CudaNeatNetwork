@@ -138,6 +138,49 @@ void DenseConnections::pbackpropagate(
 	cudaFree(weight_gradients);
 }
 
+void DenseConnections::pget_derivative(
+	size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count, 
+	layer_properties props, nn_lens lengths
+)
+{
+
+	size_t total_prev_layer_activations = previous_layer_length * t_count;
+	data_t *previous_layer_activations = 0;
+	cudaMalloc(&previous_layer_activations, sizeof(data_t) * total_prev_layer_activations);
+	network_value_extract n_threads(total_prev_layer_activations) (
+		t_count, lengths.derivative, previous_layer_length, 1, gaps_between_usable_arrays_t_count,
+		previous_layer_activations_start, 0, 1,
+		activations, previous_layer_activations
+	);
+	cudaDeviceSynchronize();
+
+	size_t total_connection_count = connection_count * t_count;
+	data_t *connections_activation = 0;
+	cudaMalloc(&connections_activation, sizeof(data_t) * total_connection_count);
+	repetitive_copy n_threads(total_connection_count) (
+		connections_activation, total_connection_count, previous_layer_activations, total_prev_layer_activations
+	);
+	cudaDeviceSynchronize();
+
+	repetitive_element_wise_multiply n_threads(total_connection_count) (
+		connections_activation, total_connection_count, weights, connection_count, connections_activation
+	);
+
+	cudaFree(previous_layer_activations);
+	cudaDeviceSynchronize();
+
+	data_t *out_derivatives = multi_PRAM_add(connections_activation, connection_count, t_count);
+	cudaFree(connections_activation);
+
+	size_t total_layer_length = neuron_count * t_count;
+	network_value_insert n_threads(total_layer_length) (
+		t_count, lengths.derivative, neuron_count, props.derivatives_per_neuron, gaps_between_usable_arrays_t_count,
+		props.derivatives_start, 0, 1,
+		out_derivatives, derivatives
+	);
+	cudaDeviceSynchronize();
+}
+
 void DenseConnections::linear_function(size_t activations_start, data_t* activations,
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
 )

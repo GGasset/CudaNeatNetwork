@@ -27,7 +27,10 @@ public:
 		size_t gaps_between_usable_arrays_t_count
 	) override;
 
-
+	void pget_derivative(
+		size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count,
+		layer_properties props, nn_lens lengths
+	);
 
 	void linear_function(size_t activations_start, data_t* activations,
 		data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
