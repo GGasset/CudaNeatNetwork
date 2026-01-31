@@ -226,6 +226,7 @@ __global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
 }
 
 template<typename T>
+// Arr len refers to the length of each array to do reduce add on
 T *multi_PRAM_add(T* in, size_t arr_len, size_t t_count)
 {
 	size_t in_len = arr_len * t_count;

@@ -31,7 +31,6 @@ struct layer_properties
 
 	size_t layer_derivative_count;
 
-	// Only applies to layer gradients
 	size_t derivatives_per_neuron;
 
 	// Layer derivatives start
