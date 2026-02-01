@@ -89,6 +89,37 @@ void NeatConnections::pbackpropagate(
 	cudaDeviceSynchronize();
 }
 
+void NeatConnections::pget_derivative(
+	size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count,
+	layer_properties props, nn_lens lengths
+)
+{
+	size_t total_connection_count = connection_count * t_count;
+	size_t raw_conn_derivative_count =  max_connections_at_layer * neuron_count * t_count;
+
+	data_t *conn_derivatives = 0;
+	cudaMalloc(&conn_derivatives, sizeof(data_t) * raw_conn_derivative_count);
+	NEAT_unsummed_linear_func_derivative n_threads(raw_conn_derivative_count) (
+		t_count, gaps_between_usable_arrays_t_count, neuron_count,
+		connection_points, connection_neuron_i, max_connections_at_layer, connection_count,
+		lengths, props, weights, activations, conn_derivatives
+	);
+	
+	size_t total_layer_neuron_count = neuron_count * t_count;
+	data_t *calc_derivatives = multi_PRAM_add(conn_derivatives, max_connections_at_layer, total_layer_neuron_count);
+	add_to_array n_threads(total_layer_neuron_count) (
+		calc_derivatives, total_layer_neuron_count, 1
+	);
+	cudaDeviceSynchronize();
+
+	network_value_insert n_threads(total_layer_neuron_count) (
+		t_count, lengths.derivative, neuron_count, props.derivatives_per_neuron, gaps_between_usable_arrays_t_count,
+		props.derivatives_start, 0, 1, 
+		calc_derivatives, derivatives
+	);
+	cudaDeviceSynchronize();
+}
+
 void NeatConnections::linear_function(
 	size_t activations_start, data_t* activations, 
 	data_t* execution_values, size_t execution_values_start, size_t execution_values_layer_start, size_t layer_execution_values_per_neuron
