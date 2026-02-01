@@ -33,7 +33,7 @@ __global__ void NEAT_backpropagate(
 	if (tid >= t_count * connection_count) return;
 
 	size_t t = tid / connection_count;
-	size_t nn_values_start_i = t + t * gaps_between_usable_arrs_t_count;
+	size_t nn_values_start_i = t + (t + 1) * gaps_between_usable_arrs_t_count;
 
 	size_t activations_start = lengths.neurons * nn_values_start_i;
 	size_t grads_start = lengths.gradients * nn_values_start_i;

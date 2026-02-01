@@ -76,7 +76,7 @@ __global__ void network_value_extract(
 	size_t neuron_i = tid % read_value_count_in_layer;
 	size_t neuron_read_i = tid % contiguous_read_value_count;
 
-	size_t block_start = value_count_per_t * t + value_count_per_t * t_count_gap_between_usable_ts * t;
+	size_t block_start = value_count_per_t * t + value_count_per_t * t_count_gap_between_usable_ts * (t + 1);
 	size_t read_i = block_start + extracted_layer_value_start + value_count_per_neuron * neuron_i + neuron_value_read_start + neuron_read_i;
 
 	out_arr[tid] = in_arr[read_i];
@@ -98,7 +98,7 @@ __global__ void network_value_insert(
 	size_t neuron_i = tid % read_value_count_in_layer;
 	size_t neuron_read_i = tid % contiguous_write_value_count;
 
-	size_t block_start = value_count_per_t * t + value_count_per_t * t_count_gap_between_usable_ts * t;
+	size_t block_start = value_count_per_t * t + value_count_per_t * t_count_gap_between_usable_ts * (t + 1);
 	size_t write_i = block_start + inserted_layer_value_start + value_count_per_neuron * neuron_i + neuron_value_write_start + neuron_read_i;
 
 	out_arr[write_i] = in_arr[tid];

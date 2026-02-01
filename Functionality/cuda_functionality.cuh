@@ -66,12 +66,14 @@ __host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t arr_len)
 }
 
 // call with n_threads(usable_count * layer_neuron_count * contiguous_read_value_count) (the multiplication should equal out_arr_len)
+// A gap at the start of t_count_gap_between_usable_ts ts is assumed
 __global__ void network_value_extract(
 	size_t usable_t_count, size_t value_count_per_t, size_t neurons_in_extracted_layer, size_t value_count_per_neuron,
 	size_t t_count_gap_between_usable_ts, size_t extracted_layer_value_start, size_t neuron_value_read_start, size_t contiguous_read_value_count,
 	data_t *in_arr, data_t *out_arr
 );
 
+// A gap at the start of t_count_gap_between_usable_ts ts is assumed
 __global__ void network_value_insert(
 	size_t usable_t_count, size_t value_count_per_t, size_t neurons_in_inserted_layer, size_t value_count_per_neuron,
 	size_t t_count_gap_between_usable_ts, size_t inserted_layer_value_start, size_t neuron_value_write_start, size_t contiguous_write_value_count,
