@@ -104,6 +104,7 @@ void NeatConnections::pget_derivative(
 		connection_points, connection_neuron_i, max_connections_at_layer, connection_count,
 		lengths, props, weights, activations, conn_derivatives
 	);
+	cudaDeviceSynchronize();
 	
 	size_t total_layer_neuron_count = neuron_count * t_count;
 	data_t *calc_derivatives = multi_PRAM_add(conn_derivatives, max_connections_at_layer, total_layer_neuron_count);
