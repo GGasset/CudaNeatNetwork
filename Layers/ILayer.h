@@ -47,12 +47,37 @@ public:
 	void deallocate();
 
 	virtual void layer_specific_deallocate();
+	
+	virtual void execute(
+		size_t t_count, data_t *activations, data_t *execution_values,
+		nn_lens lens, size_t timestep_gap
+	) = 0;
 
+	// ### Params
+	// - States:
+	// 		- The state of each of each independent execution line appended and contigous to the previous one
+	virtual void calculate_gradients(
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
+		data_t *states, nn_lens lens, size_t timestep_gap
+	);
+
+	virtual void calculate_gradients(
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
+		nn_lens lens, size_t timestep_gap
+	) = 0;
+
+	virtual void calculate_derivatives(
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives,
+		nn_lens lens, size_t timestep_gap
+	);
+
+	// Going to get deprecated
 	virtual void execute(
 		data_t *activations, size_t activations_start,
 		data_t *execution_values, size_t execution_values_start
 	) = 0;
 
+	// Going to get deprecated
 	virtual void calculate_gradients(
 		data_t* activations, size_t activations_start,
 		data_t* execution_values, size_t execution_values_start,
@@ -65,6 +90,7 @@ public:
 		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	) = 0;
 
+	// Going to get deprecated
 	virtual void calculate_derivatives(
 		data_t* activations, size_t activations_start,
 		data_t* derivatives, size_t previous_derivatives_start, size_t derivatives_start,
