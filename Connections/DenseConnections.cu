@@ -25,7 +25,7 @@ DenseConnections::DenseConnections()
 	connection_type = ConnectionTypes::Dense;
 }
 
-void DenseConnections::plinear_function(
+void DenseConnections::linear_function(
 	size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
 	size_t gaps_between_usable_arrays_t_count
 )
@@ -65,7 +65,7 @@ void DenseConnections::plinear_function(
 	cudaFree(pondered_sum);
 }
 
-void DenseConnections::pbackpropagate(
+void DenseConnections::backpropagate(
 	size_t t_count, nn_lens lengths, layer_properties props,
 	data_t *activations, data_t *grads, data_t *costs, 
 	size_t gaps_between_usable_arrays_t_count
@@ -138,7 +138,7 @@ void DenseConnections::pbackpropagate(
 	cudaFree(weight_gradients);
 }
 
-void DenseConnections::pget_derivative(
+void DenseConnections::get_derivative(
 	size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count, 
 	layer_properties props, nn_lens lengths
 )

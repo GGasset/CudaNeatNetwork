@@ -44,7 +44,7 @@ NeatConnections::NeatConnections()
 	connection_type = ConnectionTypes::NEAT;
 }
 
-void NeatConnections::plinear_function(
+void NeatConnections::linear_function(
 	size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths, 
 	size_t gaps_between_usable_arrays_t_count
 )
@@ -76,7 +76,7 @@ void NeatConnections::plinear_function(
 	cudaDeviceSynchronize();
 }
 
-void NeatConnections::pbackpropagate(
+void NeatConnections::backpropagate(
 	size_t t_count, nn_lens lengths, layer_properties props,
 	data_t *activations, data_t *grads, data_t *costs,
 	size_t gaps_between_usable_arrays_t_count
@@ -89,7 +89,7 @@ void NeatConnections::pbackpropagate(
 	cudaDeviceSynchronize();
 }
 
-void NeatConnections::pget_derivative(
+void NeatConnections::get_derivative(
 	size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count,
 	layer_properties props, nn_lens lengths
 )

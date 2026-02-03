@@ -45,18 +45,18 @@ public:
 	// Gaps are used when multiple, independent executions histories are being stored in a single array
 	// In this case, activations and execution_vals
 	// The gap being the number of executions stored between the latest execution of each history 
-	virtual void plinear_function(
+	virtual void linear_function(
 		size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
 		size_t gaps_between_usable_arrays_t_count
 	) = 0;
 
-	virtual void pbackpropagate(
+	virtual void backpropagate(
 		size_t t_count, nn_lens lengths, layer_properties props,
 		data_t *activations, data_t *grads, data_t *costs,
 		size_t gaps_between_usable_arrays_t_count
 	) = 0;
 
-	virtual void pget_derivative(
+	virtual void get_derivative(
 		size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count,
 		layer_properties props, nn_lens lengths
 	) = 0;
