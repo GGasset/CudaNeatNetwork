@@ -17,6 +17,13 @@ enum ConnectionTypes : size_t
 	last_connection_entry
 };
 
+enum output_pointer_type : size_t
+{
+	no_output,
+	cuda_pointer_output,
+	host_cpp_pointer_output
+};
+
 enum LearningRateAdjusters : size_t
 {
 	high_learning_high_learning_rate,
@@ -27,16 +34,25 @@ enum LearningRateAdjusters : size_t
 
 enum ActivationFunctions : size_t
 {
-        sigmoid,
-        _tanh,
-        activations_last_entry
+	sigmoid,
+	_tanh,
+	activations_last_entry,
+	softmax,
+	no_activation
 };
 
 enum CostFunctions : size_t
 {
-        MSE,
-        log_likelyhood,
-	PPO
+	MSE,
+	log_likelyhood,
+};
+
+enum optimizers_enum : size_t
+{
+	Adam,
+	ElasticNet,
+	last_optimizer_entry,
+	no_optimizer
 };
 
 enum action_enum : size_t
