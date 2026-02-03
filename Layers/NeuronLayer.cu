@@ -11,7 +11,7 @@ NeuronLayer::NeuronLayer(IConnections* connections, size_t neuron_count, Activat
 	this->connections = connections;
 	set_neuron_count(neuron_count);
 	this->activation = activation;
-	properties.execution_values_per_neuron = 1;
+	properties.execution_values_per_neuron = 1 + (activation == softmax);
 	properties.layer_gradient_count = connections->connection_count + neuron_count;
 
 	initialize_fields(connections->connection_count, neuron_count, false);
@@ -49,6 +49,13 @@ void NeuronLayer::load(FILE* file)
 	size_t activation_function = 0;
 	fread(&activation_function, sizeof(size_t), 1, file);
 	activation = (ActivationFunctions)activation_function;
+}
+
+void NeuronLayer::execute(size_t t_count, data_t *activations, data_t *execution_values, nn_lens lens, size_t timestep_gap)
+{
+	connections->linear_function(t_count, activations, execution_values, properties, lens, timestep_gap);
+
+
 }
 
 void NeuronLayer::execute(

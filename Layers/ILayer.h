@@ -25,7 +25,7 @@ public:
 	IConnections* connections = 0;
 	Optimizers optimizer;
 
-	layer_properties properties{};
+	layer_properties properties{.neuron_count = neuron_count};
 
 	size_t get_neuron_count();
 	void set_neuron_count(size_t neuron_count);

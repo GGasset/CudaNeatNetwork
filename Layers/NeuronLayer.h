@@ -18,6 +18,16 @@ public:
 	void load(FILE* file) override;
 
 	void execute(
+		size_t t_count, data_t *activations, data_t *execution_values,
+		nn_lens lens, size_t timestep_gap
+	);
+
+	void calculate_gradients(
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
+		nn_lens lens, size_t timestep_gap
+	);
+
+	void execute(
 		data_t* activations, size_t activations_start,
 		data_t* execution_values, size_t execution_values_start
 	) override;

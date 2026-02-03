@@ -48,4 +48,6 @@ struct layer_properties
 
 	// Only initialized with irregular connections (NEAT connections)
 	size_t *per_connection_gradient_count;
+
+	const size_t &neuron_count;
 };
