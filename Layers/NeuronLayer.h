@@ -1,6 +1,7 @@
+#pragma once
+
 #include "ILayer.h"
 
-#pragma once
 class NeuronLayer : public ILayer
 {
 protected:

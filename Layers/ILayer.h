@@ -5,6 +5,7 @@
 #include "nn_lens.h"
 
 #include "neuron_operations.cuh"
+#include "layer_operations.cuh"
 #include "derivatives.cuh"
 #include "gradients.cuh"
 
