@@ -26,7 +26,7 @@ public:
 	IConnections* connections = 0;
 	Optimizers optimizer;
 
-	layer_properties properties{.neuron_count = neuron_count};
+	layer_properties properties{};
 
 	size_t get_neuron_count();
 	void set_neuron_count(size_t neuron_count);
@@ -57,12 +57,12 @@ public:
 	// ### Params
 	// - States:
 	// 		- The state of each of each independent execution line appended and contigous to the previous one
-	virtual void calculate_gradients(
+	virtual void backpropagate(
 		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
 		data_t *states, nn_lens lens, size_t timestep_gap
 	);
 
-	virtual void calculate_gradients(
+	virtual void backpropagate(
 		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
 		nn_lens lens, size_t timestep_gap
 	) = 0;

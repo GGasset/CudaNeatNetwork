@@ -9,6 +9,7 @@ void ILayer::set_neuron_count(size_t neuron_count)
 {
 	this->neuron_count = neuron_count;
 	connections->neuron_count = neuron_count;
+	properties.neuron_count = neuron_count;
 }
 
 void ILayer::initialize_fields(size_t connection_count, size_t neuron_count, bool initialize_connection_associated_gradient_count)
@@ -42,6 +43,8 @@ void ILayer::initialize_fields(size_t connection_count, size_t neuron_count, boo
 
 	layer_specific_initialize_fields(connection_count, neuron_count);
 	cudaDeviceSynchronize();
+
+	set_neuron_count(neuron_count);
 }
 
 void ILayer::layer_specific_initialize_fields(size_t connection_count, size_t neuron_count)
@@ -130,12 +133,12 @@ void ILayer::layer_specific_deallocate()
 
 }
 
-void ILayer::calculate_gradients(
+void ILayer::backpropagate(
 	size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, 
 	data_t *states, nn_lens lens, size_t timestep_gap
 )
 {
-	calculate_gradients(t_count, activations, execution_values, gradients, costs, lens, timestep_gap);
+	backpropagate(t_count, activations, execution_values, gradients, costs, lens, timestep_gap);
 }
 
 void ILayer::calculate_derivatives(
