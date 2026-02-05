@@ -69,10 +69,32 @@ __host__ void activation_function(
 	size_t t_count, data_t *execution_vals, data_t *activations,
 	ActivationFunctions activation, layer_properties layer, nn_lens lens, size_t timestep_gap)
 {
-	if (activation == sigmoid)
+	if (activation == softmax)
 	{
-		data_t exponent_sum;
-		//execution_vals[] = exponent_sum;
+		size_t total_neuron_n = t_count * layer.neuron_count;
+		data_t *linear_functions = 0;
+		cudaMalloc(&linear_functions, sizeof(data_t) * total_neuron_n);
+		network_value_extract n_threads(total_neuron_n) (
+			t_count, lens.execution_values, layer.neuron_count, layer.execution_values_per_neuron,
+			timestep_gap, layer.execution_values_start, 0, 1, execution_vals, linear_functions
+		);
+		cudaDeviceSynchronize();
+		exp_arr n_threads(total_neuron_n) (linear_functions, total_neuron_n);
+		cudaDeviceSynchronize();
+
+		data_t *exponent_sums = multi_PRAM_add(linear_functions, layer.neuron_count, t_count);
+		data_t *expanded_sums = linear_functions;
+		clone_arr_values_n_times n_threads(total_neuron_n) (
+			exponent_sums, t_count, layer.neuron_count, expanded_sums, total_neuron_n
+		);
+		cudaDeviceSynchronize();
+		cudaFree(exponent_sums);
+
+		network_value_insert n_threads(total_neuron_n) (
+			t_count, lens.execution_values, layer.neuron_count, layer.execution_values_per_neuron, timestep_gap,
+			layer.execution_values_start, 1, 1, expanded_sums, execution_vals
+		);
+		cudaDeviceSynchronize();
 	}
 
 	g_activation_function n_threads(t_count * layer.neuron_count) (
