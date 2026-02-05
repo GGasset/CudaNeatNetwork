@@ -65,6 +65,7 @@ SET(LAYER_FILES
 		LSTMLayer.cu
 		NeuronLayer.cu
 		neuron_operations.cu
+		layer_operations.cu
 
 		${OPTIMIZER_FILES}
 	)
