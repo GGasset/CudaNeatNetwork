@@ -54,8 +54,7 @@ void NeuronLayer::load(FILE* file)
 void NeuronLayer::execute(size_t t_count, data_t *activations, data_t *execution_values, nn_lens lens, size_t timestep_gap)
 {
 	connections->linear_function(t_count, activations, execution_values, properties, lens, timestep_gap);
-
-
+	activation_function(t_count, execution_values, activations, activation, properties, lens, timestep_gap);
 }
 
 void NeuronLayer::execute(
