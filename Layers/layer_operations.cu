@@ -102,3 +102,64 @@ __host__ void activation_function(
 	);
 	cudaDeviceSynchronize();
 }
+
+__device__ data_t sigmoid_derivative(data_t in)
+{
+	data_t exp_minus_x = exp(-in);
+	return (exp_minus_x) / ((1 +exp_minus_x) * (1 + exp_minus_x));
+}
+
+__device__ data_t tanh_derivative(data_t in)
+{
+	in = device_clip(in, -10, 10);
+	data_t exp_2_x = exp(in * 2);
+	return (4 * exp_2_x) / ((exp_2_x + 1) * (exp_2_x + 1));
+}
+
+__device__ data_t sofmax_derivative(data_t in, data_t exponent_sum)
+{
+	return (exp(in) * (exponent_sum - exp(in))) / (exponent_sum * exponent_sum);
+}
+
+__global__ void backpropagate_activation(
+	size_t t_count, data_t *execution_vals, data_t *gradients, data_t *costs,
+	ActivationFunctions activation, layer_properties layer, nn_lens lens, size_t timestep_gap
+)
+{
+	size_t tid = get_tid();
+
+	size_t total_neuron_n = t_count * layer.neuron_count;
+	if (tid >= total_neuron_n) return;
+
+	size_t neuron_i = tid % layer.neuron_count;
+	size_t t = tid / layer.neuron_count;
+	size_t array_t = t + (t + 1) * timestep_gap;
+
+	size_t neuron_execution_values_start = lens.execution_values * array_t + layer.execution_values_start 
+										 + layer.execution_values_per_neuron * neuron_i;
+
+	data_t linear_func = execution_vals[neuron_execution_values_start];
+
+	size_t neuron_cost_i = lens.neurons * array_t + layer.activations_start + neuron_i;
+	data_t cost = costs[neuron_cost_i];
+
+	data_t bias_gradient = cost;
+	switch (activation)
+	{
+	case sigmoid:
+		bias_gradient *= sigmoid_derivative(linear_func);
+		break;
+	case _tanh:
+		bias_gradient *= tanh_derivative(linear_func);
+		break;
+	case softmax:
+		bias_gradient *= sofmax_derivative(linear_func, execution_vals[neuron_execution_values_start + 1]);
+		break;
+		
+	case no_activation:
+	default: break;
+	}
+
+	size_t neuron_gradients_start = lens.gradients * array_t + layer.gradients_start + layer.per_neuron_gradients_start[neuron_i];
+	gradients[neuron_gradients_start] = bias_gradient;
+}
