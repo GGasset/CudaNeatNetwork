@@ -95,6 +95,7 @@ __host__ void activation_function(
 			layer.execution_values_start, 1, 1, expanded_sums, execution_vals
 		);
 		cudaDeviceSynchronize();
+		cudaFree(linear_functions);
 	}
 
 	g_activation_function n_threads(t_count * layer.neuron_count) (
