@@ -21,12 +21,12 @@ public:
 	void execute(
 		size_t t_count, data_t *activations, data_t *execution_values,
 		nn_lens lens, size_t timestep_gap
-	);
+	) override;
 
 	void backpropagate(
 		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
 		nn_lens lens, size_t timestep_gap
-	);
+	) override;
 
 	void execute(
 		data_t* activations, size_t activations_start,
