@@ -359,3 +359,140 @@ __global__ void backpropagate_activation(
 	size_t neuron_gradients_start = lens.gradients * array_t + layer.gradients_start + layer.per_neuron_gradients_start[neuron_i];
 	gradients[neuron_gradients_start] = bias_gradient;
 }
+
+__global__ void backpropagate_LSTM(
+	size_t t_count, data_t *gradients, data_t *costs, data_t *derivatives,
+	layer_properties layer, nn_lens lens, size_t timestep_gap, size_t gap_t
+)
+{
+	size_t total_neuron_count = t_count * layer.neuron_count;
+
+	size_t tid = get_tid();
+	if (tid >= total_neuron_count) return ;
+
+	size_t neuron_i = tid % layer.neuron_count;
+
+	size_t t = tid / layer.neuron_count; 
+
+	//	           initial gaps    +other_execs+gap until next execution line
+	size_t arr_t = gap_t * (t + 1) +     t     + t * (timestep_gap - gap_t - 1);
+
+	size_t neuron_derivatives_start = arr_t * lens.derivative
+		+ layer.derivatives_start + layer.derivatives_per_neuron * neuron_i;
+
+	size_t connections_gradients_start = arr_t * lens.gradients
+		+ layer.gradients_start
+		+ layer.per_neuron_gradients_start[neuron_i];
+	size_t neuron_gradients_start =
+		connections_gradients_start + layer.per_connection_gradient_count[neuron_i];
+	
+	data_t next_hidden_state_gradient = 0;
+	data_t next_cell_state_gradient = 0;
+	if (gap_t < timestep_gap - 1)
+	{
+		size_t next_gradient_start = neuron_gradients_start + lens.gradients;
+
+		next_hidden_state_gradient = gradients[next_gradient_start + 5];
+		next_cell_state_gradient  = gradients[next_gradient_start + 4];
+	}
+
+	// Output Losses
+	data_t cost = costs[arr_t * lens.neurons + layer.activations_start + neuron_i];
+	data_t output_hidden_gradient_to_tanh = (cost 
+									- next_hidden_state_gradient * derivatives[neuron_derivatives_start + 21]);
+																// output_multiplication_partial_derivative_to_tanh
+
+	data_t output_hidden_gradient_to_sigmoid = (cost
+									- next_hidden_state_gradient * derivatives[neuron_derivatives_start + 22]);
+																// output_multiplication_partial_derivative_to_sigmoid
+
+	data_t output_hidden_gradient_to_weight = (cost
+									- next_hidden_state_gradient * derivatives[neuron_derivatives_start + 23]);
+																// output_multiplication_partial_derivative_to_weight
+
+	// To cell state
+	data_t output_cell_gradient_to_cell_state = output_hidden_gradient_to_tanh * derivatives[neuron_derivatives_start + 21];
+												// output_multiplication_partial_derivative_to_tanh
+												// multiplied twice due to previous t linear hidden sum partial derivative
+
+	output_cell_gradient_to_cell_state *= derivatives[neuron_derivatives_start + 18]; // cell tanh derivative
+	output_cell_gradient_to_cell_state -= next_cell_state_gradient;
+
+	// To previous cell state
+	data_t previous_cell_state_gradient = output_cell_gradient_to_cell_state;
+								//  forget_weight_multiplication output
+								//  store addition partial derivative
+	previous_cell_state_gradient *= derivatives[neuron_derivatives_start + 9];
+
+								//  forget multiplication partial derivative
+	previous_cell_state_gradient *= derivatives[neuron_derivatives_start + 9];
+	gradients[neuron_gradients_start + 4] = previous_cell_state_gradient;
+
+
+	// output weight gradient
+	data_t output_weight_gradient = output_hidden_gradient_to_weight;
+	output_weight_gradient *= derivatives[neuron_derivatives_start + 23];// output multiplication to weight
+	output_weight_gradient *= derivatives[neuron_derivatives_start + 19];// weight partial derivative
+	gradients[neuron_gradients_start + 3] = output_weight_gradient;
+
+
+	// Output gate to linear hidden
+	data_t output_gate_sigmoid_gradient = output_hidden_gradient_to_sigmoid;
+								//  output gate multiplication to sigmoid partial derivative
+	output_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 22];
+	output_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 20];// weight to sigmoid partial derivative
+	output_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 3]; // sigmoid_lh derivative
+
+
+	// Store Gate
+	//	To candidate_weight
+	data_t candidate_weight_gradient = output_cell_gradient_to_cell_state;
+	candidate_weight_gradient *= derivatives[neuron_derivatives_start + 17];
+	candidate_weight_gradient *= derivatives[neuron_derivatives_start + 17];
+	candidate_weight_gradient *= derivatives[neuron_derivatives_start + 12];
+	gradients[neuron_gradients_start + 2] = candidate_weight_gradient;
+
+	//	To input weight
+	data_t input_weight_gradient = output_cell_gradient_to_cell_state;
+	input_weight_gradient *= derivatives[neuron_derivatives_start + 15];
+	input_weight_gradient *= derivatives[neuron_derivatives_start + 15];
+	input_weight_gradient *= derivatives[neuron_derivatives_start + 10];
+	gradients[neuron_gradients_start + 1] = input_weight_gradient;
+
+	//	To linear hidden
+	data_t store_gate_sigmoid_gradient = output_cell_gradient_to_cell_state;
+	store_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 14];
+	store_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 14];
+	store_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 11];
+	store_gate_sigmoid_gradient *= derivatives[neuron_derivatives_start + 3];
+
+	data_t store_gate_tanh_gradient = output_cell_gradient_to_cell_state;
+	store_gate_tanh_gradient *= derivatives[neuron_derivatives_start + 16];
+	store_gate_tanh_gradient *= derivatives[neuron_derivatives_start + 16];
+	store_gate_tanh_gradient *= derivatives[neuron_derivatives_start + 13];
+	store_gate_tanh_gradient *= derivatives[neuron_derivatives_start + 4];
+
+
+	// Forget Gate
+	//	Weight
+	data_t forget_weight_gradient = output_cell_gradient_to_cell_state;
+	forget_weight_gradient *= derivatives[neuron_derivatives_start + 7];
+	forget_weight_gradient *= derivatives[neuron_derivatives_start + 7];
+	forget_weight_gradient *= derivatives[neuron_derivatives_start + 5];
+	gradients[neuron_gradients_start] = forget_weight_gradient;
+
+	//	To linear hidden
+	data_t forget_sigmoid_gradient = output_cell_gradient_to_cell_state;
+	forget_sigmoid_gradient *= derivatives[neuron_derivatives_start + 8];
+	forget_sigmoid_gradient *= derivatives[neuron_derivatives_start + 8];
+	forget_sigmoid_gradient *= derivatives[neuron_derivatives_start + 6];
+
+
+	// Linear hidden
+	data_t linear_hidden_gradient = -(forget_sigmoid_gradient + store_gate_sigmoid_gradient + store_gate_tanh_gradient + output_gate_sigmoid_gradient);
+	gradients[neuron_gradients_start + 5] = linear_hidden_gradient;
+
+	data_t linear_function_gradient = linear_hidden_gradient * derivatives[neuron_derivatives_start];
+															// linear function derivative
+	gradients[connections_gradients_start] = linear_function_gradient;
+}

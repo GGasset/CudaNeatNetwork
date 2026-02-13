@@ -83,8 +83,27 @@ void LSTMLayer::execute(
 	cudaDeviceSynchronize();
 }
 
+void LSTMLayer::backpropagate(
+	size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, data_t *derivatives,
+	nn_lens lens, size_t timestep_gap_len
+)
+{
+	for (size_t i = 0; i < timestep_gap_len; i++)
+	{
+		backpropagate_LSTM n_threads(t_count * properties.neuron_count) (
+			t_count, gradients, costs, derivatives,
+			properties, lens, timestep_gap_len, timestep_gap_len - i - 1			
+		);
+		cudaDeviceSynchronize();
+	}
+	connections->backpropagate(
+		t_count * timestep_gap_len, lens, properties,
+		activations, gradients, costs, 0
+	);
+}
+
 void LSTMLayer::calculate_derivatives(
-	size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives, 
+	size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives,
 	nn_lens lens, size_t timestep_gap
 )
 {

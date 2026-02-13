@@ -28,10 +28,9 @@ public:
 		nn_lens lens, size_t timestep_gap
 	) override;
 
-	// For stateful operation of recurrent layers copy the states inside the execution values
 	void backpropagate(
-		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
-		nn_lens lens, size_t timestep_gap
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, data_t *derivatives,
+		nn_lens lens, size_t timestep_gap_len
 	);
 
 	virtual void calculate_derivatives(

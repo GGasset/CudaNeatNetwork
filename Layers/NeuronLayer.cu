@@ -58,7 +58,7 @@ void NeuronLayer::execute(size_t t_count, data_t *activations, data_t *execution
 }
 
 void NeuronLayer::backpropagate(
-	size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, 
+	size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, data_t *derivatives,
 	nn_lens lens, size_t timestep_gap_len
 )
 {

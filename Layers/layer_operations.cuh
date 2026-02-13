@@ -45,4 +45,10 @@ __global__ void backpropagate_activation(
 	ActivationFunctions activation, layer_properties, nn_lens, size_t timestep_gap 
 );
 
-
+// ## Params:
+// gap_t: the backpropagation t inside the execution line
+//  - This is used to backpropagate each execution line in parallel, one timestep at a time
+__global__ void backpropagate_LSTM(
+	size_t t_count, data_t *gradients, data_t *costs, data_t *derivatives,
+	layer_properties, nn_lens, size_t timestep_gap, size_t gap_t
+);
