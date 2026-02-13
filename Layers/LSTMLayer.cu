@@ -83,7 +83,21 @@ void LSTMLayer::execute(
 	cudaDeviceSynchronize();
 }
 
-void LSTMLayer::execute(data_t* activations, size_t activations_start, data_t* execution_values, size_t execution_values_start)
+void LSTMLayer::calculate_derivatives(
+	size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives, 
+	nn_lens lens, size_t timestep_gap
+)
+{
+	connections->get_derivative(t_count, activations, derivatives, timestep_gap, properties, lens);
+
+	LSTM_derivatives n_threads(t_count * properties.neuron_count) (
+		t_count, activations, execution_values, derivatives, neuron_weights,
+		lens, properties, timestep_gap
+	);
+	cudaDeviceSynchronize();
+}
+
+void LSTMLayer::execute(data_t *activations, size_t activations_start, data_t *execution_values, size_t execution_values_start)
 {
 	// neuron execution values 0
 	connections->linear_function(
