@@ -8,8 +8,8 @@ LSTMLayer::LSTMLayer(IConnections* connections, size_t neuron_count, initializat
 	this->connections = connections;
 	set_neuron_count(neuron_count);
 
-	properties.execution_values_per_neuron = 10;
-	properties.per_neuron_hidden_state_count = 2;
+	properties.execution_values_per_neuron = 12;
+	properties.per_neuron_hidden_state_count = 5;
 	
 	properties.derivatives_per_neuron = 24;
 	properties.layer_derivative_count = properties.derivatives_per_neuron * neuron_count;
@@ -68,6 +68,19 @@ void LSTMLayer::load(FILE* file)
 	neuron_weights = load_array<field_t>(neuron_count * 4, file, true);
 	state = load_array<data_t>(neuron_count * 2, file, true);
 	prev_state_derivatives = load_array<data_t>(neuron_count * 3, file, true);
+}
+
+void LSTMLayer::execute(
+	size_t t_count, data_t *activations, data_t *execution_values,
+	nn_lens lens, size_t timestep_gap
+)
+{
+	connections->linear_function(t_count, activations, execution_values, properties, lens, timestep_gap);
+
+	LSTM_execution n_threads(t_count * properties.neuron_count) (
+		t_count, execution_values, activations, neuron_weights, properties, lens, timestep_gap
+	);
+	cudaDeviceSynchronize();
 }
 
 void LSTMLayer::execute(data_t* activations, size_t activations_start, data_t* execution_values, size_t execution_values_start)

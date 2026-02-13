@@ -54,14 +54,7 @@ public:
 		nn_lens lens, size_t timestep_gap
 	) = 0;
 
-	// ### Params
-	// - States:
-	// 		- The state of each of each independent execution line appended and contigous to the previous one
-	virtual void backpropagate(
-		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
-		data_t *states, nn_lens lens, size_t timestep_gap
-	);
-
+	// For stateful operation of recurrent layers copy the states inside the execution values
 	virtual void backpropagate(
 		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
 		nn_lens lens, size_t timestep_gap

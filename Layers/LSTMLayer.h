@@ -5,7 +5,10 @@ class LSTMLayer : public ILayer
 {
 public:
 	field_t* neuron_weights = 0;
+
+	// Going to get deprecated
 	data_t* state = 0;
+	//Going to get deprecated
 	data_t* prev_state_derivatives = 0;
 
 	LSTMLayer(IConnections* connections, size_t neuron_count, initialization_parameters init_params);
@@ -19,6 +22,22 @@ public:
 	ILayer* layer_specific_clone() override;
 	void specific_save(FILE* file) override;
 	void load(FILE* file) override;
+
+	void execute(
+		size_t t_count, data_t *activations, data_t *execution_values,
+		nn_lens lens, size_t timestep_gap
+	) override;
+
+	// For stateful operation of recurrent layers copy the states inside the execution values
+	void backpropagate(
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs,
+		nn_lens lens, size_t timestep_gap
+	);
+
+	virtual void calculate_derivatives(
+		size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives,
+		nn_lens lens, size_t timestep_gap
+	) override;
 
 	void execute(
 		data_t* activations, size_t activations_start,

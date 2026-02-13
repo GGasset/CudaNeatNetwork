@@ -133,14 +133,6 @@ void ILayer::layer_specific_deallocate()
 
 }
 
-void ILayer::backpropagate(
-	size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, 
-	data_t *states, nn_lens lens, size_t timestep_gap
-)
-{
-	backpropagate(t_count, activations, execution_values, gradients, costs, lens, timestep_gap);
-}
-
 void ILayer::calculate_derivatives(
 	size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives, 
 	nn_lens lens, size_t timestep_gap

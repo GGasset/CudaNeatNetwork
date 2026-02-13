@@ -104,6 +104,77 @@ __host__ void activation_function(
 	cudaDeviceSynchronize();
 }
 
+__global__ void LSTM_execution(
+	size_t t_count, data_t *execution_vals, data_t *activations, data_t *weights,
+	layer_properties layer, nn_lens lengths, size_t timestep_gap
+)
+{
+	size_t tid = get_tid();
+
+	size_t total_neuron_count = layer.neuron_count * t_count;
+	if (tid >= total_neuron_count) return;
+
+	size_t neuron_i = tid % layer.neuron_count;
+	size_t weights_start = neuron_i * 4;
+
+	// Parallel execution line i
+	size_t t = tid / layer.neuron_count;
+	size_t array_t = (t + 1) * timestep_gap + t;
+
+	size_t execution_val_i = 
+		array_t * lengths.execution_values
+		+ layer.execution_values_start
+		+ layer.execution_values_per_neuron * neuron_i;
+
+	data_t hidden_state = execution_vals[execution_val_i + 1];
+	data_t cell_state = execution_vals[execution_val_i + 2];
+	if (cell_state == 0 && hidden_state == 0 && timestep_gap != 0)
+	{
+		hidden_state = execution_vals[execution_val_i - lengths.execution_values + 10];
+		execution_vals[execution_val_i + 1] = hidden_state;
+
+		cell_state = execution_vals[execution_val_i - lengths.execution_values + 11];
+		execution_vals[execution_val_i + 2] = cell_state;
+	}
+	data_t linear_hidden = hidden_state + execution_vals[execution_val_i];
+	execution_vals[execution_val_i] = linear_hidden;
+
+	data_t linear_sigmoid = sigmoid_activation(linear_hidden);
+	execution_vals[execution_val_i + 3] = linear_sigmoid;
+
+	// Forget_gate
+	data_t forget_gate_out = linear_sigmoid * weights[weights_start];
+	execution_vals[execution_val_i + 4] = forget_gate_out;
+	cell_state *= forget_gate_out;
+
+	// Store Gate
+	data_t store_sigmoid_weight_out = linear_sigmoid * weights[weights_start + 1];
+	execution_vals[execution_val_i + 5] = store_sigmoid_weight_out;
+
+	data_t linear_tanh = tanh_activation(linear_hidden);
+	execution_vals[execution_val_i + 6] = linear_tanh;
+
+	data_t store_tanh_weight_out = linear_tanh * weights[weights_start + 2];
+	execution_vals[execution_val_i + 7] = store_tanh_weight_out;
+
+	cell_state += store_sigmoid_weight_out * store_tanh_weight_out;
+
+	// Out Gate
+	data_t cell_state_tanh = tanh_activation(cell_state);
+	execution_vals[execution_val_i + 8] = cell_state_tanh;
+
+	data_t out_weight_out = linear_sigmoid * weights[weights_start + 3];
+	execution_vals[execution_val_i + 9] = out_weight_out;
+
+	hidden_state = out_weight_out * cell_state_tanh;
+	execution_vals[execution_val_i + 10] = hidden_state;
+	execution_vals[execution_val_i + 11] = cell_state;
+
+	size_t activations_start_i = array_t * lengths.neurons
+		+ layer.activations_start + neuron_i;
+	activations[activations_start_i] = hidden_state;
+}
+
 __device__ data_t sigmoid_derivative(data_t in)
 {
 	data_t exp_minus_x = exp(-in);
