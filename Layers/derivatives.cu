@@ -42,8 +42,8 @@ __global__ void LSTM_derivative_calculation(
 	size_t previous_neuron_derivatives_start = previous_derivatives_start + derivatives_layer_start + derivatives_per_neuron * tid;
 
 
-	data_t initial_cell_state = execution_values[execution_values_start + 3];
-	data_t output_cell_state = execution_values[execution_values_start + 7];
+	data_t initial_cell_state = execution_values[neuron_execution_values_start + 3];
+	data_t output_cell_state = execution_values[neuron_execution_values_start + 7];
 
 	data_t forget_weight = neuron_weights[neuron_weights_start];
 	data_t input_weight = neuron_weights[neuron_weights_start + 1];
