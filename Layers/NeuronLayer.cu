@@ -59,14 +59,14 @@ void NeuronLayer::execute(size_t t_count, data_t *activations, data_t *execution
 
 void NeuronLayer::backpropagate(
 	size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, 
-	nn_lens lens, size_t timestep_gap
+	nn_lens lens, size_t timestep_gap_len
 )
 {
-	backpropagate_activation n_threads(t_count * neuron_count) (
-		t_count, execution_values, gradients, costs, activation, properties, lens, timestep_gap
+	backpropagate_activation n_threads(t_count * timestep_gap_len * neuron_count) (
+		t_count * timestep_gap_len, execution_values, gradients, costs, activation, properties, lens, 0
 	);
 	cudaDeviceSynchronize();
-	connections->backpropagate(t_count, lens, properties, activations, gradients, costs, timestep_gap);
+	connections->backpropagate(t_count * timestep_gap_len, lens, properties, activations, gradients, costs, 0);
 }
 
 void NeuronLayer::execute(
