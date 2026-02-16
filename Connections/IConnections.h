@@ -46,18 +46,18 @@ public:
 	// In this case, activations and execution_vals
 	// The gap being the number of executions stored between the latest execution of each history 
 	virtual void linear_function(
-		size_t t_count, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
+		size_t independent_execution_lines, data_t *activations, data_t *execution_vals, layer_properties properties, nn_lens lengths,
 		size_t gaps_between_usable_arrays_t_count
 	) = 0;
 
 	virtual void backpropagate(
-		size_t t_count, nn_lens lengths, layer_properties props,
+		size_t independent_execution_lines, nn_lens lengths, layer_properties props,
 		data_t *activations, data_t *grads, data_t *costs,
 		size_t gaps_between_usable_arrays_t_count
 	) = 0;
 
 	virtual void get_derivative(
-		size_t t_count, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count,
+		size_t independent_execution_lines, data_t *activations, data_t *derivatives, size_t gaps_between_usable_arrays_t_count,
 		layer_properties props, nn_lens lengths
 	) = 0;
 
