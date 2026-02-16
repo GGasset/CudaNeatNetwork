@@ -85,7 +85,7 @@ void PPO_initialization(
 data_t *PPO_execution(
 	data_t *X, size_t env_i,
 	NN *policy,
-	PPO::PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
+	PPO::PPO_internal_memory *mem_pntr, arr_location output_kind,
 	bool delete_memory_before
 )
 {
@@ -109,7 +109,7 @@ data_t *PPO_execution(
 	cudaMemcpy(X_tmp, X, sizeof(data_t) * in_len, cudaMemcpyDefault);
 	
 	size_t prev_n_executions = mem.n_env_executions[env_i];
-	data_t *Y = policy->inference_execute(X_tmp, cuda_pointer_output);
+	data_t *Y = policy->inference_execute(X_tmp, device_arr);
 	mem.n_env_executions[env_i]++;
 
 	// Insert to memory
@@ -165,7 +165,7 @@ void recurrent_PPO_miniBatch(
 			data_t* activations = 0;
 			data_t *Y = 0;
 			policy_clone->training_execute(steps_per_env,
-				env_X[env_i], &Y, cuda_pointer_output,
+				env_X[env_i], &Y, device_arr,
 				&execution_values, &activations, 0, &was_mem_deleted[env_i]
 			);
 			if (!Y) throw;
@@ -236,7 +236,7 @@ void non_recurrent_PPO_miniBatch(
 		data_t* execution_values = 0;
 		data_t* activations = 0;
 		data_t* Y = 0;
-		policy_clone->training_execute(data_point_count, X, &Y, cuda_pointer_output, &execution_values, &activations);
+		policy_clone->training_execute(data_point_count, X, &Y, device_arr, &execution_values, &activations);
 		if (!Y || !execution_values || !activations) throw;
 
 		size_t costs_len = neuron_count * data_point_count;
@@ -444,7 +444,7 @@ void PPO_data_cleanup(PPO::PPO_internal_memory *mem_pntr)
 data_t *PPO::PPO_execute_train(
 	data_t *X,  size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO::PPO_internal_memory *mem_pntr, output_pointer_type output_kind,
+	PPO::PPO_internal_memory *mem_pntr, arr_location output_kind,
 	bool delete_memory_before
 )
 {

@@ -95,7 +95,7 @@ void NN::set_fields()
 	output_activations_start = &(layers[counts.layer_count - 1]->properties.activations_start);
 }
 
-void NN::execute(data_t* input, data_t* execution_values, data_t* activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type)
+void NN::execute(data_t* input, data_t* execution_values, data_t* activations, size_t t, data_t* output_start_pointer, arr_location output_type)
 {
 	cudaMemcpy(activations + t * counts.neurons, input + input_length * t, sizeof(data_t) * input_length, cudaMemcpyHostToDevice);
 	cudaDeviceSynchronize();
@@ -104,10 +104,10 @@ void NN::execute(data_t* input, data_t* execution_values, data_t* activations, s
 		layers[i]->execute(activations, counts.neurons * t, execution_values, counts.execution_values * t);
 		cudaDeviceSynchronize();
 	}
-	if (output_type != no_output && output_start_pointer)
+	if (output_type != null_arr && output_start_pointer)
 	{
 		cudaMemcpyKind memcpy_kind = cudaMemcpyDeviceToHost;
-		if (output_type == cuda_pointer_output) memcpy_kind = cudaMemcpyDeviceToDevice;
+		if (output_type == device_arr) memcpy_kind = cudaMemcpyDeviceToDevice;
 		cudaMemcpy(output_start_pointer + output_length * t, activations + counts.neurons * t + *output_activations_start, sizeof(data_t) * output_length, memcpy_kind);
 		cudaDeviceSynchronize();
 	}
@@ -123,9 +123,9 @@ void NN::set_up_execution_arrays(data_t** execution_values, data_t** activations
 	cudaDeviceSynchronize();
 }
 
-data_t* NN::batch_execute(data_t* input, size_t t_count, output_pointer_type output_type)
+data_t* NN::batch_execute(data_t* input, size_t t_count, arr_location output_type)
 {
-	if (output_type == no_output) return (0);
+	if (output_type == null_arr) return (0);
 
 	data_t* execution_values = 0;
 	data_t* activations = 0;
@@ -141,7 +141,7 @@ data_t* NN::batch_execute(data_t* input, size_t t_count, output_pointer_type out
 	return outputs;
 }
 
-data_t* NN::inference_execute(data_t* input, output_pointer_type output_type)
+data_t* NN::inference_execute(data_t* input, arr_location output_type)
 {
 	return batch_execute(input, 1, output_type);
 }
@@ -193,7 +193,7 @@ data_t NN::training_batch(
 	size_t Y_hat_value_count,
 	CostFunctions cost_function,
 	data_t** Y,
-	output_pointer_type output_type,
+	arr_location output_type,
 	gradient_hyperparameters hyperparameters
 )
 {
@@ -223,7 +223,7 @@ void NN::training_execute(
 	size_t t_count,
 	data_t* X,
 	data_t** Y,
-	output_pointer_type output_type,
+	arr_location output_type,
 	data_t** execution_values,
 	data_t** activations,
 	size_t arrays_t_length,
@@ -528,108 +528,6 @@ void NN::subtract_gradients(data_t* gradients, size_t gradients_start, gradient_
 	}
 	cudaDeviceSynchronize();
 }
-
-/*data_t* NN::PPO_execute(data_t* X, data_t** initial_states, data_t** trajectory_inputs, data_t** trayectory_outputs, size_t n_executions)
-{
-	if (!initial_states || !trajectory_inputs || !trayectory_outputs || !X) return 0;
-
-	if (!n_executions) *initial_states = get_hidden_state();
-	if (n_executions && (!*trajectory_inputs || !*trayectory_outputs)) return 0;
-
-	data_t* device_output = inference_execute(X, cuda_pointer_output);
-	if (!device_output) return 0;
-
-	*trajectory_inputs = cuda_append_array(*trajectory_inputs, n_executions * input_length, X, input_length, true, true);
-	*trayectory_outputs = cuda_append_array(*trayectory_outputs, n_executions * output_length, device_output, output_length, true);
-
-	data_t* host_output = new data_t[output_length];
-	cudaMemcpy(host_output, device_output, sizeof(data_t) * output_length, cudaMemcpyDeviceToHost);
-	cudaFree(device_output);
-	return host_output;
-}
-
-void NN::PPO_train(
-	size_t t_count,
-	data_t** initial_states, data_t** trajectory_inputs, data_t** trajectory_outputs,
-	data_t* rewards, bool are_rewards_at_host, NN* value_function_estimator,
-	PPO_hyperparameters hyperparameters
-)
-{
-	if (!initial_states
-		|| !trajectory_inputs || !*trajectory_inputs
-		|| !trajectory_outputs || !*trajectory_outputs
-		|| !rewards || !value_function_estimator)
-		return;
-
-	NN* tmp_n = clone();
-
-	data_t* advantages = calculate_advantage(
-		t_count,
-		value_function_estimator, *trajectory_inputs,
-		hyperparameters.GAE, false, false,
-		rewards, are_rewards_at_host, false);
-	if (!advantages) return;
-
-	int stop = false;
-	data_t total_kl_divergence = 0;
-	data_t* collected_gradients = 0;
-	size_t i = 0;
-	for (i = 0; i < hyperparameters.max_training_steps && !stop; i++)
-	{
-		tmp_n->set_hidden_state(*initial_states, false);
-
-		data_t* execution_values = 0;
-		data_t* activations = 0;
-		data_t* Y = 0;
-		tmp_n->training_execute(t_count, *trajectory_inputs, &Y, cuda_pointer_output, &execution_values, &activations);
-		if (!Y) throw;
-
-		data_t* costs = 0;
-		cudaMalloc(&costs, sizeof(data_t) * neuron_count * t_count);
-		cudaMemset(costs, 0, sizeof(data_t) * neuron_count * t_count);
-
-		total_kl_divergence += PPO_derivative(
-			t_count, output_length, neuron_count,
-			*trajectory_outputs, Y, advantages,
-			costs, *output_activations_start,
-			hyperparameters.clip_ratio
-		);
-		stop = fabs(total_kl_divergence / (i + 1)) > hyperparameters.max_kl_divergence_threshold;
-		cudaFree(Y);
-
-		data_t* gradients = 0;
-		tmp_n->backpropagate(
-			t_count,
-			costs, activations, execution_values, &gradients, hyperparameters.policy
-		);
-		cudaFree(costs);
-		cudaFree(activations);
-		cudaFree(execution_values);
-
-		for (size_t t = 0; t < t_count; t++)
-			tmp_n->subtract_gradients(gradients, gradient_count * t, hyperparameters.policy);
-		collected_gradients = cuda_append_array(collected_gradients, gradient_count * t_count * i,
-			gradients, gradient_count * t_count, true);
-		cudaFree(gradients);
-	}
-
-	for (size_t i = 0; i < t_count; i++)
-		subtract_gradients(collected_gradients, gradient_count * i, hyperparameters.policy);
-	cudaFree(collected_gradients);
-
-	cudaFree(advantages);
-
-	cudaFree(*initial_states);
-	*initial_states = 0;
-
-	cudaFree(*trajectory_inputs);
-	*trajectory_inputs = 0;
-
-	cudaFree(*trajectory_outputs);
-	*trajectory_outputs = 0;
-
-	delete tmp_n;
-}*/
 
 data_t* NN::get_hidden_state(size_t *arr_value_count)
 {

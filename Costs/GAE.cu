@@ -82,14 +82,14 @@ data_t *calculate_advantage(
 
 	data_t* value_functions = 0;
 	value_functions = value_function_estimator->batch_execute(
-		value_function_state, t_count, cuda_pointer_output
+		value_function_state, t_count, device_arr
 	);
 	for (size_t i = 0; i < parameters.training_steps; i++)
 		value_function_estimator->training_batch(
 			t_count,
 			value_function_state, discounted_rewards, 0, t_count,
 			CostFunctions::MSE, 
-			0, no_output, parameters.value_function
+			0, null_arr, parameters.value_function
 		);
 	
 	if (!parameters.use_GAE)

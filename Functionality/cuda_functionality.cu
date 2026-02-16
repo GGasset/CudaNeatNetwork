@@ -35,20 +35,20 @@ __device__ data_t device_random_uniform(curandStateXORWOW_t *state)
 	return (curand(state) % (int)1e4) / 1e4;
 }
 
-__host__ data_t* alloc_output(size_t output_value_count, output_pointer_type output_type)
+__host__ data_t* alloc_output(size_t output_value_count, arr_location output_type)
 {
 	data_t* output = 0;
 	switch (output_type)
 	{
-	case cuda_pointer_output:
+	case device_arr:
 		cudaMalloc(&output, sizeof(data_t) * output_value_count);
 		cudaMemset(output, 0, sizeof(data_t) * output_value_count);
 		break;
-	case host_cpp_pointer_output:
+	case host_arr_new:
 		output = new data_t[output_value_count];
 		memset(output, 0, sizeof(data_t) * output_value_count);
 		break;
-	case no_output:
+	case null_arr:
 	default:
 		return (0);
 	}

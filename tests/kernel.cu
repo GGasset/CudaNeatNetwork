@@ -59,7 +59,7 @@ static void bug_hunting()
 			t_count,
 			X, Y_hat, 1, output_len * t_count,
 			MSE,
-			&Y, host_cpp_pointer_output, hyperparameters
+			&Y, host_arr_new, hyperparameters
 		));
 		for (size_t j = 0; j < t_count; j++)
 		{	
@@ -123,7 +123,7 @@ static void test_LSTM()
 		{
 			n->training_execute(
 				t_count, 
-				X + in_len * t_count * j, &Y, host_cpp_pointer_output,
+				X + in_len * t_count * j, &Y, host_arr_new,
 				&execution_values, &activations
 			);
 			data_t cost = n->train(
@@ -186,7 +186,7 @@ static void NEAT_evolution_test()
 		data_t *Y = 0;
 		//Y = n->inference_execute(X);
 		n->training_batch(t_count, X, Y_hat, true, n->get_output_length() * t_count, MSE,
-			&Y, host_cpp_pointer_output, hyperparameters);
+			&Y, host_arr_new, hyperparameters);
 		for (size_t i = 0; i < n->get_output_length() * t_count; i++)
 			if (((cudaPeekAtLastError() != cudaSuccess) || Y[i] != Y[i]))
 			{
@@ -313,7 +313,7 @@ static void test_PPO(int argc)
 			data_t *actions = PPO::PPO_execute_train(
 				obs.data(), env_i,
 				value_function, policy, parameters,
-				&mem, host_cpp_pointer_output,
+				&mem, host_arr_new,
 				shall_delete_memory[env_i]
 			);
 			auto [reward, end_of_episode] = env.step(actions, env_i);

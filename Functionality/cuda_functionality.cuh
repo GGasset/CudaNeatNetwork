@@ -24,7 +24,7 @@ __device__ data_t device_clip(data_t to_clip, data_t a, data_t b);
 // 4 significant digits
 __device__ data_t device_random_uniform(curandStateXORWOW_t *state);
 
-__host__ data_t* alloc_output(size_t output_value_count, output_pointer_type output_type);
+__host__ data_t* alloc_output(size_t output_value_count, arr_location output_type);
 
 /// <summary>
 /// Calculates linear thread_id up to blockIdx.x [inclusive]

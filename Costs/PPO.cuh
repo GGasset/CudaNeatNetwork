@@ -49,7 +49,7 @@ struct PPO_internal_memory
 data_t *PPO_execute_train(
 	data_t *X, size_t env_i,
 	NN *value_function, NN *policy, PPO_hyperparameters hyperparameters,
-	PPO_internal_memory *save_this_for_me, output_pointer_type output_kind,
+	PPO_internal_memory *save_this_for_me, arr_location output_kind,
 	bool delete_memory_before
 );
 

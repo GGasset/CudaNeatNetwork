@@ -61,10 +61,15 @@ public:
 		initialization_parameters layer_weight_init = {.initialization=Xavier}
 	);
 
-	void execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, output_pointer_type output_type);
+
+
+
+	// Training and execution are about to be deprecated
+	
+	void execute(data_t* input, data_t* execution_values, data_t *activations, size_t t, data_t* output_start_pointer, arr_location output_type);
 	void set_up_execution_arrays(data_t** execution_values, data_t** activations, size_t t_count);
-	data_t* batch_execute(data_t* input, size_t t_count, output_pointer_type output_type = host_cpp_pointer_output);
-	data_t* inference_execute(data_t* input, output_pointer_type output_type = host_cpp_pointer_output);
+	data_t* batch_execute(data_t* input, size_t t_count, arr_location output_type = host_arr_new);
+	data_t* inference_execute(data_t* input, arr_location output_type = host_arr_new);
 
 	data_t adjust_learning_rate(
 		data_t learning_rate,
@@ -82,7 +87,7 @@ public:
 		size_t Y_hat_value_count,
 		CostFunctions cost_function,
 		data_t** Y,
-		output_pointer_type output_type,
+		arr_location output_type,
 		gradient_hyperparameters hyperparameters
 	);
 
@@ -93,7 +98,7 @@ public:
 		size_t t_count,
 		data_t* X,
 		data_t** Y,
-		output_pointer_type output_type,
+		arr_location output_type,
 		data_t** execution_values,
 		data_t** activations,
 		size_t arrays_t_length = 0,
@@ -154,26 +159,6 @@ public:
 	void subtract_gradients(
 		data_t* gradients, size_t gradients_start, gradient_hyperparameters hyperparameters
 	);
-
-	/*
-	/// <summary>
-	/// Inference function to be used before calling PPO_train
-	/// PPO_train deletes the arrays generated during the calls to this function
-	/// Don't modify input/output neuron count between execution of this function, it is ok right after PPO_train and before this function
-	/// </summary>
-	/// <param name="X">Input</param>
-	/// <param name="initial_states">Saves the hidden states before its first execution, create a pointer variable set to zero and pass its pointer</param>
-	/// <param name="trajectory_inputs">Saves all inputs passed, create a pointer variable set to zero and pass its pointer</param>
-	/// <param name="trayectory_outputs">Saves all inputs passed, create a pointer variable set to zero and pass its pointer</param>
-	/// <param name="n_executions">Contains the number of times this function has been called after the last PPO_train call</param>
-	/// <returns>Network output, 0 on error</returns>
-	data_t* PPO_execute(data_t *X, data_t **initial_states, data_t **trajectory_inputs, data_t **trayectory_outputs, size_t n_executions);
-	void PPO_train(
-		size_t t_count,
-		data_t **initial_states, data_t **trajectory_inputs, data_t **trajectory_outputs,
-		data_t* rewards, bool are_rewards_at_host, NN *value_function_estimator,
-		PPO_hyperparameters hyperparameters
-	);*/
 
 	data_t* get_hidden_state(size_t *arr_value_count = 0);
 	void set_hidden_state(data_t *state, int free_input_state);
