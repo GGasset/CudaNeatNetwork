@@ -12,11 +12,11 @@ __device__ data_t tanh_activation(data_t in);
 __device__ data_t sofmax_activation(data_t in, data_t exponent_sum);
 
 __global__ void g_activation_function(
-	size_t t_count, data_t *execution_vals, data_t *activations,
+	size_t execution_lines, data_t *execution_vals, data_t *activations,
 	ActivationFunctions activation, layer_properties, nn_lens, size_t timestep_gap 
 );
 __host__ void activation_function(
-	size_t t_count, data_t *execution_vals, data_t *activations,
+	size_t execution_lines, data_t *execution_vals, data_t *activations,
 	ActivationFunctions activation, layer_properties, nn_lens, size_t timestep_gap 
 );
 
@@ -36,7 +36,7 @@ __device__ data_t sigmoid_derivative(data_t in);
 __device__ data_t tanh_derivative(data_t in);
 __device__ data_t sofmax_derivative(data_t in, data_t exponent_sum);
 __global__ data_t LSTM_derivatives(
-	size_t t_count, data_t *activations, data_t *execution_vals, data_t *derivatives, data_t *weights,
+	size_t execution_lines, data_t *activations, data_t *execution_vals, data_t *derivatives, data_t *weights,
 	nn_lens lens, layer_properties layer, size_t timestep_gap
 );
 
