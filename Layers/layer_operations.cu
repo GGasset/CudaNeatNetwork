@@ -361,11 +361,11 @@ __global__ void backpropagate_activation(
 }
 
 __global__ void backpropagate_LSTM(
-	size_t t_count, data_t *gradients, data_t *costs, data_t *derivatives,
-	layer_properties layer, nn_lens lens, size_t timestep_gap, size_t gap_t
+	size_t execution_lines, data_t *gradients, data_t *costs, data_t *derivatives,
+	layer_properties layer, nn_lens lens, size_t t_count, size_t execution_line_t
 )
 {
-	size_t total_neuron_count = t_count * layer.neuron_count;
+	size_t total_neuron_count = execution_lines * layer.neuron_count;
 
 	size_t tid = get_tid();
 	if (tid >= total_neuron_count) return ;
@@ -375,7 +375,7 @@ __global__ void backpropagate_LSTM(
 	size_t t = tid / layer.neuron_count; 
 
 	//	           initial gaps    +other_execs+gap until next execution line
-	size_t arr_t = gap_t * (t + 1) +     t     + t * (timestep_gap - gap_t - 1);
+	size_t arr_t = execution_line_t * (t + 1) +     t     + t * (t_count - execution_line_t - 1);
 
 	size_t neuron_derivatives_start = arr_t * lens.derivative
 		+ layer.derivatives_start + layer.derivatives_per_neuron * neuron_i;
@@ -388,7 +388,7 @@ __global__ void backpropagate_LSTM(
 	
 	data_t next_hidden_state_gradient = 0;
 	data_t next_cell_state_gradient = 0;
-	if (gap_t < timestep_gap - 1)
+	if (execution_line_t < t_count - 1)
 	{
 		size_t next_gradient_start = neuron_gradients_start + lens.gradients;
 

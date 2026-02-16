@@ -50,21 +50,19 @@ public:
 	virtual void layer_specific_deallocate();
 	
 	virtual void execute(
-		size_t t_count, data_t *activations, data_t *execution_values,
+		size_t execution_lines, data_t *activations, data_t *execution_values,
 		nn_lens lens, size_t timestep_gap
 	) = 0;
 
 	// For stateful operation of recurrent layers copy the states inside the execution values
-	// t_count is the number of independent execution lines
-	// timestep_gap is the number of executions (t_count) inside each execution line
 	// Backpropagates the layer through all timesteps of each execution line
 	virtual void backpropagate(
-		size_t t_count, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, data_t *derivatives,
-		nn_lens lens, size_t timestep_gap_len
+		size_t execution_lines, data_t *activations, data_t *execution_values, data_t *gradients, data_t *costs, data_t *derivatives,
+		nn_lens lens, size_t t_count
 	) = 0;
 
 	virtual void calculate_derivatives(
-		size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives,
+		size_t execution_lines, data_t *activations, data_t *execution_values, data_t *derivatives,
 		nn_lens lens, size_t timestep_gap_len
 	);
 

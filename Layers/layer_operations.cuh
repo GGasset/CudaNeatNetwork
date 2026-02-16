@@ -28,7 +28,7 @@ __host__ void activation_function(
 // t_count: number of parallel execution lines
 // timestep_gap: number of executions inside each execution line preceding the latest execution, which will be used
 __global__ void LSTM_execution(
-	size_t t_count, data_t *execution_values, data_t *activations, data_t *weights,
+	size_t execution_lines, data_t *execution_values, data_t *activations, data_t *weights,
 	layer_properties, nn_lens, size_t timestep_gap
 );
 
@@ -41,7 +41,7 @@ __global__ data_t LSTM_derivatives(
 );
 
 __global__ void backpropagate_activation(
-	size_t t_count, data_t *execution_vals, data_t *gradients, data_t *costs, 
+	size_t execution_lines, data_t *execution_vals, data_t *gradients, data_t *costs, 
 	ActivationFunctions activation, layer_properties, nn_lens, size_t timestep_gap 
 );
 
@@ -49,6 +49,6 @@ __global__ void backpropagate_activation(
 // gap_t: the backpropagation t inside the execution line
 //  - This is used to backpropagate each execution line in parallel, one timestep at a time
 __global__ void backpropagate_LSTM(
-	size_t t_count, data_t *gradients, data_t *costs, data_t *derivatives,
+	size_t execution_lines, data_t *gradients, data_t *costs, data_t *derivatives,
 	layer_properties, nn_lens, size_t timestep_gap, size_t gap_t
 );
