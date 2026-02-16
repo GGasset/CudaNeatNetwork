@@ -61,8 +61,59 @@ public:
 		initialization_parameters layer_weight_init = {.initialization=Xavier}
 	);
 
+	// ## Notes:
+	// If the array lengths don't match with the parameters, the function call is ignored, and null is returned
+	// For the socket, create a wrapper at the User class level, to abstract arr_location, for example.
+	//
+	// ---
+	// ## Params:
+	// - execution_lines: 
+	//   The number of executions to execute at the same time
+	//   Used, for example, in PPO that different environments are executed simultaniously
+	//   Or, for executing all the batch at the same time
+	//   In recurrent layers, different execution lines won't share the same state/context
+	// ---
+	// - t_count_per_execution_line:
+	//   The number of already executed timesteps inside each execution line, they will be ignored, excluding the last one of each line
+	//   If not null, each array should start with the given number of timesteps of values
+	// ---
+	// - prev_execution_values:
+	//   Used for setting the state of the new recurrent layers, if the network is not recurrent, they are ignored
+	data_t *execute(
+		size_t execution_lines, size_t t_count_per_execution_line,
+		data_t *X, size_t X_len, arr_location output_type,
+		data_t *activations, size_t activations_len,
+		data_t *execution_values, size_t execution_values_len,
+		bool delete_memory_before = false,
+		data_t *prev_execution_values = 0, size_t prev_execution_values_len = 0
+	);
 
-
+	// ## Summary: 
+	//  - Calculates the gradients for all the timesteps of all the executions of the execution_lines
+	//  - If the array lengths don't match with the parameters, the function call is ignored, and null is returned
+	// ---
+	// 
+	// ## Params:
+	// - execution_lines: 
+	//   The number of executions to execute at the same time
+	//   Used, for example, in PPO that different environments are executed simultaniously
+	//   Or, for executing all the batch at the same time
+	//   In recurrent layers, different execution lines won't share the same state/context
+	// ---
+	// - t_count_per_execution_line:
+	//   The number of already executed timesteps inside each execution line, they will be ignored, excluding the last one of each line
+	//   If not null, each array should start with the given number of timesteps of values
+	// ---
+	// ## Returns:
+	// - Gradients (device arr), mean error
+	std::tuple<data_t *, data_t> backpropagate(
+		size_t execution_lines, size_t t_count_per_execution_line,
+		data_t *activations, size_t activations_len,
+		data_t *execution_values, size_t execution_values_len,
+		gradient_hyperparameters
+	);
+	
+	void subtract_gradients();
 
 	// Training and execution are about to be deprecated
 	
