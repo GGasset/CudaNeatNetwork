@@ -24,6 +24,15 @@ __device__ data_t device_clip(data_t to_clip, data_t a, data_t b);
 // 4 significant digits
 __device__ data_t device_random_uniform(curandStateXORWOW_t *state);
 
+template<typename T>
+__host__ T *cudaCalloc(size_t value_count)
+{
+	T *out = 0;
+	cudaMalloc(&out, sizeof(T) * value_count);
+	cudaMemset(out, sizeof(T) * value_count);
+	return out;
+}
+
 __host__ data_t* alloc_output(size_t output_value_count, arr_location output_type);
 
 /// <summary>
@@ -101,7 +110,7 @@ __global__ void set_execution_values(
 // out must be the same length as in
 template<typename T>
 __global__ void continuize_arrs(
-	data_t *in, data_t *out, size_t in_len,
+	T *in, T *out, size_t in_len,
 	size_t arr_len, size_t arr_count
 )
 {
@@ -248,9 +257,9 @@ __global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
 
 template<typename T>
 // Arr len refers to the length of each array to do reduce add on
-T *multi_PRAM_add(T* in, size_t arr_len, size_t t_count)
+T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 {
-	size_t in_len = arr_len * t_count;
+	size_t in_len = arr_len * arr_count;
 	T *tmp = 0;
 	cudaMalloc(&tmp, sizeof(T) * in_len);
 	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
@@ -259,7 +268,7 @@ T *multi_PRAM_add(T* in, size_t arr_len, size_t t_count)
 	while (arr_len)
 	{
 		global_PRAM_reduce_add 
-			kernel_shared(dim3(arr_len / block_size + (arr_len % block_size > 0), t_count), block_size, sizeof(T) * block_size) (
+			kernel_shared(dim3(arr_len / block_size + (arr_len % block_size > 0), arr_count), block_size, sizeof(T) * block_size) (
 				tmp, arr_len
 			);
 		cudaDeviceSynchronize();
@@ -267,8 +276,8 @@ T *multi_PRAM_add(T* in, size_t arr_len, size_t t_count)
 	}
 
 	T *result = 0;
-	cudaMalloc(&result, sizeof(T) * t_count);
-	cudaMemcpy(result, tmp, sizeof(T) * t_count, cudaMemcpyDeviceToDevice);
+	cudaMalloc(&result, sizeof(T) * arr_count);
+	cudaMemcpy(result, tmp, sizeof(T) * arr_count, cudaMemcpyDeviceToDevice);
 	cudaFree(tmp);
 	return result;
 }
