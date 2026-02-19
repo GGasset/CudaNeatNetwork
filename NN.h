@@ -65,6 +65,11 @@ public:
 	// If the array lengths don't match with the parameters, the function call is ignored, and null is returned
 	// For the socket, create a wrapper at the User class level, to abstract arr_location, for example.
 	//
+	// The activations and execution values are automatically copied to add space for the new execution at each execution line
+	// At a higher level, just increment t_count_per_execution_line
+	// No input size of activations and execution values is requested as they are internal arrays that won't be passed to the socket
+	// A wrapper is highly incentivized
+	//
 	// ---
 	// ## Params:
 	// - execution_lines: 
@@ -72,6 +77,7 @@ public:
 	//   Used, for example, in PPO that different environments are executed simultaniously
 	//   Or, for executing all the batch at the same time
 	//   In recurrent layers, different execution lines won't share the same state/context
+	//   Only the last t of each execution line will actually be executed
 	// ---
 	// - t_count_per_execution_line:
 	//   The number of already executed timesteps inside each execution line, they will be ignored, excluding the last one of each line
@@ -79,11 +85,14 @@ public:
 	// ---
 	// - prev_execution_values:
 	//   Used for setting the state of the new recurrent layers, if the network is not recurrent, they are ignored
-	data_t *execute(
+	//
+	// ---
+	// ## Returns:
+	// - Y in the location specified at the parameter arr_location output_type
+	std::tuple<data_t *>execute(
 		size_t execution_lines, size_t t_count_per_execution_line,
 		data_t *X, size_t X_len, arr_location output_type,
-		data_t *activations, size_t activations_len,
-		data_t *execution_values, size_t execution_values_len,
+		data_t **activations, data_t **execution_values,
 		bool delete_memory_before = false,
 		data_t *prev_execution_values = 0, size_t prev_execution_values_len = 0
 	);
@@ -113,7 +122,12 @@ public:
 		gradient_hyperparameters
 	);
 	
-	void subtract_gradients();
+	// Subtracts all the gradients from all execution lines parallely through gradient accumulation before subtracting
+	void subtract_gradients(
+		size_t execution_lines, size_t t_count_per_execution_line, 
+		data_t *gradients, size_t gradients_len,
+		gradient_hyperparameters hyperparameters
+	);
 
 	// Training and execution are about to be deprecated
 	
