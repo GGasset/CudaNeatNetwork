@@ -96,6 +96,25 @@ __global__ void set_execution_values(
 	size_t neuron_count
 );
 
+// Summary: Used when there are arr_count values between each array value, and there are arr_count arrays of arr_len lengths
+// out is the values of each array in a continous manner
+// out must be the same length as in
+template<typename T>
+__global__ void continuize_arrs(
+	data_t *in, data_t *out, size_t in_len,
+	size_t arr_len, size_t arr_count
+)
+{
+	size_t tid = get_tid();
+	if (!in || tid >= in_len) return;
+
+	size_t in_i = tid;
+
+	size_t arr_i = tid % arr_count;
+	size_t arr_value_i = tid / arr_count;
+	size_t out_i = arr_len * arr_i + arr_value_i;
+}
+
 template<typename T>
 __host__ void print_array(T* arr, size_t arr_len)
 {
