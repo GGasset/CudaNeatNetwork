@@ -68,7 +68,7 @@ public:
 	// The activations and execution values are automatically copied to add space for the new execution at each execution line
 	// At a higher level, just increment t_count_per_execution_line
 	// No input size of activations and execution values is requested as they are internal arrays that won't be passed to the socket
-	// A wrapper is highly incentivized
+	// A wrapper is highly incentivized for execute, backpropagate and subtract gradients
 	//
 	// ---
 	// ## Params:
@@ -117,15 +117,15 @@ public:
 	// - Gradients (device arr), mean error
 	std::tuple<data_t *, data_t> backpropagate(
 		size_t execution_lines, size_t t_count_per_execution_line,
-		data_t *activations, size_t activations_len,
-		data_t *execution_values, size_t execution_values_len,
+		data_t *activations,
+		data_t *execution_values,
 		gradient_hyperparameters
 	);
 	
 	// Subtracts all the gradients from all execution lines parallely through gradient accumulation before subtracting
 	void subtract_gradients(
 		size_t execution_lines, size_t t_count_per_execution_line, 
-		data_t *gradients, size_t gradients_len,
+		data_t *gradients,
 		gradient_hyperparameters hyperparameters
 	);
 

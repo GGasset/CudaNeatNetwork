@@ -95,7 +95,28 @@ void NN::set_fields()
 	output_activations_start = &(layers[counts.layer_count - 1]->properties.activations_start);
 }
 
-void NN::execute(data_t* input, data_t* execution_values, data_t* activations, size_t t, data_t* output_start_pointer, arr_location output_type)
+void NN::subtract_gradients(
+	size_t execution_lines, size_t t_count_per_execution_line, 
+	data_t *gradients,
+	gradient_hyperparameters hyperparameters
+)
+{
+	size_t total_t_count = execution_lines * t_count_per_execution_line;
+	size_t total_gradient_count = total_t_count * counts.gradients;
+	data_t *continous_gradients = cudaCalloc<data_t>(total_gradient_count);
+	continuize_arrs n_threads(total_gradient_count) (
+		gradients, continous_gradients, total_gradient_count, total_t_count, counts.gradients
+	);
+	cudaDeviceSynchronize();
+
+	data_t *accumulated_grads = multi_PRAM_add(continous_gradients, total_t_count, counts.gradients);
+	cudaFree(continous_gradients);
+
+	subtract_gradients(accumulated_grads, 0, hyperparameters);
+	cudaFree(accumulated_grads);
+}
+
+void NN::execute(data_t *input, data_t *execution_values, data_t *activations, size_t t, data_t *output_start_pointer, arr_location output_type)
 {
 	cudaMemcpy(activations + t * counts.neurons, input + input_length * t, sizeof(data_t) * input_length, cudaMemcpyHostToDevice);
 	cudaDeviceSynchronize();
