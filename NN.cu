@@ -95,11 +95,63 @@ void NN::set_fields()
 	output_activations_start = &(layers[counts.layer_count - 1]->properties.activations_start);
 }
 
-void NN::subtract_gradients(
+data_t * NN::backpropagate(
 	size_t execution_lines, size_t t_count_per_execution_line, 
-	data_t *gradients,
-	gradient_hyperparameters hyperparameters
+	data_t *output_cost, size_t output_cost_len,
+	data_t *activations, 
+	data_t *execution_values, gradient_hyperparameters hyperparameters
 )
+{
+	size_t total_t_count = execution_lines * t_count_per_execution_line;
+
+	size_t total_output_neurons = total_t_count * get_output_length();
+	if (total_output_neurons != output_cost_len) throw std::exception();
+
+	size_t total_neuron_count = total_t_count * counts.neurons;
+	data_t *costs = cudaCalloc<data_t>(total_neuron_count);
+
+
+
+	apply_regularizations(
+		total_t_count,
+		costs, activations, 
+		hyperparameters.regularization
+	);
+
+	size_t total_derivative_count = total_t_count * counts.derivative
+	data_t *derivatives = 0;
+	if (total_derivative_count)
+	{
+		derivates = cudaCalloc<data_t>(total_derivative_count);
+		for (size_t i = 0; i < layer_count; i++)
+			layers[i]->calculate_derivatives(
+				execution_lines, activations, execution_values, derivatives,
+				counts, t_count_per_execution_line
+			);
+	}
+
+	size_t total_gradient_count = total_t_count * counts.gradients;
+	data_t *gradients = cudaCalloc<data_t>(total_gradient_count);
+	for (size_t i = layer_count + 1; i > 0; i--)
+	{
+		
+		layers[i - 1]->backpropagate(
+			execution_lines,
+			activations, execution_values, gradients, costs, derivatives,
+			counts, t_count_per_execution_line
+		);
+	}
+
+	cudaFree(costs);
+	cudaFree(derivatives);
+
+	return gradients;
+}
+
+void NN::subtract_gradients(
+	size_t execution_lines, size_t t_count_per_execution_line,
+	data_t *gradients,
+	gradient_hyperparameters hyperparameters)
 {
 	size_t total_t_count = execution_lines * t_count_per_execution_line;
 	size_t total_gradient_count = total_t_count * counts.gradients;

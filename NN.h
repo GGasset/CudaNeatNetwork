@@ -89,7 +89,7 @@ public:
 	// ---
 	// ## Returns:
 	// - Y in the location specified at the parameter arr_location output_type
-	std::tuple<data_t *>execute(
+	data_t * execute(
 		size_t execution_lines, size_t t_count_per_execution_line,
 		data_t *X, size_t X_len, arr_location output_type,
 		data_t **activations, data_t **execution_values,
@@ -97,9 +97,12 @@ public:
 		data_t *prev_execution_values = 0, size_t prev_execution_values_len = 0
 	);
 
+	// # TODO:
+	// - dropout rate
+	// - cost copying
 	// ## Summary: 
-	//  - Calculates the gradients for all the timesteps of all the executions of the execution_lines
-	//  - If the array lengths don't match with the parameters, the function call is ignored, and null is returned
+	// - Calculates the gradients for all the timesteps of all the executions of the execution_lines
+	// - If the array lengths don't match with the parameters, the function call is ignored, and null is returned
 	// ---
 	// 
 	// ## Params:
@@ -114,9 +117,10 @@ public:
 	//   If not null, each array should start with the given number of timesteps of values
 	// ---
 	// ## Returns:
-	// - Gradients (device arr), mean error
-	std::tuple<data_t *, data_t> backpropagate(
+	// - Gradients (device arr)
+	data_t * backpropagate(
 		size_t execution_lines, size_t t_count_per_execution_line,
+		data_t *output_cost, size_t output_cost_len,
 		data_t *activations,
 		data_t *execution_values,
 		gradient_hyperparameters
