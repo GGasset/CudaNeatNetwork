@@ -18,7 +18,7 @@
     - Mid-high priority
     - Use this to optimize PPO evironments by gathering all observations and executing on all t's
         - Create a recurrent layer function for execution in which the state is passed as a multiple t array
-- Paralelize layer derivative calculation calls
+- Paralelize layer derivative calculation calls withing CPU
 
 - Optimize PRAM reduce
 - ~~Add execution with output to GPU~~
