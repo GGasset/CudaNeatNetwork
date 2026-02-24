@@ -194,18 +194,20 @@ __device__ data_t sofmax_derivative(data_t in, data_t exponent_sum)
 }
 
 __global__ data_t LSTM_derivatives(
-	size_t t_count, data_t *activations, data_t *execution_vals, data_t *derivatives, data_t *weights,
-	nn_lens lens, layer_properties layer, size_t timestep_gap
+	size_t execution_lines, data_t *activations, data_t *execution_vals, data_t *derivatives, data_t *weights,
+	nn_lens lens, layer_properties layer, size_t exec_line_t_count, size_t execution_line_t
 )
 {
-	size_t total_neuron_count = t_count * layer.neuron_count;
+	size_t total_neuron_count = execution_lines * layer.neuron_count;
 
 	size_t tid = get_tid();
 	if (tid >= total_neuron_count) return;
 
 	size_t neuron_i = total_neuron_count % layer.neuron_count;
 	size_t t = tid / layer.neuron_count;
-	size_t arr_t = (t + 1) * timestep_gap + t;
+
+	//	           initial gaps    +other_execs+gap until next execution line
+	size_t arr_t = execution_line_t * (t + 1) +     t     + t * (exec_line_t_count - execution_line_t - 1);
 
 	size_t neuron_weights_start = neuron_i * 4;
 	size_t neuron_derivatives_start = arr_t * lens.derivative

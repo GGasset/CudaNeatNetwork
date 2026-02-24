@@ -63,7 +63,7 @@ public:
 
 	virtual void calculate_derivatives(
 		size_t execution_lines, data_t *activations, data_t *execution_values, data_t *derivatives,
-		nn_lens lens, size_t timestep_gap_len
+		nn_lens lens, size_t t_count
 	);
 
 	// Going to get deprecated

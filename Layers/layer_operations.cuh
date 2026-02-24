@@ -37,7 +37,7 @@ __device__ data_t tanh_derivative(data_t in);
 __device__ data_t sofmax_derivative(data_t in, data_t exponent_sum);
 __global__ data_t LSTM_derivatives(
 	size_t execution_lines, data_t *activations, data_t *execution_vals, data_t *derivatives, data_t *weights,
-	nn_lens lens, layer_properties layer, size_t timestep_gap
+	nn_lens lens, layer_properties layer, size_t exec_line_t_count, size_t t
 );
 
 __global__ void backpropagate_activation(

@@ -103,17 +103,20 @@ void LSTMLayer::backpropagate(
 }
 
 void LSTMLayer::calculate_derivatives(
-	size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives,
-	nn_lens lens, size_t timestep_gap
+	size_t execution_lines, data_t *activations, data_t *execution_values, data_t *derivatives,
+	nn_lens lens, size_t t_count
 )
 {
-	connections->get_derivative(t_count, activations, derivatives, timestep_gap, properties, lens);
+	connections->get_derivative(execution_lines * t_count, activations, derivatives, 0, properties, lens);
 
-	LSTM_derivatives n_threads(t_count * properties.neuron_count) (
-		t_count, activations, execution_values, derivatives, neuron_weights,
-		lens, properties, timestep_gap
-	);
-	cudaDeviceSynchronize();
+	for (size_t t = 0; t < t_count; t++)
+	{
+		LSTM_derivatives n_threads(execution_lines * properties.neuron_count) (
+			execution_lines, activations, execution_values, derivatives, neuron_weights,
+			lens, properties, t_count, t
+		);
+		cudaDeviceSynchronize();
+	}
 }
 
 void LSTMLayer::execute(data_t *activations, size_t activations_start, data_t *execution_values, size_t execution_values_start)
