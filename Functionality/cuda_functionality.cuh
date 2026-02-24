@@ -117,11 +117,11 @@ __global__ void continuize_arrs(
 	size_t tid = get_tid();
 	if (!in || tid >= in_len) return;
 
-	size_t in_i = tid;
-
 	size_t arr_i = tid % arr_count;
 	size_t arr_value_i = tid / arr_count;
 	size_t out_i = arr_len * arr_i + arr_value_i;
+
+	out[out_i] = in[tid];
 }
 
 template<typename T>
@@ -154,6 +154,21 @@ __global__ void element_wise_multiply(T* to_multiply, t* multiplier_arr, size_t 
 	if (tid >= min_arr_value_count) return;
 
 	to_multiply[tid] *= multiplier_arr[tid];
+}
+
+template<typename T, typename t>
+__global__ void gapped_element_wise_multiply(
+	T *to_multiply, size_t values_until_gap, size_t gap_value_count, size_t to_multiply_arr_len,
+	t *multiplier, size_t multiplier_arr_len
+)
+{
+	size_t tid = get_tid();
+	size_t t = tid / values_until_gap;
+	size_t to_multiply_i = t * (values_until_gap + gap_value_count);
+	if (tid >= lesser_arr_len && to_multiply_i >= to_multiply_arr_len) return;
+
+
+	to_multiply[to_multiply_i] *= multiplier[tid];
 }
 
 template<typename T, typename t>
@@ -343,6 +358,15 @@ __global__ void booleanize(T *arr, size_t value_count)
 	if (tid >= value_count) return;
 
 	arr[tid] = arr[tid] != 0;
+}
+
+template<typename T>
+__global__ void booleanize_by_greater_than(T *arr, size_t value_count, T compare_val)
+{
+	size_t tid = get_tid();
+	if (tid >= value_count) return;
+
+	arr[tid] = arr[tid] > compare_val;
 }
 
 template<typename T>
