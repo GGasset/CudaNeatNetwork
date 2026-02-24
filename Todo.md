@@ -40,7 +40,7 @@
         * ~~Evolution methods~~
 
 - ~~Modularized generate random values for different data types~~
-- Modular weight initialization
+- ~~Modular weight initialization~~
 - ~~Add Xavier initialization~~
 - Add Orthogonal initialization
 - ~~Make droput set cost of neuron to 0 before its gradient calculation and remove previous dropout~~
@@ -142,6 +142,7 @@
 ## Evolution
 
 - evolution
+	* Random connection addition (to a random neuron) and deletion 
     * if removing neuron in a layer with 1 neuron remove layer (now it won't delete the neuron)
     * Check for neurons that are not pointed to or don't point to any other and delete them after calling evolve
     * ~~Constrain evolution metadata fields from 1E-5 to .3 for stable process~~
