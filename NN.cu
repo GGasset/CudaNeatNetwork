@@ -109,8 +109,14 @@ data_t * NN::backpropagate(
 
 	size_t total_neuron_count = total_t_count * counts.neurons;
 	data_t *costs = cudaCalloc<data_t>(total_neuron_count);
+	if (!costs) throw std::exception();
 
-
+	network_values_insert n_threads(output_cost_len) (
+		total_t_count, counts.neurons, output_length, 1,
+		0, *output_activations_start, 0, 1,
+		output_cost, costs
+	);
+	cudaDeviceSyncronize();
 
 	apply_regularizations(
 		total_t_count,
@@ -123,6 +129,8 @@ data_t * NN::backpropagate(
 	if (total_derivative_count)
 	{
 		derivates = cudaCalloc<data_t>(total_derivative_count);
+		if (!derivatives) {cudaFree(costs); throw std::exception();}
+
 		for (size_t i = 0; i < layer_count; i++)
 			layers[i]->calculate_derivatives(
 				execution_lines, activations, execution_values, derivatives,
@@ -132,14 +140,23 @@ data_t * NN::backpropagate(
 
 	size_t total_gradient_count = total_t_count * counts.gradients;
 	data_t *gradients = cudaCalloc<data_t>(total_gradient_count);
+	if (!gradients) {cudaFree(costs); cudaFree(derivatives); throw std::exception();}
 	for (size_t i = layer_count + 1; i > 0; i--)
 	{
-		
 		layers[i - 1]->backpropagate(
 			execution_lines,
 			activations, execution_values, gradients, costs, derivatives,
 			counts, t_count_per_execution_line
 		);
+		if (i > 1) // Not at input layer
+		{
+			ILayer *prev_layer = layers[i - 2];
+			size_t prev_layer_activations_start = prev_layer.properties.activations_start;
+			size_t prev_layer_len = prev_layer.properties.neuron_count;
+			size_t total_prev_layer_neurons = prev_layer_len * total_t_count;
+
+			//data_t *
+		}
 	}
 
 	cudaFree(costs);

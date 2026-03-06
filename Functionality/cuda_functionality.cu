@@ -70,7 +70,7 @@ __global__ void network_value_extract(
 
 	size_t read_value_count_in_layer = neurons_in_extracted_layer * contiguous_read_value_count;
 	size_t out_len = usable_t_count * read_value_count_in_layer;
-	if (tid >= out_len) return;
+	if (tid >= out_len || !in_arr || !out_arr) return;
 
 	size_t t = tid / read_value_count_in_layer;
 	size_t neuron_i = tid % read_value_count_in_layer;
@@ -92,7 +92,7 @@ __global__ void network_value_insert(
 
 	size_t read_value_count_in_layer = neurons_in_inserted_layer * contiguous_write_value_count;
 	size_t out_len = usable_t_count * read_value_count_in_layer;
-	if (tid >= out_len) return;
+	if (tid >= out_len || !in_arr || !out_arr) return;
 
 	size_t t = tid / read_value_count_in_layer;
 	size_t neuron_i = tid % read_value_count_in_layer;

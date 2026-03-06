@@ -99,7 +99,6 @@ public:
 
 	// # TODO:
 	// - dropout rate
-	// - cost copying
 	// ## Summary: 
 	// - Calculates the gradients for all the timesteps of all the executions of the execution_lines
 	// - If the array lengths don't match with the parameters, the function call is ignored, and null is returned
