@@ -150,12 +150,24 @@ data_t *NN::backpropagate(
 		);
 		if (i > 1) // Not at input layer
 		{
+			// Dropout rate implementation
 			ILayer *prev_layer = layers[i - 2];
 			size_t prev_layer_activations_start = prev_layer->properties.activations_start;
 			size_t prev_layer_len = prev_layer->properties.neuron_count;
 			size_t total_prev_layer_neurons = prev_layer_len * total_t_count;
 
-			//data_t *
+			data_t *dropout = cudaCalloc<data_t>(total_prev_layer_neurons);
+			generate_random_values(dropout, total_prev_layer_neurons);
+			booleanize_by_greater_than n_threads(total_prev_layer_neurons) (dropout, total_prev_layer_neurons, hyperparameters.dropout_rate);
+			cudaDeviceSynchronize();
+
+			gapped_element_wise_multiply n_threads(total_prev_layer_neurons) (
+				costs + prev_layer_activations_start, prev_layer_len, counts.neurons - prev_layer_len,
+				total_neuron_count, dropout, total_prev_layer_neurons
+			);
+			cudaDeviceSynchronize();
+
+			cudaFree(dropout);
 		}
 	}
 

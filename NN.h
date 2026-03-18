@@ -98,10 +98,8 @@ public:
 		data_t *prev_execution_values = 0, size_t prev_execution_values_len = 0
 	);
 
-	// # TODO:
-	// - dropout rate
 	// ## Summary: 
-	// - Calculates the gradients for all the timesteps of all the executions of the execution_lines
+	// - Calculates the gradients for all the timesteps of all the executions of the execution_lines, in parallel
 	// - If the array lengths don't match with the parameters, the function call is ignored, and null is returned
 	// ---
 	// 
