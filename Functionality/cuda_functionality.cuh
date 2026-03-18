@@ -582,7 +582,7 @@ __host__ T* cuda_insert_zeros(T* old, size_t old_len, long insert_i, size_t inse
 }
 
 // Generates values between 0 and 1, divides them by value_divider and transforms 50% of them if generate_negative_values is true
-template<typename T, typename t>
+template<typename T, typename t = data_t>
 void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t value_divider = 1, bool generate_negative_values = false)
 {
 	if (!out)
