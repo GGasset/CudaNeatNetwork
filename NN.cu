@@ -95,12 +95,52 @@ void NN::set_fields()
 	output_activations_start = &(layers[counts.layer_count - 1]->properties.activations_start);
 }
 
-data_t *NN::backpropagate(
+data_t *NN::execute(
 	size_t execution_lines, size_t t_count_per_execution_line, 
-	data_t *output_cost, size_t output_cost_len,
-	data_t *activations, 
-	data_t *execution_values, gradient_hyperparameters hyperparameters
+	data_t *X, size_t X_len, arr_location output_type, 
+	data_t **activations, data_t **execution_values, 
+	bool delete_memory_before, 
+	data_t *prev_execution_values, size_t prev_execution_values_len
 )
+{
+	if (!X || !X_len || !execution_lines || !activations || !execution_lines)
+		throw std::exception();
+
+	{ // Allocate / expand activations-execution_values to fit the new execution
+	if (!*activations)
+	{
+		if (t_count_per_execution_line)
+		{
+	
+		}
+		else
+		{
+
+		}
+	}
+	if (!*execution_values)
+	{
+		if (t_count_per_execution_line)
+		{
+	
+		}
+		else
+		{
+
+		}
+	}
+	}
+    if (prev_execution_values && prev_execution_values_len)
+	{
+
+	}
+}
+
+data_t *NN::backpropagate(
+    size_t execution_lines, size_t t_count_per_execution_line,
+    data_t *output_cost, size_t output_cost_len,
+    data_t *activations,
+    data_t *execution_values, gradient_hyperparameters hyperparameters)
 {
 	size_t total_t_count = execution_lines * t_count_per_execution_line;
 
@@ -111,7 +151,7 @@ data_t *NN::backpropagate(
 	data_t *costs = cudaCalloc<data_t>(total_neuron_count);
 	if (!costs) throw std::exception();
 
-	network_value_extract n_threads(output_cost_len) (
+	network_value_insert n_threads(output_cost_len) (
 		total_t_count, counts.neurons, output_length, 1,
 		0, *output_activations_start, 0, 1,
 		output_cost, costs

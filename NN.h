@@ -90,7 +90,7 @@ public:
 	// ---
 	// ## Returns:
 	// - Y in the location specified at the parameter arr_location output_type
-	data_t * execute(
+	data_t *execute(
 		size_t execution_lines, size_t t_count_per_execution_line,
 		data_t *X, size_t X_len, arr_location output_type,
 		data_t **activations, data_t **execution_values,
