@@ -112,11 +112,36 @@ data_t *NN::execute(
 	// Allocate / expand activations-execution_values to fit the new execution
 	if (t_count_per_execution_line)
 	{
+		if (!*activations || !*execution_values) throw std::exception();
 
+		size_t out_total_t_count = (t_count_per_execution_line + 1) * execution_lines;
+		size_t out_activations_length = out_total_t_count * counts.neurons;
+		data_t *out_activations = cudaCalloc<data_t>(out_activations_length);
+
+		size_t out_execution_values_length = out_total_t_count * counts.execution_values;
+		data_t *out_execution_values = cudaCalloc<data_t>(counts.execution_values * out_execution_values_length);
+
+		size_t current_total_t_count = t_count_per_execution_line * execution_lines;
+
+		size_t current_activations_length = current_total_t_count * counts.neurons;
+		gapped_copy n_threads(current_activations_length) (
+			out_activations, out_activations_length, *activations, current_activations_length,
+			t_count_per_execution_line * counts.neurons, counts.neurons,
+			1, 0
+		);
+
+		size_t current_execution_values_length = current_total_t_count * counts.execution_values;
+		gapped_copy n_threads(current_execution_values_length) (
+			out_execution_values, out_execution_values_length, *execution_values, current_execution_values_length,
+			t_count_per_execution_line * counts.execution_values, counts.execution_values,
+			1, 0
+		);
+		cudaDeviceSynchronize();
 	}
 	else
 	{
-
+		*activations = cudaCalloc<data_t>(counts.neurons * execution_lines);
+		*execution_values = cudaCalloc<data_t>(counts.execution_values * execution_lines);
 	}
 
 	if (!delete_memory_before && !t_count_per_execution_line && is_recurrent() && prev_execution_values && prev_execution_values_t_count_per_execution_line) 
