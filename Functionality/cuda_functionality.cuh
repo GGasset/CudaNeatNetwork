@@ -50,6 +50,32 @@ __global__ void logical_copy(T* dst, size_t dst_len, t* src, size_t src_len)
 	dst[tid] = src[tid];
 }
 
+// Tries to copy, when src is copied and dst has free space, starts from the beginning
+template<typename T>
+__global__ void repetitive_copy(T *dst, size_t dst_len, T *src, size_t src_len)
+{
+	size_t tid = get_tid();
+	if (tid >= dst_len || !dst || !src) return;
+
+	dst[tid] = src[tid % src_len];
+}
+
+// Copies N elements, jumps a gap, and continues copying until dst or src is ends
+template<typename T>
+__global__ void gapped_copy(T *dst, size_t dst_len, T *src, size_t src_len, size_t dst_N, size_t dst_gap_len, size_t src_N, size_t src_gap_len)
+{
+	size_t tid = get_tid();
+
+	size_t src_t = tid / src_N;
+	size_t src_i = tid + src_t * src_gap_len;
+
+	size_t dst_t = tid / dst_N;
+	size_t dst_i = tid + dst_t * dst_gap_len;
+	if (src_i >= src_len || dst_i >= dst_len) return;
+
+	dst[dst_i] = src[src_i];
+}
+
 template<typename T>
 __global__ void global_sort_by_key(T *out, T *to_sort, size_t *keys, size_t arr_len)
 {
@@ -334,16 +360,6 @@ __global__ void clone_arr_values_n_times(
 	if (tid >= out_arr_len || in_i >= arr_value_count || !n_repeats_per_value) return;
 
 	out_arr[tid] = arr[in_i];
-}
-
-// Tries to copy, when src is copied and dst has free space, starts from the beginning
-template<typename T>
-__global__ void repetitive_copy(T *dst, size_t dst_len, T *src, size_t src_len)
-{
-	size_t tid = get_tid();
-	if (tid >= dst_len || !dst || !src) return;
-
-	dst[tid] = src[tid % src_len];
 }
 
 template<typename T>
