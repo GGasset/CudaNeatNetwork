@@ -98,7 +98,7 @@ __global__ void NEAT_unsummed_linear_func_derivative(
 	size_t total_connection_count = connection_count * t_count;
 	if (tid >= total_connection_count) return;
 	
-	size_t connection_i = tid % connection_i;
+	size_t connection_i = tid % connection_count;
 	size_t neuron_i = connection_neuron_i[connection_i];
 
 	size_t t = tid / layer_max_connection_count;

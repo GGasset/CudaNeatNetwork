@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data_type.h"
+#include "nn_lens.h"
 #include "cuda_functionality.cuh"
 
 __global__ void cud_add_biases(

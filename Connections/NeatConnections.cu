@@ -94,7 +94,7 @@ void NeatConnections::get_derivative(
 	layer_properties props, nn_lens lengths
 )
 {
-	size_t total_connection_count = connection_count * t_count;
+	//size_t total_connection_count = connection_count * t_count;
 	size_t raw_conn_derivative_count =  max_connections_at_layer * neuron_count * t_count;
 
 	data_t *conn_derivatives = 0;

@@ -193,7 +193,7 @@ __device__ data_t sofmax_derivative(data_t in, data_t exponent_sum)
 	return (exp(in) * (exponent_sum - exp(in))) / (exponent_sum * exponent_sum);
 }
 
-__global__ data_t LSTM_derivatives(
+__global__ void LSTM_derivatives(
 	size_t execution_lines, data_t *activations, data_t *execution_vals, data_t *derivatives, data_t *weights,
 	nn_lens lens, layer_properties layer, size_t exec_line_t_count, size_t execution_line_t
 )
@@ -228,7 +228,7 @@ __global__ data_t LSTM_derivatives(
 	data_t previous_hidden_derivative_to_tanh = 1;
 	data_t previous_hidden_derivative_to_sigmoid = 1;
 	data_t previous_hidden_derivative_to_weight = 1;
-	if (timestep_gap != 0)
+	if (execution_line_t > 0)
 	{
 		size_t prev_derivatives_start = neuron_derivatives_start - lens.derivative;
 		

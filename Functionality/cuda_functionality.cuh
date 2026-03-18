@@ -29,7 +29,7 @@ __host__ T *cudaCalloc(size_t value_count)
 {
 	T *out = 0;
 	cudaMalloc(&out, sizeof(T) * value_count);
-	cudaMemset(out, sizeof(T) * value_count);
+	cudaMemset(out, 0, sizeof(T) * value_count);
 	return out;
 }
 
@@ -156,16 +156,16 @@ __global__ void element_wise_multiply(T* to_multiply, t* multiplier_arr, size_t 
 	to_multiply[tid] *= multiplier_arr[tid];
 }
 
-template<typename T, typename t>
+template<typename T, typename ty>
 __global__ void gapped_element_wise_multiply(
 	T *to_multiply, size_t values_until_gap, size_t gap_value_count, size_t to_multiply_arr_len,
-	t *multiplier, size_t multiplier_arr_len
+	ty *multiplier, size_t multiplier_arr_len
 )
 {
 	size_t tid = get_tid();
 	size_t t = tid / values_until_gap;
 	size_t to_multiply_i = t * (values_until_gap + gap_value_count);
-	if (tid >= lesser_arr_len && to_multiply_i >= to_multiply_arr_len) return;
+	if (tid >= multiplier_arr_len && to_multiply_i >= to_multiply_arr_len) return;
 
 
 	to_multiply[to_multiply_i] *= multiplier[tid];
@@ -197,7 +197,8 @@ __global__ void add_arrays(T *write_arr, T *a, t *b, size_t a_len, size_t b_len,
 template<typename T>
 __global__ void global_PRAM_reduce_add(T *g_data, size_t in_len)
 {
-	extern __shared__ T sdata[];
+	extern __shared__ unsigned char smem[];
+	T *sdata = (T *)smem;
 
 	size_t tid = threadIdx.x;
 	size_t gid = get_tid();//blockIdx.x * blockDim.x * 2 + threadIdx.x;
@@ -256,6 +257,9 @@ __global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
 
 	size_t expected_threads = blockDim.x >> 1;
 
+	size_t t_count = gridDim.y;
+	size_t in_len = arr_len * t_count;
+
 	sdata[tid] = 0;
 	if (gid < in_len)
 		sdata[tid] = g_data[gid + arr_len * t];
@@ -267,7 +271,7 @@ __global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
 		sdata[tid * 2] += sdata[tid * 2 + 1];
 		expected_threads >>= 1;
 	}
-	if (!tid) g_data[blockIdx.x + arr_len * T] = sdata[0];
+	if (!tid) g_data[blockIdx.x + arr_len * t] = sdata[0];
 }
 
 template<typename T>

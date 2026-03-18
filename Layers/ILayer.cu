@@ -134,9 +134,13 @@ void ILayer::layer_specific_deallocate()
 }
 
 void ILayer::calculate_derivatives(
-	size_t t_count, data_t *activations, data_t *execution_values, data_t *derivatives, 
-	nn_lens lens
+	size_t execution_lines, data_t *activations, data_t *execution_values, data_t *derivatives,
+	nn_lens lens, size_t t_count
 )
+{
+}
+
+void ILayer::calculate_derivatives(data_t *activations, size_t activations_start, data_t *derivatives, size_t previous_derivatives_start, size_t derivatives_start, data_t *execution_values, size_t execution_values_start)
 {
 }
 

@@ -31,8 +31,6 @@ LSTMLayer::LSTMLayer()
 
 void LSTMLayer::layer_specific_initialize_fields(size_t connection_count, size_t neuron_count)
 {
-	size_t neuron_weights_count = sizeof(data_t) * neuron_count * 4;
-
 	cudaMalloc(&state, sizeof(data_t) * neuron_count * 2);
 	cudaMemset(state, 0, sizeof(data_t) * neuron_count * 2);
 

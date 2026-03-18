@@ -95,7 +95,7 @@ void NN::set_fields()
 	output_activations_start = &(layers[counts.layer_count - 1]->properties.activations_start);
 }
 
-data_t * NN::backpropagate(
+data_t *NN::backpropagate(
 	size_t execution_lines, size_t t_count_per_execution_line, 
 	data_t *output_cost, size_t output_cost_len,
 	data_t *activations, 
@@ -111,12 +111,12 @@ data_t * NN::backpropagate(
 	data_t *costs = cudaCalloc<data_t>(total_neuron_count);
 	if (!costs) throw std::exception();
 
-	network_values_insert n_threads(output_cost_len) (
+	network_value_extract n_threads(output_cost_len) (
 		total_t_count, counts.neurons, output_length, 1,
 		0, *output_activations_start, 0, 1,
 		output_cost, costs
 	);
-	cudaDeviceSyncronize();
+	cudaDeviceSynchronize();
 
 	apply_regularizations(
 		total_t_count,
@@ -124,14 +124,14 @@ data_t * NN::backpropagate(
 		hyperparameters.regularization
 	);
 
-	size_t total_derivative_count = total_t_count * counts.derivative
+	size_t total_derivative_count = total_t_count * counts.derivative;
 	data_t *derivatives = 0;
 	if (total_derivative_count)
 	{
-		derivates = cudaCalloc<data_t>(total_derivative_count);
+		derivatives = cudaCalloc<data_t>(total_derivative_count);
 		if (!derivatives) {cudaFree(costs); throw std::exception();}
 
-		for (size_t i = 0; i < layer_count; i++)
+		for (size_t i = 0; i < counts.layer_count; i++)
 			layers[i]->calculate_derivatives(
 				execution_lines, activations, execution_values, derivatives,
 				counts, t_count_per_execution_line
@@ -141,7 +141,7 @@ data_t * NN::backpropagate(
 	size_t total_gradient_count = total_t_count * counts.gradients;
 	data_t *gradients = cudaCalloc<data_t>(total_gradient_count);
 	if (!gradients) {cudaFree(costs); cudaFree(derivatives); throw std::exception();}
-	for (size_t i = layer_count + 1; i > 0; i--)
+	for (size_t i = counts.layer_count + 1; i > 0; i--)
 	{
 		layers[i - 1]->backpropagate(
 			execution_lines,
@@ -151,8 +151,8 @@ data_t * NN::backpropagate(
 		if (i > 1) // Not at input layer
 		{
 			ILayer *prev_layer = layers[i - 2];
-			size_t prev_layer_activations_start = prev_layer.properties.activations_start;
-			size_t prev_layer_len = prev_layer.properties.neuron_count;
+			size_t prev_layer_activations_start = prev_layer->properties.activations_start;
+			size_t prev_layer_len = prev_layer->properties.neuron_count;
 			size_t total_prev_layer_neurons = prev_layer_len * total_t_count;
 
 			//data_t *

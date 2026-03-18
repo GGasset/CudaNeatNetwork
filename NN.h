@@ -4,6 +4,7 @@
 
 #include "kernel_macros.h"
 #include "functionality.h"
+#include "cuda_functionality.cuh"
 
 #include "NN_enums.h"
 #include "nn_lens.h"
@@ -117,7 +118,7 @@ public:
 	// ---
 	// ## Returns:
 	// - Gradients (device arr)
-	data_t * backpropagate(
+	data_t *backpropagate(
 		size_t execution_lines, size_t t_count_per_execution_line,
 		data_t *output_cost, size_t output_cost_len,
 		data_t *activations,

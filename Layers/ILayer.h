@@ -90,7 +90,7 @@ public:
 		data_t* activations, size_t activations_start,
 		data_t* derivatives, size_t previous_derivatives_start, size_t derivatives_start,
 		data_t* execution_values, size_t execution_values_start
-	) = 0;
+	);
 
 	inline virtual data_t* get_state() { return 0; };
 	inline virtual void set_state(data_t * to_set) {};
