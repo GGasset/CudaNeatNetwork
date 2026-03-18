@@ -100,40 +100,59 @@ data_t *NN::execute(
 	data_t *X, size_t X_len, arr_location output_type, 
 	data_t **activations, data_t **execution_values, 
 	bool delete_memory_before, 
-	data_t *prev_execution_values, size_t prev_execution_values_len
+	data_t *prev_execution_values, size_t prev_execution_values_t_count_per_execution_line
 )
 {
 	if (!X || !X_len || !execution_lines || !activations || !execution_lines)
 		throw std::exception();
 
-	{ // Allocate / expand activations-execution_values to fit the new execution
-	if (!*activations)
-	{
-		if (t_count_per_execution_line)
-		{
-	
-		}
-		else
-		{
+	size_t total_inputs = input_length * execution_lines;
+	if (X_len != total_inputs) throw std::exception();
 
-		}
-	}
-	if (!*execution_values)
-	{
-		if (t_count_per_execution_line)
-		{
-	
-		}
-		else
-		{
-
-		}
-	}
-	}
-    if (prev_execution_values && prev_execution_values_len)
+	// Allocate / expand activations-execution_values to fit the new execution
+	if (t_count_per_execution_line)
 	{
 
 	}
+	else
+	{
+
+	}
+
+	if (!delete_memory_before && !t_count_per_execution_line && is_recurrent() && prev_execution_values && prev_execution_values_t_count_per_execution_line) 
+	{
+		// Insert last states of previous execution
+	}
+	if (delete_memory_before && t_count_per_execution_line && is_recurrent())
+	{
+
+	}
+
+	network_value_insert n_threads(total_inputs) (
+		execution_lines, counts.neurons, input_length, 1, t_count_per_execution_line, 0, 0, 1,
+		X, *activations
+	);
+	cudaDeviceSynchronize();
+
+	for (size_t i = 0; i < counts.layer_count; i++)
+		layers[i]->execute(execution_lines, *activations, *execution_values, counts, t_count_per_execution_line);
+
+	size_t total_outputs = output_length * execution_lines;
+	data_t *out = alloc_output(total_outputs, output_type);
+	if (out)
+	{
+		data_t *continuized_output = 0;
+		cudaMalloc(&continuized_output, sizeof(data_t) * total_outputs);
+		network_value_extract n_threads(total_outputs) (
+			execution_lines, counts.neurons, output_length, 1, t_count_per_execution_line, *output_activations_start,
+			0, 1, *activations, continuized_output
+		);
+		cudaDeviceSynchronize();
+
+		cudaMemcpy(out, continuized_output, sizeof(data_t) * total_outputs, cudaMemcpyDefault);
+		cudaFree(continuized_output);
+	}
+	return out;
 }
 
 data_t *NN::backpropagate(
