@@ -62,6 +62,9 @@ public:
 		initialization_parameters layer_weight_init = {.initialization=Xavier}
 	);
 
+	// TODO:
+	// * delete memory before
+	// * prev execution values usage
 	// ## Notes:
 	// If the array lengths don't match with the parameters, the function call is ignored, and null is returned
 	// For the socket, create a wrapper at the User class level, to abstract arr_location, for example.
