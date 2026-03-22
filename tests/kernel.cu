@@ -13,6 +13,7 @@
 
 #include "PPO.cuh"
 #include "test_env.h"
+#include <iomanip>
 
 template<typename t>
 t abs(t a)
@@ -345,7 +346,7 @@ void optimizations_test()
 {
 	const size_t input_length = 1;
 	const size_t output_length = 1;
-	const size_t parallel_execution_line_n = 2;
+	const size_t parallel_execution_line_n = 3;
 
 	gradient_hyperparameters params;
 	NN *n = NN_constructor()
@@ -366,7 +367,7 @@ void optimizations_test()
 		Y_hat[i] = i % 2? .75 : .25;
 	}
 
-	const size_t t_count = 1;
+	const size_t t_count = 3;
 	const size_t epoch_n = 1000;
 	for (size_t epoch = 0; epoch < epoch_n; epoch++)
 	{
@@ -378,6 +379,7 @@ void optimizations_test()
 			data_t *Y = n->execute(parallel_execution_line_n, t, X, total_in_count, host_arr_new,
 				&activations, &execution_values);
 
+			std::cout << "|";
 			for (size_t i = 0; i < total_out_count; i++)
 				std::cout << Y_hat[i] << " " << Y[i] << " | ";
 		}
@@ -398,6 +400,7 @@ int main(int argc)
 	srand(get_arbitrary_number());
 #endif
 
+	std::cout << std::setprecision(3);
 
 	//cudaSetDevice(0);
 	//bug_hunting();
