@@ -33,7 +33,7 @@ __global__ void g_activation_function(
 	size_t t = tid / layer.neuron_count;
 	size_t neuron_i = tid % layer.neuron_count;
 
-	size_t arrays_t = ((t + 1) * timestep_gap);
+	size_t arrays_t = t + (t + 1) * timestep_gap;
 	size_t execution_values_start = arrays_t * lens.execution_values;
 	size_t neuron_execution_values_start = execution_values_start + layer.execution_values_start + layer.execution_values_per_neuron * neuron_i;
 
