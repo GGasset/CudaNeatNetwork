@@ -1,5 +1,11 @@
 #include "NN_constructor.h"
 
+#ifdef DETERMINISTIC
+	#define SEED 13
+#else
+	#define SEED get_arbitrary_number()
+#endif
+
 NN_constructor::NN_constructor()
 {
 
@@ -41,12 +47,15 @@ NN* NN_constructor::construct(
 
 		weight_init.layer_n_inputs = previous_layer_length;
 		weight_init.layer_n_outputs = layer_length;
+		weight_init.time = SEED;
 
 		bias_init.layer_n_inputs = previous_layer_length;
 		bias_init.layer_n_outputs = layer_length;
+		bias_init.time = SEED;
 		
 		layer_weight_init.layer_n_inputs = previous_layer_length;
 		layer_weight_init.layer_n_outputs = layer_length;
+		layer_weight_init.time = SEED;
 
 		IConnections* connections = 0;
 		ILayer* layer = 0;
