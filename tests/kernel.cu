@@ -341,6 +341,55 @@ static void test_PPO(int argc)
 	}
 }
 
+void optimizations_test()
+{
+	const size_t input_length = 1;
+	const size_t output_length = 1;
+	const size_t parallel_execution_line_n = 2;
+
+	gradient_hyperparameters params;
+	NN *n = NN_constructor()
+		.append_layer(Dense, Neuron, output_length)
+		.construct(input_length, params.optimization);
+
+	size_t total_in_count = input_length * parallel_execution_line_n;
+	data_t X[total_in_count];
+	for (size_t i = 0; i < total_in_count; i++)
+	{
+		X[i] = i % 2? -1 : 1;
+	}
+
+	size_t total_out_count = output_length * parallel_execution_line_n;
+	data_t Y_hat[total_out_count];
+	for (size_t i = 0; i < total_out_count; i++)
+	{
+		Y_hat[i] = i % 2? .75 : .25;
+	}
+
+	const size_t t_count = 1;
+	const size_t epoch_n = 1000;
+	for (size_t epoch = 0; epoch < epoch_n; epoch++)
+	{
+		data_t *activations = 0;
+		data_t *execution_values = 0;
+
+		for (size_t t = 0; t < t_count; t++)
+		{
+			data_t *Y = n->execute(parallel_execution_line_n, t, X, total_in_count, host_arr_new,
+				&activations, &execution_values);
+
+			for (size_t i = 0; i < total_out_count; i++)
+				std::cout << Y_hat[i] << " " << Y[i] << " | ";
+		}
+		std::cout << std::endl << "--------" << std::endl;
+
+
+		cudaFree(activations);
+		cudaFree(execution_values);
+	}
+	delete n;
+}
+
 int main(int argc)
 {
 #ifdef DETERMINISTIC
@@ -353,7 +402,8 @@ int main(int argc)
 	//cudaSetDevice(0);
 	//bug_hunting();
 	//test_LSTM();
-	test_PPO(argc);
+	//test_PPO(argc);
+	optimizations_test();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
