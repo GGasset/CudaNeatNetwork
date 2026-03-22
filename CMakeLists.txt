@@ -151,7 +151,7 @@ if(DETERMINISTIC)
 	message("-- Deterministic value generation active")
 endif()
 
-set(CMAKE_CUDA_ARCHITECTURES "default")
+set(CMAKE_CUDA_ARCHITECTURES "native")
 
 project(NN LANGUAGES CUDA CXX)
 
