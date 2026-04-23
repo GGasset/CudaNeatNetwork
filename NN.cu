@@ -97,7 +97,7 @@ void NN::set_fields()
 
 data_t *NN::execute(
 	size_t execution_lines, size_t t_count_per_execution_line, 
-	data_t *X, size_t X_len, arr_location output_type, 
+	data_t *X, size_t X_len, bool is_X_on_host, arr_location output_type, 
 	data_t **activations, data_t **execution_values, 
 	bool delete_memory_before, 
 	data_t *prev_execution_values, size_t prev_execution_values_t_count_per_execution_line
@@ -144,7 +144,7 @@ data_t *NN::execute(
 		*execution_values = cudaCalloc<data_t>(counts.execution_values * execution_lines);
 	}
 
-	if (!delete_memory_before && !t_count_per_execution_line && is_recurrent() && prev_execution_values && prev_execution_values_t_count_per_execution_line) 
+	if (is_recurrent() && !delete_memory_before && !t_count_per_execution_line && prev_execution_values && prev_execution_values_t_count_per_execution_line) 
 	{
 		// Insert last states of previous execution
 	}
@@ -153,11 +153,21 @@ data_t *NN::execute(
 
 	}
 
+	// Copy inputs
+	if (is_X_on_host)
+	{
+		data_t *X_tmp = 0;
+		cudaMalloc(&X_tmp, sizeof(data_t) * total_inputs);
+		cudaMemcpy(X_tmp, X, sizeof(data_t) * total_inputs, cudaMemcpyHostToDevice);
+		X = X_tmp;
+	}
+
 	network_value_insert n_threads(total_inputs) (
 		execution_lines, counts.neurons, input_length, 1, t_count_per_execution_line, 0, 0, 1,
 		X, *activations
 	);
 	cudaDeviceSynchronize();
+	if (is_X_on_host) {cudaFree(X); X = 0;}
 
 	for (size_t i = 0; i < counts.layer_count; i++)
 		layers[i]->execute(execution_lines, *activations, *execution_values, counts, t_count_per_execution_line);

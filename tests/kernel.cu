@@ -376,7 +376,7 @@ void optimizations_test()
 
 		for (size_t t = 0; t < t_count; t++)
 		{
-			data_t *Y = n->execute(parallel_execution_line_n, t, X, total_in_count, host_arr_new,
+			data_t *Y = n->execute(parallel_execution_line_n, t, X, total_in_count, true, host_arr_new,
 				&activations, &execution_values);
 
 			std::cout << "| ";

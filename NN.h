@@ -96,7 +96,7 @@ public:
 	// - Y in the location specified at the parameter arr_location output_type
 	data_t *execute(
 		size_t execution_lines, size_t t_count_per_execution_line,
-		data_t *X, size_t X_len, arr_location output_type,
+		data_t *X, size_t X_len, bool is_X_on_host, arr_location output_type,
 		data_t **activations, data_t **execution_values,
 		bool delete_memory_before = false,
 		data_t *prev_execution_values = 0, size_t prev_execution_values_t_count_per_execution_line = 0
