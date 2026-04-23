@@ -347,6 +347,7 @@ void optimizations_test()
 	const size_t input_length = 1;
 	const size_t output_length = 1;
 	const size_t parallel_execution_line_n = 3;
+	const size_t t_count = 3;
 
 	gradient_hyperparameters params;
 	NN *n = NN_constructor()
@@ -354,20 +355,21 @@ void optimizations_test()
 		.construct(input_length, params.optimization);
 
 	size_t total_in_count = input_length * parallel_execution_line_n;
+	size_t total_out_count = output_length * parallel_execution_line_n;
+
 	data_t X[total_in_count];
 	for (size_t i = 0; i < total_in_count; i++)
 	{
 		X[i] = i % 2? -1 : 1;
 	}
 
-	size_t total_out_count = output_length * parallel_execution_line_n;
-	data_t Y_hat[total_out_count];
-	for (size_t i = 0; i < total_out_count; i++)
+	size_t total_label_count = total_out_count * t_count;
+	data_t Y_hat[total_label_count];
+	for (size_t i = 0; i < total_label_count; i++)
 	{
 		Y_hat[i] = i % 2? .75 : .25;
 	}
 
-	const size_t t_count = 3;
 	const size_t epoch_n = 1000;
 	for (size_t epoch = 0; epoch < epoch_n; epoch++)
 	{
@@ -381,18 +383,31 @@ void optimizations_test()
 
 			std::cout << "| ";
 			for (size_t i = 0; i < total_out_count; i++)
-				std::cout << Y_hat[i] << " " << Y[i] << " | ";
+				std::cout << Y_hat[t * total_out_count + i] << " " << Y[i] << " | ";
 			
 			delete[] Y;
 		}
 		std::cout << std::endl << "--------" << std::endl;
 
-		data_t *grads = n->backpropagate(parallel_execution_line_n, t_count, /*TODO: output_costs*/0, total_out_count, activations, execution_values, params);
+		/*data_t *costs = cudaCalloc<data_t>(total_label_count);
+		global_MSE_derivative n_threads(total_label_count) (
+			parallel_execution_line_n, t_count, activations, n->get_neuron_count(), output_length,
+			Y_hat, total_label_count,
+			costs, total_label_count
+		);
+		cudaDeviceSynchronize();
+
+		data_t *grads = n->backpropagate(
+			parallel_execution_line_n, t_count, 
+			costs, total_label_count, 
+			activations, execution_values, params
+		);*/
 		cudaFree(activations);
 		cudaFree(execution_values);
+		//cudaFree(costs);
 
-		n->subtract_gradients(parallel_execution_line_n, t_count, grads, params);
-		cudaFree(grads);
+		//n->subtract_gradients(parallel_execution_line_n, t_count, grads, params);
+		//cudaFree(grads);
 	}
 	delete n;
 }

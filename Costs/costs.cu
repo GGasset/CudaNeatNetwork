@@ -1,10 +1,36 @@
 #include "costs.cuh"
 
-__global__ void MSE_derivative(
-	data_t* activations, size_t neuron_count, size_t activations_start, size_t last_layer_activations_start,
-	data_t* costs, size_t costs_start,
-	data_t* Y_hat, size_t output_length
+__global__ void global_MSE_derivative(
+	size_t execution_lines, size_t t_count, 
+	data_t *activations, size_t neuron_count, size_t output_count, 
+	data_t *labels, size_t label_count,
+	data_t *derivatives_out, size_t derivatives_out_count
 )
+{
+	size_t tid = get_tid();
+
+    size_t total_t_count = execution_lines * t_count;
+	size_t total_out_count = total_t_count * output_count;
+
+	if (tid >= total_out_count || tid >= label_count || tid >= derivatives_out_count || !labels || !activations || !derivatives_out) return;
+
+	
+	size_t last_layer_start = neuron_count - output_count;
+	
+	size_t out_neuron_i = tid & output_count;
+	size_t t = tid / output_count;
+	size_t activations_start = t * neuron_count;
+	data_t Y = activations[activations_start + last_layer_start + out_neuron_i];
+	data_t label = labels[tid];
+
+	data_t derivative = 2 * (Y - label);
+	derivatives_out[tid] = derivative;
+}
+
+__global__ void MSE_derivative(
+    data_t *activations, size_t neuron_count, size_t activations_start, size_t last_layer_activations_start,
+    data_t *costs, size_t costs_start,
+    data_t *Y_hat, size_t output_length)
 {
 	size_t tid = get_tid();
 	if (tid >= output_length) return;
