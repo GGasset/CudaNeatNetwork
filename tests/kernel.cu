@@ -387,9 +387,12 @@ void optimizations_test()
 		}
 		std::cout << std::endl << "--------" << std::endl;
 
-
+		data_t *grads = n->backpropagate(parallel_execution_line_n, t_count, /*TODO: output_costs*/0, total_out_count, activations, execution_values, params);
 		cudaFree(activations);
 		cudaFree(execution_values);
+
+		n->subtract_gradients(parallel_execution_line_n, t_count, grads, params);
+		cudaFree(grads);
 	}
 	delete n;
 }

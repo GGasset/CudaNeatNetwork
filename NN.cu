@@ -199,7 +199,7 @@ data_t *NN::backpropagate(
 	size_t total_t_count = execution_lines * t_count_per_execution_line;
 
 	size_t total_output_neurons = total_t_count * get_output_length();
-	if (total_output_neurons != output_cost_len) throw std::exception();
+	if (!output_cost || total_output_neurons != output_cost_len) throw std::exception();
 
 	size_t total_neuron_count = total_t_count * counts.neurons;
 	data_t *costs = cudaCalloc<data_t>(total_neuron_count);
