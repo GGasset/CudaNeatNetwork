@@ -346,10 +346,17 @@ void optimizations_test()
 {
 	const size_t input_length = 1;
 	const size_t output_length = 1;
-	const size_t parallel_execution_line_n = 3;
-	const size_t t_count = 3;
+	const size_t parallel_execution_line_n = 2;
+	const size_t t_count = 2;
 
 	gradient_hyperparameters params;
+	params.optimization.L_regularization.active = false;
+	params.optimization.adam.active = false;
+	params.regularization.entropy_bonus.active = false;
+	params.global_gradient_clip = 0;
+	params.dropout_rate = 0;
+	params.learning_rate = 0.001;
+
 	NN *n = NN_constructor()
 		.append_layer(Dense, Neuron, output_length)
 		.construct(input_length, params.optimization);
@@ -360,17 +367,20 @@ void optimizations_test()
 	data_t X[total_in_count];
 	for (size_t i = 0; i < total_in_count; i++)
 	{
-		X[i] = i % 2? -1 : 1;
+		//X[i] = i % 2? -1 : 1;
+		X[i] = -.5;
 	}
 
 	size_t total_label_count = total_out_count * t_count;
+	data_t persistent_Y[total_label_count];
 	data_t Y_hat[total_label_count];
 	for (size_t i = 0; i < total_label_count; i++)
 	{
-		Y_hat[i] = i % 2? .75 : .25;
+		//Y_hat[i] = i % 2? .75 : .25;
+		Y_hat[i] = .515152;
 	}
 
-	const size_t epoch_n = 1000;
+	const size_t epoch_n = 100000;
 	for (size_t epoch = 0; epoch < epoch_n; epoch++)
 	{
 		data_t *activations = 0;
@@ -381,33 +391,36 @@ void optimizations_test()
 			data_t *Y = n->execute(parallel_execution_line_n, t, X, total_in_count, true, host_arr_new,
 				&activations, &execution_values);
 
-			std::cout << "| ";
 			for (size_t i = 0; i < total_out_count; i++)
-				std::cout << Y_hat[t * total_out_count + i] << " " << Y[i] << " | ";
-			
+				persistent_Y[i * t_count * output_length + t] = Y[i];
 			delete[] Y;
 		}
-		std::cout << std::endl << "--------" << std::endl;
 
-		/*data_t *costs = cudaCalloc<data_t>(total_label_count);
-		global_MSE_derivative n_threads(total_label_count) (
-			parallel_execution_line_n, t_count, activations, n->get_neuron_count(), output_length,
-			Y_hat, total_label_count,
-			costs, total_label_count
+
+		data_t mean_derivative = 0;
+		data_t *output_costs = MSE_derivative(
+			parallel_execution_line_n, t_count,
+			activations, n->get_neuron_count(), output_length, 
+			Y_hat, total_label_count, true
 		);
-		cudaDeviceSynchronize();
+
+		std::cout << "| ";
+		for (size_t i = 0; i < total_label_count; i++)
+			std::cout << Y_hat[i] << " " << persistent_Y[i] << " | ";
+		std::cout << " " << epoch << std::endl << "--------" << std::endl;
+
 
 		data_t *grads = n->backpropagate(
 			parallel_execution_line_n, t_count, 
-			costs, total_label_count, 
+			output_costs, total_label_count, 
 			activations, execution_values, params
-		);*/
+		);
 		cudaFree(activations);
 		cudaFree(execution_values);
-		//cudaFree(costs);
+		cudaFree(output_costs);
 
-		//n->subtract_gradients(parallel_execution_line_n, t_count, grads, params);
-		//cudaFree(grads);
+		n->subtract_gradients(parallel_execution_line_n, t_count, grads, params);
+		cudaFree(grads);
 	}
 	delete n;
 }

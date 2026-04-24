@@ -16,6 +16,12 @@ __global__ void global_MSE_derivative(
 	data_t *derivatives_out, size_t derivatives_out_count
 );
 
+__host__ data_t *MSE_derivative(
+	size_t execution_lines, size_t t_count,
+	data_t *activations, size_t neuron_count, size_t output_count,
+	data_t *labels, size_t label_count, bool are_labels_on_host
+);
+
 __global__ void MSE_derivative(
 	data_t* activations, size_t neuron_count, size_t activations_start, size_t last_layer_activations_start,
 	data_t* costs, size_t costs_start,

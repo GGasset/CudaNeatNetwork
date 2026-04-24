@@ -17,14 +17,43 @@ __global__ void global_MSE_derivative(
 	
 	size_t last_layer_start = neuron_count - output_count;
 	
-	size_t out_neuron_i = tid & output_count;
+	size_t out_neuron_i = tid % output_count;
 	size_t t = tid / output_count;
 	size_t activations_start = t * neuron_count;
-	data_t Y = activations[activations_start + last_layer_start + out_neuron_i];
+	size_t activation_i = activations_start + last_layer_start + out_neuron_i;
+	data_t Y = activations[activation_i];
 	data_t label = labels[tid];
 
 	data_t derivative = 2 * (Y - label);
 	derivatives_out[tid] = derivative;
+}
+
+__host__ data_t *MSE_derivative(
+	size_t execution_lines, size_t t_count, 
+	data_t *activations, size_t neuron_count, size_t output_count, 
+	data_t *labels, size_t label_count, bool are_labels_on_host
+)
+{
+	if (!activations || !labels) return 0;
+    if (are_labels_on_host)
+	{
+		data_t *device_labels = 0;
+		cudaMalloc(&device_labels, sizeof(data_t) * label_count);
+		cudaMemcpy(device_labels, labels, sizeof(data_t) * label_count, cudaMemcpyHostToDevice);
+		labels = device_labels;
+	}
+
+	data_t *out_derivatives = cudaCalloc<data_t>(label_count);
+
+	global_MSE_derivative n_threads(label_count) (
+		execution_lines, t_count, activations, neuron_count, output_count,
+		labels, label_count, out_derivatives, label_count
+	);
+	cudaDeviceSynchronize();
+
+	if (are_labels_on_host) cudaFree(labels);
+
+	return out_derivatives;
 }
 
 __global__ void MSE_derivative(

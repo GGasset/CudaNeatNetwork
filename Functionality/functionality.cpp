@@ -3,8 +3,12 @@
 
 unsigned long long get_arbitrary_number()
 {
+#ifndef DETERMINISTIC
 	return ((int)time(NULL)) +
      (unsigned long long)clock();
+#else
+    return 13;
+#endif
 }
 
 float get_random_float()

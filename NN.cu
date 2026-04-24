@@ -137,6 +137,14 @@ data_t *NN::execute(
 			1, 0
 		);
 		cudaDeviceSynchronize();
+
+		cudaFree(*activations);
+		cudaFree(*execution_values);
+
+		*activations = out_activations;
+		*execution_values = out_execution_values;
+
+		//print_array(*activations, out_activations_length);
 	}
 	else
 	{
@@ -235,7 +243,7 @@ data_t *NN::backpropagate(
 	size_t total_gradient_count = total_t_count * counts.gradients;
 	data_t *gradients = cudaCalloc<data_t>(total_gradient_count);
 	if (!gradients) {cudaFree(costs); cudaFree(derivatives); throw std::exception();}
-	for (size_t i = counts.layer_count + 1; i > 0; i--)
+	for (size_t i = counts.layer_count; i > 0; i--)
 	{
 		layers[i - 1]->backpropagate(
 			execution_lines,
