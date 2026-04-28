@@ -269,9 +269,12 @@ T PRAM_reduce_add(T *in, size_t in_len, T *out_write = 0)
 	return result;
 }
 
-// Shared memory needs to be the same as blockDim.x * blockDim.y
+//__global__ void global_multi_PRAM_add(float*);
+
+
+// Shared memory needs to be the same as blockDim.x * gridDim.y
 // Uses get_tid()
-template<typename T>
+/*template<typename T>
 __global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
 {
 	extern __shared__ T sdata[];
@@ -298,11 +301,69 @@ __global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
 		expected_threads >>= 1;
 	}
 	if (!tid) g_data[blockIdx.x + arr_len * t] = sdata[0];
+}*/
+
+// Reduces arr_len by up to blockDim.x, blockDim.x must be a power of 2 for optimal performance, 32 is best
+// gridDim.x must be arr_len / blockDim.x + (arr_len % blockDim.x > 0)
+// gridDim.y must be arr_count
+// shared size must be sizeof(T) * blockDim.x
+// After a call to this function set arr_len to: arr_len / blockDim.x + (arr_len % blockDim.x > 0)
+template<typename T> 
+__global__ void global_multi_PRAM_add(T *g_data, size_t arr_count, size_t arr_len)
+{
+    extern __shared__ unsigned char smem[];
+	T *sdata = (T *)smem;
+
+	size_t max_arr_values_per_block = blockDim.x;
+	size_t arr_i = blockIdx.y;
+	if (arr_i >= arr_count) return;
+	size_t arr_start = arr_i * arr_len;
+
+	size_t tidx = threadIdx.x;
+
+	// The part of the array that this block is responsible
+	size_t subarr_i = blockIdx.x;
+	size_t subarr_start = subarr_i * max_arr_values_per_block;
+
+	size_t arr_read_i = subarr_start + tidx;
+	if (arr_read_i >= arr_len) return;
+
+	size_t gdata_read_i = arr_start + arr_read_i;
+	sdata[tidx] = g_data[gdata_read_i];
+
+	size_t subarr_len = device_min(max_arr_values_per_block, arr_len - subarr_start);
+	size_t expected_threads = subarr_len >> 1;
+	while (expected_threads)
+	{
+		if (tidx >= expected_threads) return;
+		__syncthreads();
+
+		sdata[tidx] += sdata[expected_threads + tidx];
+		expected_threads = expected_threads >> 1;
+	}
+
+	// Last value remaining in the subarr will write to global data index that:
+	// is the new location of the array, inside the array, it writes to the index of the subarray
+	// So the second subarray writes to the second value of the array
+	// and the new array location overwrites old array locations of other arrays
+	// also copy the last value to the end of the array if sub_arr_len is odd
+
+	if (!tidx)
+	{
+		size_t new_arr_len = arr_len / blockDim.x + (arr_len % blockDim.x > 0);
+		size_t new_arr_start_i = new_arr_len * arr_i;
+		size_t value_write = new_arr_start_i + subarr_i;
+		g_data[value_write] = sdata[0];
+		if (subarr_len < max_arr_values_per_block && (subarr_len & 1))
+		{
+			g_data[value_write + 1] = sdata[subarr_len - 1];
+		}
+	}
 }
 
 template<typename T>
 // Arr len refers to the length of each array to do reduce add on
-T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
+__host__ T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 {
 	size_t in_len = arr_len * arr_count;
 	T *tmp = 0;
@@ -310,14 +371,16 @@ T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
 
 	size_t block_size = 32;
-	while (arr_len)
+	while (arr_len > 1)
 	{
-		global_PRAM_reduce_add 
-			kernel_shared(dim3(arr_len / block_size + (arr_len % block_size > 0), arr_count), block_size, sizeof(T) * block_size) (
-				tmp, arr_len
-			);
+		size_t blocks_per_array = arr_len / block_size + (arr_len % block_size > 0);
+		global_multi_PRAM_add kernel_shared(dim3(blocks_per_array, arr_count), block_size, sizeof(T) * block_size) (
+			tmp, arr_count, arr_len
+		);
 		cudaDeviceSynchronize();
-		arr_len /= block_size;
+		arr_len = blocks_per_array;
+		print_array(tmp, in_len);
+		print_array(tmp, arr_len);
 	}
 
 	T *result = 0;
