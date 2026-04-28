@@ -46,7 +46,7 @@ __global__ void NEAT_backpropagate(
 	data_t connected_activation = activations[activations_start + connected_neuron_i];
 
 	size_t neuron_grads_start = grads_start + props.gradients_start + props.per_neuron_gradients_start[neuron_i];
-	data_t bias_grad = grads[grads_start + neuron_grads_start];
+	data_t bias_grad = grads[neuron_grads_start];
 	
 	// Weight gradient
 	grads[neuron_grads_start + neuron_i + 1 + connection_i] = bias_grad * connected_activation;
