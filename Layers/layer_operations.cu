@@ -206,7 +206,7 @@ __global__ void LSTM_derivatives(
 	size_t neuron_i = total_neuron_count % layer.neuron_count;
 	size_t t = tid / layer.neuron_count;
 
-	//	           initial gaps    +other_execs+gap until next execution line
+	//	           initial gaps               +other_execs+gap until next execution line
 	size_t arr_t = execution_line_t * (t + 1) +     t     + t * (exec_line_t_count - execution_line_t - 1);
 
 	size_t neuron_weights_start = neuron_i * 4;
@@ -357,7 +357,7 @@ __global__ void backpropagate_activation(
 	case no_activation:
 	default: break;
 	}
-
+	
 	size_t neuron_gradients_start = lens.gradients * array_t + layer.gradients_start + layer.per_neuron_gradients_start[neuron_i];
 	gradients[neuron_gradients_start] = bias_gradient;
 }
