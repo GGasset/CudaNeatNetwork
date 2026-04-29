@@ -97,7 +97,7 @@ void DenseConnections::backpropagate(
 	data_t *weight_gradients = 0;
 	cudaMalloc(&weight_gradients, sizeof(data_t) * total_connections);
 	clone_arr_values_n_times n_threads(total_connections) (
-		weight_gradients, n_linear_funcs, previous_layer_length, weight_gradients, total_connections
+		bias_gradients, n_linear_funcs, previous_layer_length, weight_gradients, total_connections
 	);
 	cudaDeviceSynchronize();
 	cudaFree(bias_gradients);
