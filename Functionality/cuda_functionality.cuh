@@ -269,40 +269,6 @@ T PRAM_reduce_add(T *in, size_t in_len, T *out_write = 0)
 	return result;
 }
 
-//__global__ void global_multi_PRAM_add(float*);
-
-
-// Shared memory needs to be the same as blockDim.x * gridDim.y
-// Uses get_tid()
-/*template<typename T>
-__global__ void global_multi_PRAM_add(T *g_data, size_t arr_len)
-{
-	extern __shared__ T sdata[];
-
-	size_t tid = threadIdx.x;
-	size_t gid = get_tid();
-
-	size_t t = blockIdx.y;
-
-	size_t expected_threads = blockDim.x >> 1;
-
-	size_t t_count = gridDim.y;
-	size_t in_len = arr_len * t_count;
-
-	sdata[tid] = 0;
-	if (gid < in_len)
-		sdata[tid] = g_data[gid + arr_len * t];
-	while (expected_threads)
-	{
-		if (tid >= expected_threads) return;
-
-		__syncthreads();
-		sdata[tid * 2] += sdata[tid * 2 + 1];
-		expected_threads >>= 1;
-	}
-	if (!tid) g_data[blockIdx.x + arr_len * t] = sdata[0];
-}*/
-
 // Reduces arr_len by up to blockDim.x, blockDim.x must be a power of 2 for optimal performance, 32 is best
 // gridDim.x must be arr_len / blockDim.x + (arr_len % blockDim.x > 0)
 // gridDim.y must be arr_count
@@ -379,8 +345,6 @@ __host__ T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 		);
 		cudaDeviceSynchronize();
 		arr_len = blocks_per_array;
-		print_array(tmp, in_len);
-		print_array(tmp, arr_len);
 	}
 
 	T *result = 0;
