@@ -11,7 +11,7 @@ __global__ void extract_activations_dense(
 	size_t per_t_input_count = previous_layer_length * layer_neuron_count;
 	size_t input_count = per_t_input_count * t_count;
 
-	if (tid >= input_count) return;
+	if (tid >= input_count || !out_arr || !activations) return;
 
 	size_t t = tid % t_count;
 	size_t activations_start = t * neuron_count + (t + 1) * neuron_count * gaps_between_usable_arrays_t_count;
@@ -40,10 +40,12 @@ __global__ void get_pondered_activations_neat(
 	size_t activations_start = neuron_count * t + gaps_between_usable_arrays_t_count * neuron_count * (t + 1);
 	size_t activations_i = activations_start + connection_points[connection_i];
 
+	size_t neuron_i = connection_neuron_i[connection_i];
+	size_t neuron_connection_i = tid % max_connection_count_at_layer;
 	size_t write_i = 
 		max_connection_count_at_layer * layer_neuron_count * t // Go to time step activations start
-		+ max_connection_count_at_layer * connection_neuron_i[connection_i] // Go to layer activations
-		+ connection_i;
+		+ max_connection_count_at_layer * neuron_i// Go to layer activations
+		+ neuron_connection_i;
 
 	out_arr[write_i] = activations[activations_i] * weights[connection_i];
 }
