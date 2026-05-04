@@ -3,13 +3,19 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+**.cmake
+**CMakeCache.txt
+**NN
+**Makefile
+**.o
+**.d
+**/CMakeFiles/*
+
 .vscode/
 godot-cpp/*
-build/*
 *.swp
 .sconsign.dblite
 godot_bin/*
-socket_client/build/*
 socket_client/test_main/*[^p]
 
 
