@@ -334,6 +334,7 @@ __host__ T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 	size_t in_len = arr_len * arr_count;
 	T *tmp = 0;
 	cudaMalloc(&tmp, sizeof(T) * in_len);
+	if (!tmp) return 0;
 	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
 
 	size_t block_size = 32;
@@ -349,6 +350,7 @@ __host__ T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 
 	T *result = 0;
 	cudaMalloc(&result, sizeof(T) * arr_count);
+	if (!result) return result;
 	cudaMemcpy(result, tmp, sizeof(T) * arr_count, cudaMemcpyDeviceToDevice);
 	cudaFree(tmp);
 	return result;
