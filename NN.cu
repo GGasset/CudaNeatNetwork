@@ -150,6 +150,12 @@ data_t *NN::execute(
 	{
 		*activations = cudaCalloc<data_t>(counts.neurons * execution_lines);
 		*execution_values = cudaCalloc<data_t>(counts.execution_values * execution_lines);
+		if (!*activations || !*execution_values)
+		{
+			cudaFree(*activations);
+			cudaFree(*execution_values);
+			return 0;
+		}
 	}
 
 	if (is_recurrent() && !delete_memory_before && !t_count_per_execution_line && prev_execution_values && prev_execution_values_t_count_per_execution_line) 
