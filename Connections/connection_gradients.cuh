@@ -15,6 +15,13 @@ __global__ void cud_dense_gradient_calculation(
 	field_t* weights
 );
 
+__global__ void dense_backpropagate(
+	size_t t_count, data_t *activations, data_t *grads, data_t *costs,
+	field_t *weights, size_t prev_layer_activations_start, size_t prev_layer_len,
+	size_t connection_count, nn_lens lengths, layer_properties props,
+	size_t gaps_between_usable_arrs_t_count
+);
+
 __global__ void NEAT_backpropagate(
 	size_t t_count, data_t *activations, data_t *grads, data_t *costs,
 	field_t *weights, size_t *connection_points, size_t *connection_neuron_i,

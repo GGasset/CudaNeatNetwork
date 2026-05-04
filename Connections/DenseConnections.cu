@@ -72,8 +72,15 @@ void DenseConnections::backpropagate(
 )
 {
 	size_t total_connections = connection_count * t_count;
-	size_t n_linear_funcs = neuron_count * t_count;
 
+	dense_backpropagate n_threads(total_connections) (
+		t_count, activations, grads, costs, weights,
+		previous_layer_activations_start, previous_layer_length, connection_count,
+		lengths, props, gaps_between_usable_arrays_t_count
+	);
+	cudaDeviceSynchronize();
+
+	/*size_t n_linear_funcs = neuron_count * t_count;
 	data_t *previous_layer_activations = 0;
 	cudaMalloc(&previous_layer_activations, sizeof(data_t) * total_connections);
 
@@ -135,7 +142,7 @@ void DenseConnections::backpropagate(
 	cudaDeviceSynchronize();
 
 	cudaFree(activations_gradients);
-	cudaFree(weight_gradients);
+	cudaFree(weight_gradients);*/
 }
 
 void DenseConnections::get_derivative(
