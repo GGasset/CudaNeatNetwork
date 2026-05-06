@@ -634,11 +634,8 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 		return;
 	curandGenerator_t generator;
 	curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_XORWOW);
-#ifdef DETERMINISTIC
-	curandSetPseudoRandomGeneratorSeed(generator, 13);
-#else
 	curandSetPseudoRandomGeneratorSeed(generator, get_arbitrary_number());
-#endif
+	
 	float* arr = 0;
 	cudaMalloc(&arr, sizeof(float) * value_count);
 	curandGenerateUniform(generator, arr, value_count);
