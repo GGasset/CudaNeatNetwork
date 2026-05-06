@@ -626,19 +626,23 @@ __host__ T* cuda_insert_zeros(T* old, size_t old_len, long insert_i, size_t inse
 	return out;
 }
 
+extern curandGenerator_t global_curand_generator;
+
 // Generates values between 0 and 1, divides them by value_divider and transforms 50% of them if generate_negative_values is true
 template<typename T, typename t = data_t>
 void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t value_divider = 1, bool generate_negative_values = false)
 {
 	if (!out)
 		return;
-	curandGenerator_t generator;
-	curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_XORWOW);
-	curandSetPseudoRandomGeneratorSeed(generator, get_arbitrary_number());
-	
+	if (!global_curand_generator)
+	{
+		curandCreateGenerator(&global_curand_generator, CURAND_RNG_PSEUDO_XORWOW);
+		curandSetPseudoRandomGeneratorSeed(global_curand_generator, get_arbitrary_number());
+	}
+
 	float* arr = 0;
 	cudaMalloc(&arr, sizeof(float) * value_count);
-	curandGenerateUniform(generator, arr, value_count);
+	curandGenerateUniform(global_curand_generator, arr, value_count);
 	if (generate_negative_values)
 	{
 		add_to_array<float, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) (
@@ -659,7 +663,6 @@ void generate_random_values(T* out, size_t value_count, size_t start_i = 0, t va
 	logical_copy<T, float> kernel(value_count / 32 + (value_count % 32 > 0), 32) ((out) + start_i, value_count, arr, value_count);
 	cudaDeviceSynchronize();
 
-	curandDestroyGenerator(generator);
 	cudaDeviceSynchronize();
 	cudaFree(arr);
 }

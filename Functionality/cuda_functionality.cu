@@ -1,5 +1,6 @@
 #include "cuda_functionality.cuh"
 
+curandGenerator_t global_curand_generator = 0;
 
 __device__ data_t device_abs(data_t a)
 {
