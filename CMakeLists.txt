@@ -142,7 +142,7 @@ if (DEBUG)
 	add_compile_definitions("DEBUG")
 	message("-- Config debug")
 else()
-	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O2")
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 	SET(GCC_COVERAGE_COMPILE_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS} -O2")
 	message("-- Added optimization")
 endif()
@@ -152,6 +152,7 @@ if(DETERMINISTIC)
 endif()
 
 set(CMAKE_CUDA_ARCHITECTURES "native")
+#set(CMAKE_CUDA_ARCHITECTURES "all")
 
 project(NN LANGUAGES CUDA CXX)
 
