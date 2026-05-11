@@ -252,7 +252,6 @@ T PRAM_reduce_add(T *in, size_t in_len, T *out_write = 0)
 	cudaMalloc(&tmp, sizeof(T) * in_len);
 	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
 
-	size_t block_size = 32;
 	while (in_len)
 	{
 		global_PRAM_reduce_add 
@@ -337,7 +336,6 @@ __host__ T *multi_PRAM_add(T* in, size_t arr_len, size_t arr_count)
 	if (!tmp) return 0;
 	cudaMemcpy(tmp, in, sizeof(T) * in_len, cudaMemcpyDefault);
 
-	size_t block_size = 32;
 	while (arr_len > 1)
 	{
 		size_t blocks_per_array = arr_len / block_size + (arr_len % block_size > 0);
