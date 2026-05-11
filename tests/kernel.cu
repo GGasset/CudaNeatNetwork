@@ -346,18 +346,19 @@ void optimizations_test()
 {
 	const size_t input_length = 1;
 	const size_t output_length = 1;
-	const size_t parallel_execution_line_n = 2;
-	const size_t t_count = 2;
+	const size_t parallel_execution_line_n = 512;
+	const size_t t_count = 1;
 
 	gradient_hyperparameters params;
-	params.optimization.L_regularization.active = false;
+	/*params.optimization.L_regularization.active = false;
 	params.optimization.adam.active = false;
 	params.regularization.entropy_bonus.active = false;
 	params.global_gradient_clip = 0;
-	params.dropout_rate = 0;
-	params.learning_rate = 0.001;
+	params.dropout_rate = 0;*/
+	params.learning_rate = 0.00001;
 
 	NN *n = NN_constructor()
+		.append_layer(Dense, Neuron, 128 << 4)
 		.append_layer(Dense, Neuron, output_length)
 		.construct(input_length, params.optimization);
 
@@ -379,6 +380,8 @@ void optimizations_test()
 		//Y_hat[i] = i % 2? .75 : .25;
 		Y_hat[i] = .515152;
 	}
+
+	int64_t clock_time = clock();
 
 	const size_t epoch_n = 100000;
 	for (size_t epoch = 0; epoch < epoch_n; epoch++)
@@ -404,10 +407,6 @@ void optimizations_test()
 			Y_hat, total_label_count, true
 		);
 
-		std::cout << "| ";
-		for (size_t i = 0; i < total_label_count; i++)
-			std::cout << Y_hat[i] << " " << persistent_Y[i] << " | ";
-		std::cout << " " << epoch << std::endl << "--------" << std::endl;
 
 
 		data_t *grads = n->backpropagate(
@@ -420,6 +419,13 @@ void optimizations_test()
 		cudaFree(output_costs);
 
 		n->subtract_gradients(parallel_execution_line_n, t_count, grads, params);
+
+				std::cout << "| ";
+		for (size_t i = 0; i < total_label_count && 1; i++)
+			std::cout << Y_hat[i] << " " << persistent_Y[i] << " | ";
+		std::cout << " " << epoch << " " << (clock() - clock_time) / (float)CLOCKS_PER_SEC << "s." << std::endl << "--------" << std::endl;
+		clock_time = clock();
+
 		cudaFree(grads);
 	}
 	delete n;
