@@ -6,6 +6,9 @@
 
 typedef struct GAE_hyperparameters
 {
+	reward_normalization_data reward_normalization;
+	bool use_reward_normalization = true;
+
 	gradient_hyperparameters value_function;
 
 	// Discount factor, ranges [0, 1]

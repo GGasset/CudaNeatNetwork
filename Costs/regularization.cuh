@@ -4,6 +4,24 @@
 #include "cuda_functionality.cuh"
 #include "gradient_parameters.h"
 
+class reward_normalization_data
+{
+private:
+    data_t mean = 0;
+    data_t std = 0;
+
+    static __global__ void g_incoming_rewards(data_t *incoming_rewards, size_t rewards_count, data_t *out_normalized_rewards);
+
+public:
+    // Does not affect future normalization
+    data_t normalize_reward(data_t r);
+
+    // Returns normalized rewards, counts to future normalization
+    data_t *incoming_rewards(data_t *incoming_rewards, bool are_rewards_on_host, arr_location _return_location);
+    // Returns normalized reward, counts to future normalization
+    data_t incoming_reward(data_t r);
+};
+
 /// <summary>
 /// Adds entropy regularization to the loss, which encourages exploration and prevents suboptimal convergence
 /// </summary>
