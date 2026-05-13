@@ -40,3 +40,7 @@ data_t* calculate_advantage(
 	NN* value_function_estimator, data_t* value_function_input, GAE_hyperparameters parameters, bool is_input_on_host, bool free_input,
 	data_t* rewards, bool is_reward_on_host, bool free_rewards
 );
+
+__global__ void get_discounted_rewards(size_t parallel_executions_n, size_t t_count, data_t gamma, data_t *rewards, data_t *out);
+data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *value_function_estimator, data_t *state, size_t state_len, GAE_hyperparameters, data_t *rewards);
+

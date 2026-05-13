@@ -164,3 +164,80 @@ data_t *calculate_advantage(
 
 	return advantages;
 }
+
+data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimator, data_t *state, size_t state_len, GAE_hyperparameters gae, data_t *rewards)
+{
+	size_t n_executions = parallel_executions_n * t_count;
+    size_t expected_state_len = n_executions * estimator->get_input_length();
+
+	if (state_len != expected_state_len || !estimator || !state || !rewards) return 0;
+	if (estimator->get_output_length() != 1) throw;
+
+	data_t *device_rewards = cuda_clone_arr(rewards, n_executions);
+	if (!device_rewards) throw;
+
+	data_t *discounted_rewards = cudaCalloc<data_t>(n_executions);
+	if (!discounted_rewards) throw;
+
+	get_discounted_rewards n_threads(n_executions) (parallel_executions_n, t_count, gae.gamma, device_rewards, discounted_rewards);
+	cudaDeviceSynchronize();
+	cudaFree(device_rewards);
+
+
+	if (gae.use_reward_normalization)
+	{
+		data_t *normalized_rewards = gae.reward_normalization.incoming_rewards(discounted_rewards, false, device_arr);
+		cudaFree(discounted_rewards);
+		discounted_rewards = normalized_rewards;
+	}
+
+	data_t *device_state = cuda_clone_arr(state, state_len);
+	if (!device_state) throw;
+	data_t *value_functions = 0;
+
+	data_t *activations = 0;
+	data_t *execution_values = 0;
+	if (!estimator->is_recurrent())
+		value_functions = estimator->execute(n_executions, 0, device_state, state_len, true, device_arr, &activations, &execution_values);
+	else
+	{
+		throw;
+		//for (size_t i = 0; )
+	}
+	if (gae.training_steps == 1)
+	{
+		data_t *cost_derivative = 
+			MSE_derivative(n_executions, 0, activations, estimator->get_neuron_count(), 1, discounted_rewards, n_executions, false);
+		data_t *grads = estimator->backpropagate(n_executions, 0, cost_derivative, n_executions, activations, execution_values, gae.value_function);
+		estimator->subtract_gradients(n_executions, 0, grads, gae.value_function);
+
+		cudaFree(cost_derivative);
+		cudaFree(grads);
+	}
+	cudaFree(activations);
+	cudaFree(execution_values);
+	for (size_t i = 0; i < gae.training_steps && gae.training_steps > 1; i++)
+	{
+		throw;
+		
+	}
+
+	if (!gae.use_GAE)
+	{
+		add_arrays n_threads(n_executions) (value_functions, discounted_rewards, value_functions, n_executions, n_executions, false, true);
+		cudaDeviceSynchronize();
+
+		//cudaFree(value_functions);
+		cudaFree(discounted_rewards);
+		cudaFree(device_state);
+
+		// Value functions is being used to store advantages (deltas)
+		return value_functions;
+	}
+
+	cudaFree(value_functions);
+	cudaFree(discounted_rewards);
+	cudaFree(device_state);
+
+	throw;
+}
