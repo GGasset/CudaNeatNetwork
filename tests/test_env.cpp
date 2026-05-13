@@ -20,15 +20,24 @@ void test_env::initialize_env(size_t env, bool init_agent_pos)
 {
 	size_t board_len = board_size * board_size;
 	size_t agent_pos = std::get<1>(target_agent_pos[env]);
-	if (init_agent_pos)
-		agent_pos = rand() % board_len;
-	size_t target_pos = rand() % (board_len - 1);
-	target_pos += target_pos >= agent_pos;
+	size_t target_pos = 0;
+	if (!easy_mode)
+	{
+		if (init_agent_pos)
+			agent_pos = rand() % board_len;
+		target_pos = rand() % (board_len - 1);
+		target_pos += target_pos >= agent_pos;
+	}
+	else
+	{
+		agent_pos = 0;
+		target_pos = 1;
+	}
 	target_agent_pos[env] = {target_pos, agent_pos};
 	execution_n[env] = 0;
 }
 
-test_env::test_env(size_t _nenvs)
+test_env::test_env(size_t _nenvs, bool easy_mode)
 {
 	nenvs = _nenvs;
 	target_agent_pos.resize(nenvs, {0,0});
