@@ -165,8 +165,51 @@ data_t *calculate_advantage(
 	return advantages;
 }
 
-data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimator, data_t *state, size_t state_len, GAE_hyperparameters gae, data_t *rewards)
+// rewards must be of size n_executions = parallel_execution_n * t_count and write_arr must be of size n_executions * t_count
+// if output is PRAM_add ed discounted rewards will remain 
+__global__ void g_discounted_rewards(data_t *rewards, size_t parallel_execution_n, size_t t_count, data_t gamma, data_t *write_arr)
 {
+	size_t tid = get_tid();
+
+	size_t n_executions = parallel_execution_n * t_count;
+	size_t total_outs = n_executions * t_count;
+	if (tid >= total_outs) return;
+
+	size_t execution_i = tid / t_count;
+	size_t t = execution_i % t_count;
+	size_t addition_arr_i = tid % t_count;
+
+	write_arr[tid] = 0;
+	if (addition_arr_i > t) return;
+
+	size_t discounted_sequence_i = addition_arr_i - t;
+	data_t adjusted_gamma = pow(gamma, discounted_sequence_i);
+
+	size_t parallel_execution_line_i = execution_i / t_count;
+	size_t reward_i = parallel_execution_line_i * t_count + addition_arr_i;
+	write_arr[tid] = adjusted_gamma * rewards[reward_i];
+}
+
+// Rewards are the appended rewards of each execution line
+__host__ data_t *get_discounted_rewards(size_t parallel_executions_n, size_t t_count, data_t gamma, data_t *rewards)
+{
+	size_t n_executions = parallel_executions_n * t_count;
+	size_t expanded_n_executions = n_executions * t_count;
+
+    data_t *unsummed_discounted_rewards = cudaCalloc<data_t>(expanded_n_executions);
+	if (!unsummed_discounted_rewards) return 0;
+
+	g_discounted_rewards n_threads(expanded_n_executions) (rewards, parallel_executions_n, t_count, gamma, unsummed_discounted_rewards);
+	cudaDeviceSynchronize();
+
+	// PRAM add
+	data_t *discounted_rewards = multi_PRAM_add(discounted_rewards, t_count, n_executions);
+	cudaFree(unsummed_discounted_rewards);
+	return discounted_rewards;
+}
+
+data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimator, data_t *state, size_t state_len, GAE_hyperparameters gae, data_t *rewards)
+{ 
 	size_t n_executions = parallel_executions_n * t_count;
     size_t expected_state_len = n_executions * estimator->get_input_length();
 
@@ -176,11 +219,9 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 	data_t *device_rewards = cuda_clone_arr(rewards, n_executions);
 	if (!device_rewards) throw;
 
-	data_t *discounted_rewards = cudaCalloc<data_t>(n_executions);
+	data_t *discounted_rewards = get_discounted_rewards(parallel_executions_n, t_count, gae.gamma, device_rewards);
 	if (!discounted_rewards) throw;
-
-	get_discounted_rewards n_threads(n_executions) (parallel_executions_n, t_count, gae.gamma, device_rewards, discounted_rewards);
-	cudaDeviceSynchronize();
+	
 	cudaFree(device_rewards);
 
 
