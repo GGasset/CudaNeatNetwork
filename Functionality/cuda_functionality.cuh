@@ -596,6 +596,18 @@ __host__ T* cuda_append_array(T* old, size_t old_len, T* to_append, size_t to_ap
 	return out;
 }
 
+template<typename T>
+__global__ T *cuda_write_exponent_sequence(T *arr, size_t arr_len, T base, T starting_exponent = 1, size_t restart_sequence_every = 0, bool sequence_starts_at_1 = true)
+{
+	size_t tid = get_tid();
+	if (!arr || tid >= arr_len)
+
+	size_t sequence_i = tid;
+	if (restart_sequence_every > 0) sequence_i = sequence_i % restart_sequence_every;
+
+	arr[tid] = pow(base, starting_exponent * (sequence_i + !sequence_starts_at_1));
+}
+
 // if insert_i is < 0, an append is made
 template<typename T>
 __host__ T* cuda_insert_zeros(T* old, size_t old_len, long insert_i, size_t insert_len, bool free_old)
