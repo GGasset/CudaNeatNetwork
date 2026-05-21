@@ -97,10 +97,13 @@ template<typename T>
 __host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t key_arr_len, size_t continous_value_count = 1)
 {
 	if (!to_sort || !*to_sort || !keys || !continous_value_count) throw;
+
+	size_t to_sort_len = key_arr_len * continous_value_count;
+
 	T *sorted = 0;
-	cudaMalloc(&sorted, sizeof(T) * key_arr_len);
-	global_sort_by_key n_threads(key_arr_len) (
-		sorted, *to_sort, keys, key_arr_len
+	cudaMalloc(&sorted, sizeof(T) * to_sort_len);
+	global_sort_by_key n_threads(to_sort_len) (
+		sorted, *to_sort, keys, key_arr_len, continous_value_count
 	);
 	cudaDeviceSynchronize();
 
