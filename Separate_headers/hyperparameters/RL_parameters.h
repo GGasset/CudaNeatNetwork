@@ -1,8 +1,10 @@
 
 #pragma once
 
-#include "gradient_parameters.h"
 #include <cstddef>
+
+#include "gradient_parameters.h"
+#include "regularization.cuh"
 
 typedef struct GAE_hyperparameters
 {
