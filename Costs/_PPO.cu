@@ -375,10 +375,11 @@ void PPO_train(
 
 		}
 
+		// BUG: shuffles all values without regard to the length of the inputs and outputs
 		// add shuffling
 		size_t *shuffling_keys = std::get<0>(cud_get_shuffled_indices(total_execution_count));
-		cuda_sort_by_key(&appended_X, shuffling_keys, total_execution_count);
-		cuda_sort_by_key(&appended_Y, shuffling_keys, total_execution_count);
+		cuda_sort_by_key(&appended_X, shuffling_keys, total_execution_count, policy->get_input_length());
+		cuda_sort_by_key(&appended_Y, shuffling_keys, total_execution_count, policy->get_output_length());
 		cuda_sort_by_key(&appended_advantages, shuffling_keys, total_execution_count);
 
 		// Create training data
