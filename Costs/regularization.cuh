@@ -10,8 +10,6 @@ private:
     data_t mean = 0;
     data_t std = 0;
 
-    static __global__ void g_incoming_rewards(data_t *incoming_rewards, size_t rewards_count, data_t *out_normalized_rewards);
-
 public:
     // Does not affect future normalization
     data_t normalize_reward(data_t r);
