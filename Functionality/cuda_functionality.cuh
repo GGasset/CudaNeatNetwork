@@ -77,22 +77,30 @@ __global__ void gapped_copy(T *dst, size_t dst_len, T *src, size_t src_len, size
 }
 
 template<typename T>
-__global__ void global_sort_by_key(T *out, T *to_sort, size_t *keys, size_t arr_len)
+__global__ void global_sort_by_key(T *out, T *to_sort, size_t *keys, size_t key_arr_len, size_t continous_value_count)
 {
-	size_t tid = get_tid();
-	if (tid >= arr_len) return;
+	size_t out_arr_len = key_arr_len * continous_value_count;
 
-	out[keys[tid]] = to_sort[tid];
+	size_t tid = get_tid();
+	if (tid >= out_arr_len) return;
+
+	size_t key_i = tid / continous_value_count;
+	size_t key = keys[key_i];
+
+	size_t continous_value_i = tid % continous_value_count;
+
+	out[key + continous_value_i] = to_sort[tid];
 }
 
+// Continous value count: the number of elements to be treated as a single element
 template<typename T>
-__host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t arr_len)
+__host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t key_arr_len, size_t continous_value_count = 1)
 {
-	if (!to_sort || !*to_sort || !keys) throw;
+	if (!to_sort || !*to_sort || !keys || !continous_value_count) throw;
 	T *sorted = 0;
-	cudaMalloc(&sorted, sizeof(T) * arr_len);
-	global_sort_by_key n_threads(arr_len) (
-		sorted, *to_sort, keys, arr_len
+	cudaMalloc(&sorted, sizeof(T) * key_arr_len);
+	global_sort_by_key n_threads(key_arr_len) (
+		sorted, *to_sort, keys, key_arr_len
 	);
 	cudaDeviceSynchronize();
 
@@ -134,18 +142,23 @@ __global__ void set_execution_values(
 // Summary: Used when there are arr_count values between each array value, and there are arr_count arrays of arr_len lengths
 // out is the values of each array in a continous manner
 // out must be the same length as in
+// continous_value_count is the length of the series of elements that must not be separeted
 template<typename T>
 __global__ void continuize_arrs(
 	T *in, T *out, size_t in_len,
-	size_t arr_len, size_t arr_count
+	size_t arr_len, size_t arr_count,
+	size_t continous_value_count = 1
 )
 {
 	size_t tid = get_tid();
-	if (!in || tid >= in_len) return;
+	if (!in || !arr_len || !arr_count || !continous_value_count || tid >= in_len) return;
 
-	size_t arr_i = tid % arr_count;
-	size_t arr_value_i = tid / arr_count;
-	size_t out_i = arr_len * arr_i + arr_value_i;
+	size_t arr_i = (tid / continous_value_count) % arr_count;
+	size_t arr_value_i = tid / (arr_count * continous_value_count);
+	size_t continous_value_i = tid % continous_value_count;
+
+	size_t out_i = 
+		arr_len * continous_value_count * arr_i + arr_value_i * continous_value_count + continous_value_i;
 
 	out[out_i] = in[tid];
 }
@@ -597,15 +610,16 @@ __host__ T* cuda_append_array(T* old, size_t old_len, T* to_append, size_t to_ap
 }
 
 template<typename T>
-__global__ T *cuda_write_exponent_sequence(T *arr, size_t arr_len, T base, T starting_exponent = 1, size_t restart_sequence_every = 0, bool sequence_starts_at_1 = true)
+__global__ void cuda_write_exponent_sequence(T *arr, size_t arr_len, T base, T starting_exponent = 1, size_t restart_sequence_every = 0, bool sequence_starts_at_1 = true)
 {
 	size_t tid = get_tid();
+	size_t seq_i = tid;
+
 	if (!arr || tid >= arr_len)
 
-	size_t sequence_i = tid;
-	if (restart_sequence_every > 0) sequence_i = sequence_i % restart_sequence_every;
+	if (restart_sequence_every > 0) seq_i = seq_i % restart_sequence_every;
 
-	arr[tid] = pow(base, starting_exponent * (sequence_i + !sequence_starts_at_1));
+	arr[tid] = pow(base, starting_exponent * (seq_i + !sequence_starts_at_1));
 }
 
 // if insert_i is < 0, an append is made
