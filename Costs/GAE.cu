@@ -191,6 +191,7 @@ __global__ void g_discounted_rewards(data_t *rewards, size_t parallel_execution_
 }
 
 // Rewards are the appended rewards of each execution line
+// Output is the discounted rewards of the t_count sequence one execution line after the other
 __host__ data_t *get_discounted_rewards(size_t parallel_executions_n, size_t t_count, data_t gamma, data_t *rewards)
 {
 	size_t n_executions = parallel_executions_n * t_count;
