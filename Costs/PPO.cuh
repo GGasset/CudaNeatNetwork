@@ -15,31 +15,40 @@
 #include <vector>
 #include <tuple>
 
-namespace PPO {
-
-struct PPO_memory
+class PPO_memory
 {
+public:
 	data_t *inputs = 0;
 	data_t *outputs = 0;
 	data_t *rewards = 0;
 
+	// Used to give memory to recurrent NNs
+	data_t *execution_values = 0;
+
 	size_t n_executions = 0;
 	bool was_reward_added = false;
-}
 
-data_t *PPO_execute_train(
+	void deallocate(bool free_memory_execution_values = true);
+};
+
+data_t *PPO_execute(
 	data_t *X, size_t X_len, NN *policy,
-	PPO_memory &save_this_for_me, PPO_hyperparameters, arr_location output_location = host_arr_new,
+	PPO_memory &save_this_for_me, PPO_hyperparameters, bool is_X_on_host = true, arr_location output_location = host_arr_new,
 	bool delete_memory_before = false
 );
 
-void add_rewards(
+// This function starts PPO training step
+// Returns true on error
+int add_rewards(
 	data_t *rewards, size_t rewards_len,
 	NN *value_function, NN *policy, PPO_memory &, PPO_hyperparameters
 );
 
 
-/*struct PPO_internal_memory
+
+namespace PPO {
+
+struct PPO_internal_memory
 {
 	std::vector<data_t *>	initial_internal_states;
 	std::vector<data_t *>	current_internal_states;
@@ -82,5 +91,5 @@ void add_reward(
 
 // returns 0
 bool free_PPO_data(PPO_internal_memory *mem);
-*/
+
 }
