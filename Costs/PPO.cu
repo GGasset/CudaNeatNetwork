@@ -9,7 +9,10 @@ data_t *PPO_execute(
 {
     if (policy->is_recurrent()) throw;
     if (!mem.was_reward_added) return 0;
-    if (!X || X_len != policy->get_input_length() * parameters.vecenvironment_count) return 0;
+    if (
+        !X || X_len != policy->get_input_length() * parameters.vecenvironment_count
+        || parameters.mini_batch_count > parameters.steps_before_training * parameters.vecenvironment_count
+    ) return 0;
 
     data_t *activations = 0;
     data_t *execution_values = 0;
@@ -50,9 +53,26 @@ void non_recurrent_PPO_train(
     NN *value_function, NN *policy, PPO_hyperparameters parameters
 )
 {
+    
     size_t total_execution = n_executions * parameters.vecenvironment_count;
 
     auto [shuffled_keys, key_arr_len] = cud_get_shuffled_indices(total_execution);
+
+    cuda_sort_by_key(&inputs, shuffled_keys, key_arr_len, policy->get_input_length());
+    cuda_sort_by_key(&outputs, shuffled_keys, key_arr_len, policy->get_output_length());
+    cuda_sort_by_key(&advantages, shuffled_keys, key_arr_len, 1);
+
+    size_t minibatch_execution_i_start = 0;
+    for (size_t minibatch_i = 0; minibatch_i < parameters.mini_batch_count; minibatch_i++)
+    {
+        size_t executions_in_minibatch = total_execution / parameters.mini_batch_count;
+        if (minibatch_execution_i_start + executions_in_minibatch >= n_executions)
+            executions_in_minibatch = n_executions - minibatch_execution_i_start;
+
+
+
+        minibatch_execution_i_start += executions_in_minibatch;
+    }
 }
 
 int add_rewards(
@@ -108,4 +128,22 @@ int add_rewards(
     cudaFree(continuized_inputs);
     cudaFree(continuized_outputs);
     cudaFree(advantages);
+}
+
+void PPO_memory::deallocate(bool free_memory_execution_values)
+{
+    cudaFree(inputs);
+    inputs = 0;
+    cudaFree(outputs);
+    outputs = 0;
+    cudaFree(rewards);
+    rewards = 0;
+
+    if (free_memory_execution_values)
+    {
+        cudaFree(execution_values);
+        execution_values = 0;
+    }
+
+    n_executions = 0;
 }
