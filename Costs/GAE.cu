@@ -228,7 +228,7 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 
 	if (gae.use_reward_normalization)
 	{
-		data_t *normalized_rewards = gae.reward_normalization.incoming_rewards(discounted_rewards, false, device_arr);
+		data_t *normalized_rewards = gae.reward_normalization.incoming_vals(discounted_rewards, false, device_arr);
 		cudaFree(discounted_rewards);
 		discounted_rewards = normalized_rewards;
 	}
