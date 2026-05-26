@@ -58,3 +58,54 @@ __host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gra
 	multiply_array n_threads(gradient_count) (gradients, gradient_count, to_multiply_by);
 	cudaDeviceSynchronize();
 }
+
+void value_normalizer::update_mean_std()
+{
+	mean = sum / n;
+	std = sqrt(sum_of_squares / n - mean * mean);
+}
+
+data_t value_normalizer::normalize_val(data_t v)
+{
+    return (v - mean) / std;
+}
+
+data_t *value_normalizer::incoming_vals(
+	data_t *vals, size_t n_vals, bool are_vals_on_host, arr_location _return_location
+)
+{
+	if (are_vals_on_host)
+		vals = cuda_clone_arr(vals, n_vals);
+
+    n += n_vals;
+	sum += PRAM_reduce_add(vals, n_vals);
+
+	data_t *squared_vals = cuda_clone_arr(vals, n_vals);
+	element_wise_multiply n_threads(n_vals) (squared_vals, squared_vals, n_vals);
+	cudaDeviceSynchronize();
+	sum_of_squares += PRAM_reduce_add(squared_vals, n_vals);
+	cudaFree(squared_vals);
+
+
+	update_mean_std();
+
+	data_t *out = cuda_clone_arr(vals, n_vals);
+	normalize_arr n_threads(n_vals) (out, n_vals, mean, std);
+	
+	if (are_vals_on_host)
+		cudaFree(vals);
+		
+	cudaDeviceSynchronize();
+	return out;
+}
+
+data_t value_normalizer::incoming_val(data_t v)
+{
+	sum += v;
+	sum_of_squares += v * v;
+	n++;
+
+	update_mean_std();
+
+    return normalize_val(v);
+}

@@ -178,6 +178,14 @@ __host__ void print_array(T* arr, size_t arr_len)
 	delete[] host_arr;
 }
 
+__global__ void normalize_arr(data_t *vals, size_t n_vals, data_t mean, data_t std)
+{
+	size_t tid = get_tid();
+	if (!vals || !std || tid >= n_vals) return;
+
+	vals[tid] = (vals[tid] - mean) / std;
+}
+
 __global__ void exp_arr(data_t *arr, size_t arr_value_count);
 
 template<typename T, typename t>
