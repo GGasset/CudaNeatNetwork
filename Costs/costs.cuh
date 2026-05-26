@@ -47,6 +47,14 @@ __global__ void log_likelyhood_cost(
 	data_t* cost
 );
 
+// TODO: kl approximation
+__host__ data_t *PPO_derivative(
+	size_t n_executions,
+	size_t output_count,
+	data_t *initial_outputs, data_t *current_outputs, bool are_outputs_on_host,
+	data_t *advantages, data_t clip_ratio, data_t &kl_estimation_out
+);
+
 /// <returns>Mean kl divergence of this step</returns>
 __host__ data_t PPO_derivative(
 	size_t t_count, size_t output_len, size_t neuron_count,
