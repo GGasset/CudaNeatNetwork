@@ -1,6 +1,7 @@
 
 #include "test_env.h"
 #include <cstdlib>
+#include <cstring>
 
 void test_env::add_to_last_episode_lens(size_t episode_len)
 {
@@ -78,6 +79,26 @@ std::vector<data_t> test_env::get_observations(size_t env_i)
 	return out;
 }
 
+std::tuple<data_t *, size_t> test_env::get_all_observations()
+{
+	size_t total_observation_count = get_observation_count() * nenvs;
+    data_t *out_arr = new data_t[total_observation_count];
+
+	size_t actual_observations = 0;
+	for (size_t i = 0; i < nenvs; i++)
+	{
+		size_t observations_start_i = i * get_observation_count();
+
+		std::vector<data_t> obs = get_observations(i);
+		memcpy(out_arr + observations_start_i, obs.data(), sizeof(data_t) * obs.size());
+
+		actual_observations += obs.size();
+	}
+	if (actual_observations != total_observation_count) { delete[] out_arr; throw; };
+
+	return {out_arr, total_observation_count};
+}
+
 std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 {
 	size_t x = std::get<1>(target_agent_pos[env_i]) % board_size;
@@ -150,6 +171,24 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 
 	target_agent_pos[env_i] = { agent_pos, std::get<0>(target_agent_pos[env_i]) };
 	return {0, 0};
+}
+
+std::tuple<data_t *, size_t, std::vector<bool>> test_env::step(data_t *all_action_probs)
+{
+	data_t *rewards = new data_t[nenvs];
+	std::vector<bool> EOPs;
+	EOPs.resize(nenvs);
+
+    for (size_t i = 0; i < nenvs; i++)
+	{
+		size_t action_probs_start_i = get_action_count() * i;
+
+		auto [reward, EOP] = step(all_action_probs + action_probs_start_i, i);
+
+		rewards[i] = reward;
+		EOPs[i] = EOP;
+	}
+	return {rewards, nenvs, EOPs};
 }
 
 data_t test_env::get_mean_episode_len()

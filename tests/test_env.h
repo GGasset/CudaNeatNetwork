@@ -31,10 +31,14 @@ public:
 	test_env(size_t _n_envs, bool easy_mode = 0);
 
 	std::vector<data_t> get_observations(size_t env_i);
+	std::tuple<data_t *, size_t> get_all_observations();
 
 	// Returns reward and wheter the episode finished
 	// Actions_probs must be a host arr
 	std::tuple<data_t, bool> step(data_t *actions_probs, size_t env_i);
+
+	// Returns rewards, its length and a vector informing of finished episodes
+	std::tuple<data_t *, size_t, std::vector<bool>> step(data_t *all_action_probs);
 
 	data_t get_mean_episode_len();
 	inline size_t get_observation_count() {return 4; }
