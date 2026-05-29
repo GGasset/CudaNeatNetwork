@@ -212,7 +212,7 @@ static void NEAT_evolution_test()
 // Bugs: saving loading, global gradient clip, check kl divergence
 // TODO: move value function training loop outside of advantage calculation for greater efficiency
 // TODO: set biases to 0, then orthogonal in initialization, create modular initializer
-static void test_PPO(int argc)
+/*static void test_PPO(int argc)
 {
 	const size_t n_envs = 32;
 	test_env env = test_env(n_envs);
@@ -340,7 +340,7 @@ static void test_PPO(int argc)
 		ss << hit_count << ", " << env.get_mean_episode_len() << ", " << env.get_last_episode_lens_len() << ", " << mean_reward << ", " << i << ", " << exec_n << std::endl;
 		std::cout << ss.str();
 	}
-}
+}*/
 
 void optimizations_test()
 {
@@ -383,7 +383,7 @@ void optimizations_test()
 
 	int64_t clock_time = clock();
 
-	const size_t epoch_n = 100000;
+	const size_t epoch_n = 10;
 	for (size_t epoch = 0; epoch < epoch_n; epoch++)
 	{
 		data_t *activations = 0;
@@ -431,6 +431,44 @@ void optimizations_test()
 	delete n;
 }
 
+void test_optimized_PPO()
+{
+	PPO_hyperparameters hyperparameters;
+	hyperparameters.vecenvironment_count = 32;
+
+	test_env env(hyperparameters.vecenvironment_count, true);
+
+	NN *value_function = NN_constructor()
+		.append_layer(Dense, Neuron, 64)
+		.append_layer(Dense, Neuron, env.get_action_count(), sigmoid)
+		.construct(env.get_observation_count(), hyperparameters.GAE.value_function.optimization);
+
+	NN *policy = NN_constructor()
+		.append_layer(Dense, Neuron, 64)
+		.append_layer(Dense, Neuron, env.get_action_count(), softmax)
+		.construct(env.get_observation_count(), hyperparameters.policy.optimization);
+
+	PPO_memory mem;
+
+	for (size_t epoch = 0; true; epoch++)
+	{
+		auto [observations, observations_len] = env.get_all_observations();
+		
+		data_t *actions = PPO_execute(
+			observations, observations_len, policy, mem, hyperparameters
+		);
+		delete[] observations;
+
+		auto [rewards, reward_count, _] = env.step(actions);
+
+		if (add_rewards(rewards, reward_count, value_function, policy, mem, hyperparameters))
+			throw;
+
+		delete[] rewards;
+	}
+	
+}
+
 int main(int argc)
 {
 #ifdef DETERMINISTIC
@@ -445,7 +483,8 @@ int main(int argc)
 	//bug_hunting();
 	//test_LSTM();
 	//test_PPO(argc);
-	optimizations_test();
+	//optimizations_test();
+	test_optimized_PPO();
 
 	printf("Last error peek: %i\n", cudaPeekAtLastError());
 }
