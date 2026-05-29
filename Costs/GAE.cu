@@ -204,7 +204,7 @@ __host__ data_t *get_discounted_rewards(size_t parallel_executions_n, size_t t_c
 	cudaDeviceSynchronize();
 
 	// PRAM add
-	data_t *discounted_rewards = multi_PRAM_add(discounted_rewards, t_count, n_executions);
+	data_t *discounted_rewards = multi_PRAM_add(unsummed_discounted_rewards, t_count, n_executions);
 	cudaFree(unsummed_discounted_rewards);
 	return discounted_rewards;
 }
@@ -228,7 +228,7 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 
 	if (gae.use_reward_normalization)
 	{
-		data_t *normalized_rewards = gae.reward_normalization.incoming_vals(discounted_rewards, false, device_arr);
+		data_t *normalized_rewards = gae.reward_normalization.incoming_vals(discounted_rewards, n_executions, false, device_arr);
 		cudaFree(discounted_rewards);
 		discounted_rewards = normalized_rewards;
 	}
