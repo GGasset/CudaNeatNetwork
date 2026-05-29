@@ -40,6 +40,8 @@ void test_env::initialize_env(size_t env, bool init_agent_pos)
 
 test_env::test_env(size_t _nenvs, bool easy_mode)
 {
+	this->easy_mode = easy_mode;
+
 	nenvs = _nenvs;
 	target_agent_pos.resize(nenvs, {0,0});
 	execution_n.resize(_nenvs, 0);
@@ -162,8 +164,8 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 			int target_pos_x = target_pos % board_size;
 			int target_pos_y = target_pos / board_size;
 
-			size_t distance = abs(target_pos_x - x) * 2 + abs(target_pos_y - y) * 2;
-			data_t reward = -1 + (1 - distance / (data_t)(board_size * board_size));
+			size_t distance = abs(target_pos_x - x) + abs(target_pos_y - y);
+			data_t reward = -1 + 2 * (1 - distance / (data_t)(board_size * board_size));
 			return end_of_episode(reward, env_i);
 		}
 		execution_n[env_i]++;
