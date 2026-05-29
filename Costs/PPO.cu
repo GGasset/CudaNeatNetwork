@@ -8,7 +8,7 @@ data_t *PPO_execute(
 )
 {
     if (policy->is_recurrent()) throw;
-    if (!mem.was_reward_added) return 0;
+    if (!mem.was_reward_added && mem.n_executions) return 0;
     if (
         !X || X_len != policy->get_input_length() * parameters.vecenvironment_count
         || parameters.mini_batch_count > parameters.steps_before_training * parameters.vecenvironment_count
@@ -176,6 +176,8 @@ int add_rewards(
     cudaFree(inputs);
     cudaFree(outputs);
     cudaFree(advantages);
+
+    return 0;
 }
 
 void PPO_memory::deallocate(bool free_memory_execution_values)
