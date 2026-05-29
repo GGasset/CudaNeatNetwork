@@ -178,7 +178,8 @@ __host__ void print_array(T* arr, size_t arr_len)
 	delete[] host_arr;
 }
 
-__global__ void normalize_arr(data_t *vals, size_t n_vals, data_t mean, data_t std)
+template<typename T>
+__global__ void normalize_arr(T *vals, size_t n_vals, T mean, T std)
 {
 	size_t tid = get_tid();
 	if (!vals || !std || tid >= n_vals) return;
