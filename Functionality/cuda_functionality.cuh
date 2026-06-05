@@ -727,6 +727,8 @@ __global__ void global_shuffle(T *arr, size_t arr_len, size_t i, size_t time)
 template<typename T>
 __host__ void cuda_shuffle_inplace(T *arr, size_t arr_len)
 {
+	if (arr_len < 2) return;
+	
 	size_t needs_shuffling = arr_len;
 	for (size_t i = 0; needs_shuffling > 1; i++, needs_shuffling = needs_shuffling >> 1)
 	{
