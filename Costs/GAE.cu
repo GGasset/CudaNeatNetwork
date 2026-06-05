@@ -249,9 +249,9 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 	if (gae.training_steps == 1)
 	{
 		data_t *cost_derivative = 
-			MSE_derivative(n_executions, 0, activations, estimator->get_neuron_count(), 1, discounted_rewards, n_executions, false);
-		data_t *grads = estimator->backpropagate(n_executions, 0, cost_derivative, n_executions, activations, execution_values, gae.value_function);
-		estimator->subtract_gradients(n_executions, 0, grads, gae.value_function);
+			MSE_derivative(n_executions, 1, activations, estimator->get_neuron_count(), 1, discounted_rewards, n_executions, false);
+		data_t *grads = estimator->backpropagate(n_executions, 1, cost_derivative, n_executions, activations, execution_values, gae.value_function);
+		estimator->subtract_gradients(n_executions, 1, grads, gae.value_function);
 
 		cudaFree(cost_derivative);
 		cudaFree(grads);
