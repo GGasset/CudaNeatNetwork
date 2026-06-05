@@ -18,22 +18,25 @@ data_t *PPO_execute(
     data_t *execution_values = 0;
 
     data_t *device_Y = policy->execute(
-        parameters.vecenvironment_count, mem.n_executions,
+        parameters.vecenvironment_count, policy->is_recurrent() * mem.n_executions,
         X, X_len, is_X_on_host, device_arr,
         &activations, &execution_values, delete_memory_before,
-        mem.execution_values, 1
+        mem.last_execution_values, 1
     );
     if (policy->is_recurrent())
     {
-        cudaFree(mem.execution_values);
-        mem.execution_values = execution_values;
+        cudaFree(mem.last_execution_values);
+        mem.last_execution_values = execution_values;
+
+        cudaFree(mem.last_activations);
+        mem.last_activations = activations;
     }
     else cudaFree(execution_values);
     cudaFree(activations);
     if (!device_Y) return 0;
 
     size_t in_count = policy->get_input_length() * parameters.vecenvironment_count;
-    mem.inputs = cuda_append_array(mem.inputs, in_count * mem.n_executions, X, in_count, true);
+    mem.inputs = cuda_append_array(mem.inputs, in_count * mem.n_executions, X, in_count, true, true);
 
     size_t out_count = policy->get_output_length() * parameters.vecenvironment_count;
     mem.outputs = cuda_append_array(mem.outputs, out_count * mem.n_executions, device_Y, out_count, true);
@@ -66,7 +69,7 @@ void non_recurrent_PPO_minibatch(
         data_t *execution_values = 0;
 
         data_t *current_outputs = policy->execute(
-            n_executions, 1, inputs + inputs_start, inputs_len, false, device_arr, 
+            n_executions, 0, inputs + inputs_start, inputs_len, false, device_arr, 
             &activations, &execution_values
         );
 
@@ -99,17 +102,17 @@ void non_recurrent_PPO_train(
     NN *policy, PPO_hyperparameters parameters
 )
 {
-    size_t total_execution = n_executions * parameters.vecenvironment_count;
+    size_t total_executions = n_executions * parameters.vecenvironment_count;
 
     size_t minibatch_execution_i_start = 0;
     for (size_t minibatch_i = 0; minibatch_i < parameters.mini_batch_count; minibatch_i++)
     {
-        size_t executions_in_minibatch = total_execution / parameters.mini_batch_count;
-        if (minibatch_execution_i_start + executions_in_minibatch >= n_executions)
-            executions_in_minibatch = n_executions - minibatch_execution_i_start;
+        size_t executions_in_minibatch = total_executions / parameters.mini_batch_count;
+        if (minibatch_execution_i_start + executions_in_minibatch >= total_executions)
+            executions_in_minibatch = total_executions - minibatch_execution_i_start;
 
         non_recurrent_PPO_minibatch(
-            inputs, outputs, advantages, n_executions,
+            inputs, outputs, advantages, executions_in_minibatch,
             policy, parameters, minibatch_execution_i_start, executions_in_minibatch
         );
 
@@ -124,12 +127,13 @@ int add_rewards(
 {
     if (!rewards || rewards_len != parameters.vecenvironment_count || mem.was_reward_added) return true;
 
-    mem.rewards = cuda_append_array(mem.rewards, rewards_len * mem.n_executions, rewards, rewards_len, true);
+    mem.rewards = cuda_append_array(mem.rewards, rewards_len * mem.n_executions, rewards, rewards_len, true, true);
     mem.was_reward_added = true;
 
     if (mem.n_executions < parameters.steps_before_training) return 0;
     
     // Training
+    std::cout << "\nTraining..." << std::endl;
 
     size_t total_execution_count = mem.n_executions * parameters.vecenvironment_count;
 
@@ -191,8 +195,8 @@ void PPO_memory::deallocate(bool free_memory_execution_values)
 
     if (free_memory_execution_values)
     {
-        cudaFree(execution_values);
-        execution_values = 0;
+        cudaFree(last_execution_values);
+        last_execution_values = 0;
     }
 
     n_executions = 0;
