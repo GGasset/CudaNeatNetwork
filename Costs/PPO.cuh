@@ -23,7 +23,10 @@ public:
 	data_t *rewards = 0;
 
 	// Used to give memory to recurrent NNs
-	data_t *execution_values = 0;
+	data_t *last_execution_values = 0;
+
+	// Used only for recurrent NNs
+	data_t *last_activations = 0;
 
 	size_t n_executions = 0;
 	bool was_reward_added = false;
