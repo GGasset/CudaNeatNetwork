@@ -42,6 +42,8 @@ __global__ void dense_backpropagate(
 	size_t neuron_i = connection_i / prev_layer_len;
 	size_t connected_neuron_i = tid % prev_layer_len;
 
+	size_t neuron_connection_i = connection_i % prev_layer_len;
+
 	data_t weight = weights[connection_i];
 	data_t connected_activation = activations[activations_start + connected_neuron_i];
 
@@ -49,7 +51,7 @@ __global__ void dense_backpropagate(
 	data_t bias_grad = grads[neuron_grads_start];
 	
 	// Weight gradient
-	grads[neuron_grads_start + neuron_i + 1 + connection_i] = bias_grad * connected_activation;
+	grads[neuron_grads_start + 1 + neuron_connection_i] = bias_grad * connected_activation;
 	atomicAdd(costs + activations_start + connected_neuron_i, -bias_grad * weight);
 }
 
