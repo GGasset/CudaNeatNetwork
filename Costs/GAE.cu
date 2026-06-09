@@ -214,7 +214,7 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 	size_t n_executions = parallel_executions_n * t_count;
     size_t expected_state_len = n_executions * estimator->get_input_length();
 
-	if (state_len != expected_state_len || !estimator || !state || !rewards) return 0;
+	if (state_len != expected_state_len || !estimator || !state || !rewards) throw;
 	if (estimator->get_output_length() != 1) throw;
 
 	data_t *device_rewards = cuda_clone_arr(rewards, n_executions);
