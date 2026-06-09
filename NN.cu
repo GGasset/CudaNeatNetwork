@@ -190,16 +190,16 @@ data_t *NN::execute(
 	data_t *out = alloc_output(total_outputs, output_type);
 	if (out)
 	{
-		data_t *continuized_output = 0;
-		cudaMalloc(&continuized_output, sizeof(data_t) * total_outputs);
+		data_t *extracted_output = 0;
+		cudaMalloc(&extracted_output, sizeof(data_t) * total_outputs);
 		network_value_extract n_threads(total_outputs) (
 			execution_lines, counts.neurons, output_length, 1, t_count_per_execution_line, *output_activations_start,
-			0, 1, *activations, continuized_output
+			0, 1, *activations, extracted_output
 		);
 		cudaDeviceSynchronize();
 
-		cudaMemcpy(out, continuized_output, sizeof(data_t) * total_outputs, cudaMemcpyDefault);
-		cudaFree(continuized_output);
+		cudaMemcpy(out, extracted_output, sizeof(data_t) * total_outputs, cudaMemcpyDefault);
+		cudaFree(extracted_output);
 	}
 	return out;
 }
