@@ -2,6 +2,8 @@
 #include "test_env.h"
 #include <cstdlib>
 #include <cstring>
+#include <utility>
+#include <iostream>
 
 void test_env::add_to_last_episode_lens(size_t episode_len)
 {
@@ -106,19 +108,27 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 	size_t x = std::get<1>(target_agent_pos[env_i]) % board_size;
 	size_t y = std::get<1>(target_agent_pos[env_i]) / board_size;
 
+	for (size_t i = 0; i < 4 && !env_i; i++)
+		//printf("%.4f ", actions_probs[i]);
+		std::cout << actions_probs[i] << " ";
+
 	if (!actions_probs) 
 		throw;
 
 	size_t selected_action = 0;
+	data_t r = get_random_float();
 	{
-		data_t r = get_random_float();
+		bool contains_nan = 0;
 		data_t cumulative_probs = 0;
 		for (size_t i = 0; i < 4 && !selected_action; i++)
 		{
+			contains_nan = contains_nan || actions_probs[i] != actions_probs[i];
 			cumulative_probs += actions_probs[i];
 			if (r <= cumulative_probs)
 				selected_action = i + 1;
 		}
+		if (!selected_action && !contains_nan)
+			selected_action = 4;
 	}
 
 	size_t agent_pos = std::get<1>(target_agent_pos[env_i]);
@@ -146,6 +156,7 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 		break;
 
 	default:
+		printf("Invalid action %li\n", selected_action);
 		throw;
 	}
 	size_t target_pos = std::get<0>(target_agent_pos[env_i]);
