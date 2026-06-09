@@ -79,12 +79,38 @@ __host__ void activation_function(
 			timestep_gap, layer.execution_values_start, 0, 1, execution_vals, linear_functions
 		);
 		cudaDeviceSynchronize();
+
+		// Subtract highest logit from each parallel execution to every logit to make softmax numerically stable
+		// Makes changes to execution values and to the extracted linear functions
+
+		data_t *highest_logits = multi_PRAM_max(linear_functions, layer.neuron_count, t_count);
+
+		data_t *expanded_highest_logits = 0;
+		cudaMalloc(&expanded_highest_logits, sizeof(data_t) * total_neuron_n);
+		cuda_expand_arr n_threads(total_neuron_n) (
+			highest_logits, t_count, layer.neuron_count, expanded_highest_logits, total_neuron_n
+		);
+		cudaDeviceSynchronize();
+		cudaFree(highest_logits);
+
+		add_arrays n_threads(total_neuron_n) (
+			linear_functions, linear_functions, expanded_highest_logits,
+			total_neuron_n, total_neuron_n, false, true
+		);
+		cudaDeviceSynchronize();
+		cudaFree(expanded_highest_logits);
+
+		network_value_insert n_threads(total_neuron_n) (
+			t_count, lens.execution_values, layer.neuron_count, layer.execution_values_per_neuron,
+			timestep_gap, layer.execution_values_start, 0, 1, linear_functions, execution_vals
+		);
+
 		exp_arr n_threads(total_neuron_n) (linear_functions, total_neuron_n);
 		cudaDeviceSynchronize();
 
 		data_t *exponent_sums = multi_PRAM_add(linear_functions, layer.neuron_count, t_count);
 		data_t *expanded_sums = linear_functions;
-		clone_arr_values_n_times n_threads(total_neuron_n) (
+		cuda_expand_arr n_threads(total_neuron_n) (
 			exponent_sums, t_count, layer.neuron_count, expanded_sums, total_neuron_n
 		);
 		cudaDeviceSynchronize();
