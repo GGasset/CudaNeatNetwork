@@ -141,7 +141,7 @@ __global__ void global_PPO_derivative(
 
 	size_t execution_i = tid / output_count;
 
-	data_t initial_output = initial_outputs[tid];
+	data_t initial_output = initial_outputs[tid] + 1e-7;
 	data_t output = current_outputs[tid];
 	data_t advantage = advantages[execution_i];
 
