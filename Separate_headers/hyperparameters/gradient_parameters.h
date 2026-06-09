@@ -46,7 +46,7 @@ typedef struct gradient_hyperparameters
 	// Set to 0 to disable
 	data_t global_gradient_clip = .5;
 	data_t gradient_clip = 1;
-	float  dropout_rate = .2;
+	data_t dropout_rate = .2;
 
 	regularization_hyperparameters	regularization;
 	optimizer_hyperparameters		optimization;
