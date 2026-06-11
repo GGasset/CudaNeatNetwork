@@ -434,18 +434,34 @@ void optimizations_test()
 void test_optimized_PPO()
 {
 	PPO_hyperparameters hyperparameters;
-	hyperparameters.vecenvironment_count = 32;
+	hyperparameters.vecenvironment_count = 128;
+	hyperparameters.clip_ratio = .1;
+
+	hyperparameters.policy.learning_rate = .01;
+	hyperparameters.policy.regularization.entropy_bonus.active = true;
+
+
+	hyperparameters.GAE.training_steps = 1;
+
+	hyperparameters.GAE.value_function.learning_rate = .1;
 
 	test_env env(hyperparameters.vecenvironment_count, true);
 
+	size_t hidden_layer_len = 64;
+
+	initialization_parameters init;
+	init.initialization = Xavier;
+	init.central_limit.std = .2;
+	init.constant.value_constant = 1;
+
 	NN *value_function = NN_constructor()
-		.append_layer(Dense, Neuron, 64)
-		.append_layer(Dense, Neuron, env.get_action_count(), sigmoid)
+		.append_layer(Dense, Neuron, hidden_layer_len, sigmoid, init)
+		.append_layer(Dense, Neuron, 1, _tanh, init)
 		.construct(env.get_observation_count(), hyperparameters.GAE.value_function.optimization);
 
 	NN *policy = NN_constructor()
-		.append_layer(Dense, Neuron, 64)
-		.append_layer(Dense, Neuron, env.get_action_count(), softmax)
+		.append_layer(Dense, Neuron, hidden_layer_len, sigmoid, init)
+		.append_layer(Dense, Neuron, env.get_action_count(), softmax, init)
 		.construct(env.get_observation_count(), hyperparameters.policy.optimization);
 
 	PPO_memory mem;
@@ -461,9 +477,19 @@ void test_optimized_PPO()
 
 		auto [rewards, reward_count, _] = env.step(actions);
 
+		data_t mean_reward = 0;
+		for (size_t i = 0; i < reward_count; i++) mean_reward += rewards[i];
+		mean_reward /= reward_count;
+
 		if (add_rewards(rewards, reward_count, value_function, policy, mem, hyperparameters))
 			throw;
 
+		for (size_t i = 0; i < 4; i++)
+			std::cout << actions[i] << " ";
+		
+		std::cout << "| Step: " << epoch << ". Step mean reward: " << mean_reward << std::endl;
+
+		delete[] actions;
 		delete[] rewards;
 	}
 	
@@ -477,7 +503,7 @@ int main(int argc)
 	srand(get_arbitrary_number());
 #endif
 
-	std::cout << std::setprecision(3);
+	std::cout << std::setprecision(4);
 
 	//cudaSetDevice(0);
 	//bug_hunting();

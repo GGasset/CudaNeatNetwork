@@ -108,9 +108,6 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 	size_t x = std::get<1>(target_agent_pos[env_i]) % board_size;
 	size_t y = std::get<1>(target_agent_pos[env_i]) / board_size;
 
-	for (size_t i = 0; i < 4 && !env_i; i++)
-		//printf("%.4f ", actions_probs[i]);
-		std::cout << actions_probs[i] << " ";
 
 	if (!actions_probs) 
 		throw;
