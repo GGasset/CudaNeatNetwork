@@ -133,7 +133,7 @@ int add_rewards(
     if (mem.n_executions < parameters.steps_before_training) return 0;
     
     // Training
-    std::cout << "\nTraining..." << std::endl;
+    //std::cout << "\nTraining..." << std::endl;
 
     size_t total_execution_count = mem.n_executions * parameters.vecenvironment_count;
 
