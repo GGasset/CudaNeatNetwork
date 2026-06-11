@@ -44,7 +44,7 @@ typedef struct PPO_hyperparameters
 	size_t mini_batch_count = 4;
 
 	// Environment frames before training is calculated and applied
-	size_t steps_before_training = 30;
+	size_t steps_before_training = 32;
 
 	// number of (independent) vector environments
 	// if the execution count of an environment reach steps_before_training 
