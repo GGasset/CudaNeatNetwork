@@ -435,24 +435,33 @@ void test_optimized_PPO()
 {
 	PPO_hyperparameters hyperparameters;
 	hyperparameters.vecenvironment_count = 128;
-	hyperparameters.clip_ratio = .1;
+	hyperparameters.clip_ratio = .2;
+	//hyperparameters.max_training_steps = 20;
 
-	hyperparameters.policy.learning_rate = .01;
+	hyperparameters.GAE.value_function.learning_rate = .01;
+	hyperparameters.policy.learning_rate = .001;
+
+	hyperparameters.policy.global_gradient_clip = .5;
+
 	hyperparameters.policy.regularization.entropy_bonus.active = true;
+	hyperparameters.policy.regularization.entropy_bonus.entropy_coefficient = 0.0001;
 
 
-	hyperparameters.GAE.training_steps = 1;
+	//hyperparameters.GAE.training_steps = 20;
 
-	hyperparameters.GAE.value_function.learning_rate = .1;
 
 	test_env env(hyperparameters.vecenvironment_count, true);
 
-	size_t hidden_layer_len = 64;
+	size_t hidden_layer_len = 128;
 
 	initialization_parameters init;
 	init.initialization = Xavier;
 	init.central_limit.std = .2;
 	init.constant.value_constant = 1;
+
+	initialization_parameters last_layer_policy_init;
+	init.initialization = Xavier;
+	init.constant.value_constant = .01;
 
 	NN *value_function = NN_constructor()
 		.append_layer(Dense, Neuron, hidden_layer_len, sigmoid, init)
@@ -461,7 +470,7 @@ void test_optimized_PPO()
 
 	NN *policy = NN_constructor()
 		.append_layer(Dense, Neuron, hidden_layer_len, sigmoid, init)
-		.append_layer(Dense, Neuron, env.get_action_count(), softmax, init)
+		.append_layer(Dense, Neuron, env.get_action_count(), softmax, last_layer_policy_init)
 		.construct(env.get_observation_count(), hyperparameters.policy.optimization);
 
 	PPO_memory mem;
