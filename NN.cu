@@ -301,7 +301,7 @@ void NN::subtract_gradients(
 	data_t *accumulated_grads = multi_PRAM_add(continous_gradients, total_t_count, counts.gradients);
 	cudaFree(continous_gradients);
 
-	multiply_array n_threads(counts.gradients) (accumulated_grads, counts.gradients, 1 / total_t_count);
+	//multiply_array n_threads(counts.gradients) (accumulated_grads, counts.gradients, 1 / execution_lines);
 	cudaDeviceSynchronize();
 
 	subtract_gradients(accumulated_grads, 0, hyperparameters);
