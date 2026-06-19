@@ -182,12 +182,14 @@ __global__ void g_discounted_rewards(data_t *rewards, size_t parallel_execution_
 	write_arr[tid] = 0;
 	if (addition_arr_i > t) return;
 
+	size_t addition_arr_len = t_count - t;
+
 	size_t discounted_sequence_i = addition_arr_i - t;
 	data_t adjusted_gamma = pow(gamma, discounted_sequence_i);
 
 	size_t parallel_execution_line_i = execution_i / t_count;
 	size_t reward_i = parallel_execution_line_i * t_count + addition_arr_i;
-	write_arr[tid] = adjusted_gamma * rewards[reward_i];
+	write_arr[tid] = (adjusted_gamma * rewards[reward_i]) / addition_arr_len;
 }
 
 // Rewards are the appended rewards of each execution line
