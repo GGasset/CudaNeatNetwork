@@ -50,7 +50,7 @@ __host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gra
 	
 	data_t l2 = PRAM_reduce_add(gradients_copy, gradient_count);
 	cudaFree(gradients_copy);
-	if (l2 <= hyperparameters.global_gradient_clip || !l2) return;
+	if (l2 <= hyperparameters.global_gradient_clip) return;
 
 	data_t to_multiply_by = hyperparameters.global_gradient_clip / l2;
 	
