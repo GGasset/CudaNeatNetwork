@@ -248,7 +248,7 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 		throw;
 		//for (size_t i = 0; )
 	}
-	if (gae.training_steps == 1)
+	/*if (gae.training_steps == 1)
 	{
 		data_t *cost_derivative = 
 			MSE_derivative(n_executions, 1, activations, estimator->get_neuron_count(), 1, discounted_rewards, n_executions, false);
@@ -257,14 +257,26 @@ data_t *get_advantages(size_t parallel_executions_n, size_t t_count, NN *estimat
 
 		cudaFree(cost_derivative);
 		cudaFree(grads);
-	}
-	cudaFree(activations);
-	cudaFree(execution_values);
-	for (size_t i = 0; i < gae.training_steps && gae.training_steps > 1; i++)
+	}*/
+
+	for (size_t i = 0; i < gae.training_steps; i++)
 	{
-		throw;
-		
-	}
+		if (!activations || !execution_values) estimator->execute(n_executions, 0, device_state, state_len, true, device_arr, &activations, &execution_values);
+
+		data_t *cost_derivative = 
+			MSE_derivative(n_executions, 1, activations, estimator->get_neuron_count(), 1, discounted_rewards, n_executions, false);
+		data_t *grads = estimator->backpropagate(n_executions, 1, cost_derivative, n_executions, activations, execution_values, gae.value_function);
+		estimator->subtract_gradients(n_executions, 1, grads, gae.value_function);
+
+		cudaFree(cost_derivative);
+		cudaFree(grads);
+
+		cudaFree(activations);
+		activations = 0;
+		cudaFree(execution_values);
+		execution_values = 0;
+
+	};
 
 	if (!gae.use_GAE)
 	{
