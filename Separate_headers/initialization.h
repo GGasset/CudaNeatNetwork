@@ -5,6 +5,8 @@
 
 enum initialization_type
 {
+	He,
+	orthogonal,
 	Xavier,
 	central_limit,
 	constant
@@ -32,6 +34,9 @@ struct initialization_parameters
 	size_t layer_n_inputs = 0;
 	// Automatically set in nn_constructor.construct and NN.add_layer
 	size_t layer_n_outputs = 0;
+	// Automatically set in nn_constructor.construct and NN.add_layer
+	// Equals layer_n_outputs in last layer
+	size_t next_layer_len = 0;
 	// Automatically set in nn_constructor.construct and NN.add_layer
 	size_t time = 0;
 };

@@ -184,7 +184,7 @@ __global__ void normalize_arr(T *vals, size_t n_vals, T mean, T std)
 	size_t tid = get_tid();
 	if (!vals || !std || tid >= n_vals) return;
 
-	vals[tid] = (vals[tid] - mean) / std;
+	vals[tid] = (vals[tid] - mean) / (std + 1e-7);
 }
 
 __global__ void exp_arr(data_t *arr, size_t arr_value_count);

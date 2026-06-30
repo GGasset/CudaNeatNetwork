@@ -355,7 +355,7 @@ void optimizations_test()
 	params.regularization.entropy_bonus.active = false;
 	params.global_gradient_clip = 0;
 	params.dropout_rate = 0;*/
-	params.learning_rate = 0.00001;
+	params.learning_rate = 0.0001;
 
 	NN *n = NN_constructor()
 		.append_layer(Dense, Neuron, 128 << 4)

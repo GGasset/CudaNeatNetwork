@@ -301,7 +301,7 @@ void NN::subtract_gradients(
 	data_t *accumulated_grads = multi_PRAM_add(continous_gradients, total_t_count, counts.gradients);
 	cudaFree(continous_gradients);
 
-	//multiply_array n_threads(counts.gradients) (accumulated_grads, counts.gradients, 1 / execution_lines);
+	multiply_array n_threads(counts.gradients) (accumulated_grads, counts.gradients, 1 / execution_lines);
 	cudaDeviceSynchronize();
 
 	subtract_gradients(accumulated_grads, 0, hyperparameters);
@@ -852,15 +852,19 @@ void NN::add_layer(size_t insert_i, NeuronTypes layer_type)
 		previous_layer_activations_start = previous_layer->properties.activations_start;
 	}
 
+	size_t next_layer_len = insert_i == counts.layer_count ? output_length : layers[insert_i]->get_neuron_count();
+
 	weight_init.layer_n_inputs = previous_layer_length;
 	weight_init.layer_n_outputs = 1;
+	weight_init.next_layer_len = next_layer_len;
 
 	bias_init.layer_n_inputs = previous_layer_length;
 	bias_init.layer_n_outputs = 1;
+	bias_init.next_layer_len = next_layer_len;
 	
 	layer_weights_init.layer_n_inputs = previous_layer_length;
 	layer_weights_init.layer_n_outputs = 1;
-
+	layer_weights_init.next_layer_len = next_layer_len;
 
 	IConnections* new_connections = new NeatConnections(
 		previous_layer_activations_start, previous_layer_length, 1,

@@ -52,7 +52,7 @@ __host__ void global_gradient_clip(data_t *gradients, size_t gradient_count, gra
 	cudaFree(gradients_copy);
 	if (l2 <= hyperparameters.global_gradient_clip) return;
 
-	data_t to_multiply_by = hyperparameters.global_gradient_clip / l2;
+	data_t to_multiply_by = hyperparameters.global_gradient_clip / (l2 + 1e-7);
 	
 	multiply_array n_threads(gradient_count) (gradients, gradient_count, to_multiply_by);
 	cudaDeviceSynchronize();

@@ -114,9 +114,9 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 
 	size_t selected_action = 0;
 	data_t r = get_random_float();
+	data_t cumulative_probs = 0;
 	{
 		bool contains_nan = 0;
-		data_t cumulative_probs = 0;
 		for (size_t i = 0; i < 4 && !selected_action; i++)
 		{
 			contains_nan = contains_nan || actions_probs[i] != actions_probs[i];
@@ -153,7 +153,7 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 		break;
 
 	default:
-		printf("Invalid action %li\n", selected_action);
+		printf("Invalid action %li  %.2f  %.2f\n", selected_action, r, cumulative_probs);
 		throw;
 	}
 	size_t target_pos = std::get<0>(target_agent_pos[env_i]);

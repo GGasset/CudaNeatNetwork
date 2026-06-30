@@ -188,7 +188,7 @@ __global__ void global_initialize_parameters(field_t *params, size_t param_count
 		break;
 	case initialization_type::Xavier:
 	{
-		data_t factor = sqrtf(6.0 / (init.layer_n_inputs + init.layer_n_outputs));
+		data_t factor = sqrtf(6.0 / (init.layer_n_inputs + init.next_layer_len));
 		params[tid] = (device_random_uniform(&curand) - .5) * 2 * factor;
 		break;
 	}
@@ -197,6 +197,9 @@ __global__ void global_initialize_parameters(field_t *params, size_t param_count
 			sqrtf(-2 * logf(device_random_uniform(&curand))) * cosf(6.2831853 * device_random_uniform(&curand))
 			* init.central_limit.std
 			+ init.central_limit.mean;
+		break;
+	case initialization_type::He:
+		params[tid] = device_random_uniform(&curand) * (2 / init.layer_n_inputs);
 		break;
 	default:
 		printf("Invalid initialization\n");
