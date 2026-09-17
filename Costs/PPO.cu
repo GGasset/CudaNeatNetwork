@@ -198,6 +198,9 @@ void PPO_memory::deallocate(bool free_memory_execution_values)
     {
         cudaFree(last_execution_values);
         last_execution_values = 0;
+
+    	cudaFree(last_activations);
+    	last_activations = 0;
     }
 
     n_executions = 0;
