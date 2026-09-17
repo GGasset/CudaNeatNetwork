@@ -47,6 +47,7 @@ data_t *PPO_execute(
     data_t *Y = alloc_output(out_count, output_location);
     if (Y) cudaMemcpy(Y, device_Y, sizeof(data_t) * out_count, cudaMemcpyDefault);
 
+	cudaFree(device_Y);
     return Y;
 }
 
@@ -77,7 +78,7 @@ void non_recurrent_PPO_minibatch(
         data_t kl_divergence_aproximation = 0;
         data_t *output_cost = PPO_derivative(
             minibatch_len, policy->get_output_length(),
-            outputs, current_outputs, false, advantages,
+            outputs + outputs_start, current_outputs, false, advantages,
             parameters.clip_ratio, kl_divergence_aproximation
         );
 
