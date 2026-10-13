@@ -64,8 +64,8 @@ std::vector<data_t> test_env::get_observations(size_t env_i)
 
 	size_t agent_pos = std::get<1>(target_agent_pos[env_i]);
 	size_t agent_pos_components[2] {};
-	agent_pos_components[0] = target_pos % board_size;
-	agent_pos_components[1] = target_pos / board_size;
+	agent_pos_components[0] = agent_pos % board_size;
+	agent_pos_components[1] = agent_pos / board_size;
 
 	// Target direction
 	data_t tmp = target_pos_components[0] - agent_pos_components[0];
@@ -179,7 +179,7 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 		execution_n[env_i]++;
 	}
 
-	target_agent_pos[env_i] = { agent_pos, std::get<0>(target_agent_pos[env_i]) };
+	target_agent_pos[env_i] = { std::get<0>(target_agent_pos[env_i]), agent_pos };
 	return {0, 0};
 }
 

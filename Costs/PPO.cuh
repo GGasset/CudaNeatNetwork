@@ -28,6 +28,8 @@ public:
 	// Used only for recurrent NNs
 	data_t *last_activations = 0;
 
+	size_t *action_index = 0;
+
 	size_t n_executions = 0;
 	bool was_reward_added = false;
 

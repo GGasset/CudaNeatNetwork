@@ -147,8 +147,8 @@ __global__ void global_PPO_derivative(
 
 	data_t ratio = output / initial_output;
 	
-	data_t cost_derivative = advantage / initial_output;
-	cost_derivative *= 1 + clip_ratio > ratio && 1 - clip_ratio < ratio;
+	data_t cost_derivative = -advantage / initial_output;
+	cost_derivative *= (1 + clip_ratio > ratio || advantage < 0) && (1 - clip_ratio < ratio || advantage >= 0);
 
 	out_arr[tid] = cost_derivative;
 
