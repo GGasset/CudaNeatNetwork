@@ -434,12 +434,13 @@ void optimizations_test()
 void test_optimized_PPO()
 {
 	PPO_hyperparameters hyperparameters;
-	hyperparameters.vecenvironment_count = 128;
-	hyperparameters.clip_ratio = .2;
+	//hyperparameters.steps_before_training = 
+	hyperparameters.vecenvironment_count = 32;
+	hyperparameters.clip_ratio = .1;
 	//hyperparameters.max_training_steps = 20;
 
-	hyperparameters.GAE.value_function.learning_rate = .01;
-	hyperparameters.policy.learning_rate = .001;
+	hyperparameters.GAE.value_function.learning_rate = .001;
+	hyperparameters.policy.learning_rate = .0001;
 
 	hyperparameters.policy.global_gradient_clip = .5;
 
@@ -484,11 +485,13 @@ void test_optimized_PPO()
 		);
 		delete[] observations;
 
-		auto [rewards, reward_count, _] = env.step(actions);
+		auto [rewards, actions_indexes, reward_count, _] = env.step(actions);
 
 		data_t mean_reward = 0;
 		for (size_t i = 0; i < reward_count; i++) mean_reward += rewards[i];
 		mean_reward /= reward_count;
+
+		mem.action_index = cuda_append_array(mem.action_index, mem.n_executions - 1, actions_indexes, reward_count, true, true);
 
 		if (add_rewards(rewards, reward_count, value_function, policy, mem, hyperparameters))
 			throw;

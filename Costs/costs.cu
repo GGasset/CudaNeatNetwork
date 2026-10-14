@@ -130,7 +130,7 @@ __global__ void global_PPO_derivative(
 	size_t n_executions, data_t *out_arr,
 	size_t output_count, 
 	data_t *initial_outputs, data_t *current_outputs, 
-	data_t *advantages, data_t clip_ratio, data_t *kl_estimation_arr
+	data_t *advantages, data_t clip_ratio, data_t *kl_estimation_arr, size_t *action_index
 
 )
 {
@@ -139,7 +139,11 @@ __global__ void global_PPO_derivative(
 	size_t total_outputs = n_executions * output_count;
 	if (tid >= total_outputs) return;
 
+	out_arr[tid] = 0;
+
 	size_t execution_i = tid / output_count;
+	size_t output_i = tid % output_count;
+	if (action_index && action_index[execution_i] != output_i) return;
 
 	data_t initial_output = initial_outputs[tid] + 1e-7;
 	data_t output = current_outputs[tid];
@@ -160,7 +164,7 @@ __host__ data_t *PPO_derivative(
 	size_t n_executions,
 	size_t output_count, 
 	data_t *initial_outputs, data_t *current_outputs, bool are_outputs_on_host, 
-	data_t *advantages, data_t clip_ratio, data_t &kl_estimation_out
+	data_t *advantages, data_t clip_ratio, data_t &kl_estimation_out, size_t *action_index
 )
 {
 	size_t total_outputs = output_count * n_executions;
@@ -182,7 +186,7 @@ __host__ data_t *PPO_derivative(
 	global_PPO_derivative n_threads(total_outputs) (
 		n_executions, derivatives_arr, output_count,
 		initial_outputs, current_outputs, advantages, clip_ratio,
-		kl_divergence_array
+		kl_divergence_array, action_index
 	);
 	cudaDeviceSynchronize();
 

@@ -68,7 +68,7 @@ std::vector<data_t> test_env::get_observations(size_t env_i)
 	agent_pos_components[1] = agent_pos / board_size;
 
 	// Target direction
-	data_t tmp = target_pos_components[0] - agent_pos_components[0];
+	data_t tmp = target_pos_components[0] - (data_t)agent_pos_components[0];
 	tmp = (tmp != 0) * (1 - 2 * (tmp < 0));
 	out.push_back(tmp);
 
@@ -103,7 +103,7 @@ std::tuple<data_t *, size_t> test_env::get_all_observations()
 	return {out_arr, total_observation_count};
 }
 
-std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
+std::tuple<data_t, bool, size_t> test_env::step(data_t *actions_probs, size_t env_i)
 {
 	size_t x = std::get<1>(target_agent_pos[env_i]) % board_size;
 	size_t y = std::get<1>(target_agent_pos[env_i]) / board_size;
@@ -133,22 +133,23 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 	{
 	case 1:
 		if (x == 0) 
-			return end_of_episode(-1, env_i);
+			return std::tuple_cat(end_of_episode(-1, env_i), std::make_tuple(selected_action));
 		agent_pos--;
 		break;
 	case 2:
 		if (x == board_size - 1) 
-			return end_of_episode(-1, env_i);
+			return std::tuple_cat(end_of_episode(-1, env_i), std::make_tuple(selected_action));
 		agent_pos++;
 		break;
 	case 3:
 		if (y == 0) 
-			return end_of_episode(-1, env_i);
+			return std::tuple_cat(end_of_episode(-1, env_i), std::make_tuple(selected_action));
+
 		agent_pos -= board_size;
 		break;
 	case 4:
 		if (y == board_size - 1) 
-			return end_of_episode(-1, env_i);
+			return std::tuple_cat(end_of_episode(-1, env_i), std::make_tuple(selected_action));
 		agent_pos += board_size;
 		break;
 
@@ -160,7 +161,7 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 
 	if (agent_pos == target_pos)
 	{
-		return end_of_episode(1, env_i);
+			return std::tuple_cat(end_of_episode(1, env_i), std::make_tuple(selected_action));
 	}
 	else
 	{
@@ -174,31 +175,33 @@ std::tuple<data_t, bool> test_env::step(data_t *actions_probs, size_t env_i)
 
 			size_t distance = abs(target_pos_x - x) + abs(target_pos_y - y);
 			data_t reward = -1 + 2 * (1 - distance / (data_t)(board_size * board_size));
-			return end_of_episode(reward, env_i);
+			return std::tuple_cat(end_of_episode(-1, env_i), std::make_tuple(selected_action));
 		}
 		execution_n[env_i]++;
 	}
 
 	target_agent_pos[env_i] = { std::get<0>(target_agent_pos[env_i]), agent_pos };
-	return {0, 0};
+	return {0, 0, selected_action};
 }
 
-std::tuple<data_t *, size_t, std::vector<bool>> test_env::step(data_t *all_action_probs)
+std::tuple<data_t *, size_t*, size_t, std::vector<bool>> test_env::step(data_t *all_action_probs)
 {
 	data_t *rewards = new data_t[nenvs];
 	std::vector<bool> EOPs;
 	EOPs.resize(nenvs);
+	size_t *actions = new size_t[nenvs];
 
     for (size_t i = 0; i < nenvs; i++)
 	{
 		size_t action_probs_start_i = get_action_count() * i;
 
-		auto [reward, EOP] = step(all_action_probs + action_probs_start_i, i);
+		auto [reward, EOP, action] = step(all_action_probs + action_probs_start_i, i);
 
 		rewards[i] = reward;
 		EOPs[i] = EOP;
+		actions[i] = action;
 	}
-	return {rewards, nenvs, EOPs};
+	return {rewards, actions, nenvs, EOPs};
 }
 
 data_t test_env::get_mean_episode_len()

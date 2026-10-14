@@ -52,7 +52,7 @@ data_t *PPO_execute(
 }
 
 void non_recurrent_PPO_minibatch(
-    data_t *inputs, data_t *outputs, data_t *advantages, size_t n_executions,
+    data_t *inputs, data_t *outputs, data_t *advantages, size_t *action_indexes,
     NN *policy, PPO_hyperparameters parameters,
     size_t minibatch_start_i, size_t minibatch_len
 )
@@ -63,6 +63,8 @@ void non_recurrent_PPO_minibatch(
     size_t outputs_start = minibatch_start_i * policy->get_output_length();
     size_t outputs_len = minibatch_len * policy->get_output_length();
 
+    if (action_indexes) action_indexes += minibatch_start_i;
+
     int stop = 0;
     for (size_t i = 0; i < parameters.max_training_steps && !stop; i++)
     {
@@ -70,7 +72,7 @@ void non_recurrent_PPO_minibatch(
         data_t *execution_values = 0;
 
         data_t *current_outputs = policy->execute(
-            n_executions, 0, inputs + inputs_start, inputs_len, false, device_arr, 
+            minibatch_len, 0, inputs + inputs_start, inputs_len, false, device_arr, 
             &activations, &execution_values
         );
 
@@ -78,17 +80,17 @@ void non_recurrent_PPO_minibatch(
         data_t kl_divergence_aproximation = 0;
         data_t *output_cost = PPO_derivative(
             minibatch_len, policy->get_output_length(),
-            outputs + outputs_start, current_outputs, false, advantages,
-            parameters.clip_ratio, kl_divergence_aproximation
+            outputs + outputs_start, current_outputs, false, advantages + outputs_start,
+            parameters.clip_ratio, kl_divergence_aproximation, action_indexes
         );
 
         if (kl_divergence_aproximation > parameters.max_kl_divergence_threshold) stop = true;
         
         data_t *gradients = policy->backpropagate(
-            n_executions, 1, output_cost, outputs_len, activations, execution_values, parameters.policy
+            minibatch_len, 1, output_cost, outputs_len, activations, execution_values, parameters.policy
         );
 
-        policy->subtract_gradients(n_executions, 1, gradients, parameters.policy);
+        policy->subtract_gradients(minibatch_len, 1, gradients, parameters.policy);
         
         cudaFree(activations);
         cudaFree(execution_values);
@@ -99,11 +101,11 @@ void non_recurrent_PPO_minibatch(
 
 // Parameters to this function must have the timesteps of the same execution line together
 void non_recurrent_PPO_train(
-    data_t *inputs, data_t *outputs, data_t *advantages, size_t n_executions,
-    NN *policy, PPO_hyperparameters parameters
+    data_t *inputs, data_t *outputs, data_t *advantages, size_t *action_indexes,
+    NN *policy, PPO_memory &mem, PPO_hyperparameters parameters
 )
 {
-    size_t total_executions = n_executions * parameters.vecenvironment_count;
+    size_t total_executions = mem.n_executions * parameters.vecenvironment_count;
 
     size_t minibatch_execution_i_start = 0;
     for (size_t minibatch_i = 0; minibatch_i < parameters.mini_batch_count; minibatch_i++)
@@ -113,7 +115,7 @@ void non_recurrent_PPO_train(
             executions_in_minibatch = total_executions - minibatch_execution_i_start;
 
         non_recurrent_PPO_minibatch(
-            inputs, outputs, advantages, executions_in_minibatch,
+            inputs, outputs, advantages, action_indexes,
             policy, parameters, minibatch_execution_i_start, executions_in_minibatch
         );
 
@@ -144,6 +146,9 @@ int add_rewards(
     size_t total_output_count = policy->get_output_length() * total_execution_count;
     data_t *outputs = cudaCalloc<data_t>(total_output_count);
 
+    size_t *actions = 0;
+    if (mem.action_index) actions = cudaCalloc<size_t>(total_execution_count);
+
     continuize_arrs n_threads(total_input_count) (
         mem.inputs, inputs, total_input_count,
         mem.n_executions, parameters.vecenvironment_count,
@@ -157,6 +162,7 @@ int add_rewards(
     );
     cudaDeviceSynchronize();
 
+    // Rewards get contiuized like inputs and outputs
     data_t *advantages = 
         get_advantages(
             parameters.vecenvironment_count, mem.n_executions, value_function,
@@ -168,11 +174,12 @@ int add_rewards(
     cuda_sort_by_key(&inputs, shuffled_keys, key_arr_len, policy->get_input_length());
     cuda_sort_by_key(&outputs, shuffled_keys, key_arr_len, policy->get_output_length());
     cuda_sort_by_key(&advantages, shuffled_keys, key_arr_len, 1);
+    cuda_sort_by_key(&actions, shuffled_keys, key_arr_len, 1);
 
     if (!policy->is_recurrent() && !value_function->is_recurrent())
         non_recurrent_PPO_train(
-            inputs, outputs, advantages, mem.n_executions,
-            policy, parameters
+            inputs, outputs, advantages, actions,
+            policy, mem, parameters
         );
     else
         throw;
@@ -193,6 +200,8 @@ void PPO_memory::deallocate(bool free_memory_execution_values)
     outputs = 0;
     cudaFree(rewards);
     rewards = 0;
+    cudaFree(action_index);
+    action_index = 0;
 
     if (free_memory_execution_values)
     {

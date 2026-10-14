@@ -15,6 +15,7 @@
 #include <vector>
 #include <tuple>
 
+// For discrete spaces (sofmax) action_index must be fille manually
 class PPO_memory
 {
 public:
@@ -28,6 +29,9 @@ public:
 	// Used only for recurrent NNs
 	data_t *last_activations = 0;
 
+	// Append manually for discrete action spaces (softmax activation) (Important) (cuda array)
+	// Should be the actions taken in each timestep for each environment
+	// All environment's selected action is appended at each timestep
 	size_t *action_index = 0;
 
 	size_t n_executions = 0;
