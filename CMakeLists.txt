@@ -119,8 +119,7 @@ SET(TEST_FOLDER tests)
 ADD_PREFIX_INPLACE(${TEST_FOLDER}/ TEST_FILES)
 list(APPEND NETWORK_INCLUDE_DIRECTORIES ${TEST_FOLDER}/)
 
-SET(GCC_COVERAGE_COMPILE_FLAGS "-std=gnu++20 -lm -lstdc++ -fanalyzer")
-SET(GCC_COVERAGE_LINK_FLAGS    "-lm -lstdc++")
+SET(GCC_COVERAGE_COMPILE_FLAGS "-fanalyzer")
 
 set (CMAKE_CXX_STANDARD 20)
 
@@ -131,7 +130,6 @@ set(CMAKE_CUDA_COMPILER "nvcc")
 
 # -rdc=true
 if (UNIX)
-	set(CMAKE_CXX_COMPILER "gcc")
 	#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin='g++-13'")
 endif()
 if (DEBUG)
@@ -154,7 +152,6 @@ set(CMAKE_CUDA_ARCHITECTURES "native")
 #set(CMAKE_CUDA_ARCHITECTURES "all")
 
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
 project(NN LANGUAGES CUDA CXX)
 
@@ -198,6 +195,9 @@ endif()
 
 #target_link_libraries(${PROJECT_NAME} PUBLIC -lcurand)
 target_link_libraries(${PROJECT_NAME} PUBLIC curand)
+if(UNIX)
+	target_link_libraries(${PROJECT_NAME} PUBLIC m)
+endif()
 set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES "native")
 target_include_directories(${PROJECT_NAME} PRIVATE
