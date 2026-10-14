@@ -96,7 +96,8 @@ __global__ void global_sort_by_key(T *out, T *to_sort, size_t *keys, size_t key_
 template<typename T>
 __host__ void cuda_sort_by_key(T **to_sort, size_t *keys, size_t key_arr_len, size_t continous_value_count = 1)
 {
-	if (!to_sort || !*to_sort || !keys || !continous_value_count) throw;
+	if (!to_sort || !keys || !continous_value_count) throw;
+	if (!*to_sort) return;
 
 	size_t to_sort_len = key_arr_len * continous_value_count;
 
